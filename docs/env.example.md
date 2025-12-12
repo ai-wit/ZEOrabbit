@@ -1,0 +1,8 @@
+## Environment variables example
+
+```text
+DATABASE_URL="mysql://root@localhost:3306/zeorabbit"
+CRON_SECRET="dev_cron_secret_change_me"
+```
+
+

@@ -1,0 +1,446 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Notes:
+// - IDs use cuid for simplicity in MySQL and good DX with Prisma.
+// - Amount fields are stored as integer KRW (won) to avoid float issues.
+
+enum UserRole {
+  ADVERTISER
+  REWARDER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum TermsType {
+  SERVICE
+  PRIVACY
+  REWARDER_GUIDE
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum MissionType {
+  TRAFFIC
+  SAVE
+  SHARE
+}
+
+enum MissionDayStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum ParticipationStatus {
+  IN_PROGRESS
+  PENDING_REVIEW
+  MANUAL_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+  CANCELED
+}
+
+enum VerificationDecision {
+  APPROVE
+  REJECT
+  NEED_MANUAL
+}
+
+enum LedgerReason {
+  MISSION_REWARD
+  MISSION_APPROVED_CHARGE
+  PAYOUT
+  PAYOUT_REVERSAL
+  TOPUP
+  REFUND
+  ADJUSTMENT
+}
+
+enum PayoutStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PAID
+  CANCELED
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+  CANCELED
+  REFUNDED
+}
+
+enum PolicyKey {
+  PRICING
+  REWARD
+  FRAUD
+  PAYOUT
+  MISSION_LIMITS
+}
+
+model User {
+  id        String     @id @default(cuid())
+  role      UserRole
+  status    UserStatus @default(ACTIVE)
+
+  email     String?    @unique
+  name      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  advertiserProfile AdvertiserProfile?
+  rewarderProfile   RewarderProfile?
+  credential         AuthCredential?
+  sessions           Session[]
+  terms              TermsAgreement[]
+
+  auditLogs     AuditLog[]
+  notifications Notification[]
+}
+
+model AuthCredential {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model TermsAgreement {
+  id          String    @id @default(cuid())
+  userId      String
+  type        TermsType
+  version     String
+  acceptedAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, version])
+  @@index([userId, acceptedAt])
+}
+
+model AdvertiserProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  displayName  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  places   Place[]
+  campaigns Campaign[]
+  budgetLedgers BudgetLedger[]
+  payments Payment[]
+}
+
+model RewarderProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  level       Int      @default(1)
+  trustScore  Int      @default(0)
+  warningCount Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  participations Participation[]
+  creditLedgers  CreditLedger[]
+  payoutAccounts PayoutAccount[]
+  payoutRequests PayoutRequest[]
+  fraudSignals   FraudSignal[]
+}
+
+model Place {
+  id              String   @id @default(cuid())
+  advertiserId     String
+  name            String
+  externalProvider String? // e.g. NAVER_PLACE
+  externalId       String? // provider-specific identifier
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+  campaigns  Campaign[]
+
+  @@index([advertiserId])
+  @@index([externalProvider, externalId])
+}
+
+model Campaign {
+  id            String        @id @default(cuid())
+  advertiserId  String
+  placeId       String
+  name          String
+  missionType   MissionType
+  dailyTarget   Int
+  startDate     DateTime
+  endDate       DateTime
+  unitPriceKrw  Int
+  rewardKrw     Int
+  budgetTotalKrw Int
+  status        CampaignStatus @default(DRAFT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+  place      Place            @relation(fields: [placeId], references: [id], onDelete: Restrict)
+  missionDays MissionDay[]
+
+  @@index([advertiserId, status])
+  @@index([placeId])
+  @@index([missionType])
+}
+
+model MissionDay {
+  id             String        @id @default(cuid())
+  campaignId     String
+  date           DateTime      // normalized to date (00:00)
+  quotaTotal     Int
+  quotaRemaining Int
+  status         MissionDayStatus @default(ACTIVE)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  campaign       Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  participations Participation[]
+
+  @@unique([campaignId, date])
+  @@index([date, status])
+  @@index([campaignId, status])
+}
+
+model Participation {
+  id             String              @id @default(cuid())
+  missionDayId   String
+  rewarderId     String
+  status         ParticipationStatus @default(IN_PROGRESS)
+  startedAt      DateTime           @default(now())
+  expiresAt      DateTime
+  submittedAt    DateTime?
+  decidedAt      DateTime?
+  failureReason  String?
+  idempotencyKey String?            @unique
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  missionDay MissionDay      @relation(fields: [missionDayId], references: [id], onDelete: Restrict)
+  rewarder   RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+  evidences  VerificationEvidence[]
+  result     VerificationResult?
+
+  @@index([rewarderId, status])
+  @@index([missionDayId, status])
+  @@index([expiresAt])
+}
+
+model VerificationEvidence {
+  id              String   @id @default(cuid())
+  participationId String
+  type            String   // SCREENSHOT | LOG (keep flexible for MVP)
+  fileRef         String?
+  metadataJson    Json?
+  ocrText         String?
+  createdAt       DateTime @default(now())
+
+  participation Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+
+  @@index([participationId])
+}
+
+model VerificationResult {
+  id              String             @id @default(cuid())
+  participationId String             @unique
+  autoDecision    VerificationDecision?
+  manualDecision  VerificationDecision?
+  signalsJson     Json?
+  decidedByAdminId String?
+  decidedAt       DateTime?
+  createdAt       DateTime           @default(now())
+
+  participation Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+}
+
+model CreditLedger {
+  id         String       @id @default(cuid())
+  rewarderId String
+  amountKrw  Int
+  reason     LedgerReason
+  refId      String?      // participationId or payoutId, etc.
+  createdAt  DateTime     @default(now())
+
+  rewarder RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+
+  @@index([rewarderId, createdAt])
+  @@unique([reason, refId])
+}
+
+model BudgetLedger {
+  id          String       @id @default(cuid())
+  advertiserId String
+  amountKrw   Int
+  reason      LedgerReason
+  refId       String?
+  createdAt   DateTime     @default(now())
+
+  advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+
+  @@index([advertiserId, createdAt])
+  @@unique([reason, refId])
+}
+
+model PayoutAccount {
+  id         String   @id @default(cuid())
+  rewarderId String
+  bankName   String
+  accountNumberMasked String
+  accountHolderName   String?
+  isPrimary  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  rewarder RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+  payoutRequests PayoutRequest[]
+
+  @@index([rewarderId, isPrimary])
+}
+
+model PayoutRequest {
+  id            String      @id @default(cuid())
+  rewarderId    String
+  payoutAccountId String
+  amountKrw     Int
+  status        PayoutStatus @default(REQUESTED)
+  failureReason String?
+  idempotencyKey String?     @unique
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  decidedAt     DateTime?
+
+  rewarder RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+  payoutAccount PayoutAccount @relation(fields: [payoutAccountId], references: [id], onDelete: Restrict)
+
+  @@index([rewarderId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  advertiserId  String
+  amountKrw     Int
+  status        PaymentStatus @default(CREATED)
+  provider      String?       // e.g. PORTONE / TOSS / STRIPE
+  providerRef   String?       @unique
+  idempotencyKey String?      @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+
+  @@index([advertiserId, status, createdAt])
+}
+
+model FraudSignal {
+  id            String   @id @default(cuid())
+  rewarderId    String
+  participationId String?
+  type          String   // DUP_IMAGE | FAST | LOG_MISMATCH | IP_REPEAT ...
+  severity      Int      @default(1) // 1..5
+  payloadJson   Json?
+  createdAt     DateTime @default(now())
+
+  rewarder RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+
+  @@index([rewarderId, createdAt])
+  @@index([type, createdAt])
+}
+
+model Blacklist {
+  id        String   @id @default(cuid())
+  type      String   // IP | DEVICE
+  value     String
+  reason    String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([type, value])
+}
+
+model Policy {
+  id        String   @id @default(cuid())
+  key       PolicyKey
+  version   Int      @default(1)
+  payloadJson Json
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([key, isActive, createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  channel   String   // EMAIL | KAKAO | IN_APP
+  type      String
+  payloadJson Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorUserId String?
+  action    String
+  targetType String?
+  targetId  String?
+  payloadJson Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  actorUser User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+}
+
+
