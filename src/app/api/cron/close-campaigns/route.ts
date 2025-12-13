@@ -6,9 +6,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const provided = url.searchParams.get("secret");
   const expected = process.env.CRON_SECRET;
+  const isVercelCron = req.headers.get("x-vercel-cron") === "1" || req.headers.has("x-vercel-cron");
 
   if (process.env.NODE_ENV === "production") {
-    if (!expected || !provided || provided !== expected) {
+    if (!isVercelCron && (!expected || !provided || provided !== expected)) {
       return NextResponse.json({ ok: false }, { status: 401 });
     }
   }

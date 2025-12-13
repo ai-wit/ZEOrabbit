@@ -1,0 +1,14 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/expire-participations",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/close-campaigns",
+      "schedule": "10 0 * * *"
+    }
+  ]
+}
+
+
