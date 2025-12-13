@@ -28,7 +28,8 @@ export async function createSessionForUser(params: {
     }
   });
 
-  cookies().set({
+  const cookieStore = await cookies();
+  cookieStore.set({
     name: SESSION_COOKIE_NAME,
     value: token,
     httpOnly: true,
@@ -40,7 +41,8 @@ export async function createSessionForUser(params: {
 }
 
 export async function destroyCurrentSession(): Promise<void> {
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (token) {
     const tokenHash = sha256Base64Url(token);
     await prisma.session.deleteMany({
@@ -48,7 +50,7 @@ export async function destroyCurrentSession(): Promise<void> {
     });
   }
 
-  cookies().set({
+  cookieStore.set({
     name: SESSION_COOKIE_NAME,
     value: "",
     httpOnly: true,
@@ -60,7 +62,8 @@ export async function destroyCurrentSession(): Promise<void> {
 }
 
 export async function getUserIdFromSessionCookie(): Promise<string | null> {
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
 
   const tokenHash = sha256Base64Url(token);

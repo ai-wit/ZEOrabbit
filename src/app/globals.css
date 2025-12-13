@@ -2,4 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+.zeo-body {
+  position: relative;
+}
+
+.zeo-body::before,
+.zeo-body::after {
+  content: "";
+  position: fixed;
+  inset: auto;
+  width: 520px;
+  height: 520px;
+  border-radius: 9999px;
+  pointer-events: none;
+  filter: blur(64px);
+  opacity: 0.9;
+  z-index: 0;
+}
+
+.zeo-body::before {
+  top: -140px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.22), rgba(0, 0, 0, 0) 60%);
+}
+
+.zeo-body::after {
+  bottom: -220px;
+  right: -160px;
+  background: radial-gradient(circle at center, rgba(34, 211, 238, 0.16), rgba(0, 0, 0, 0) 60%);
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Date inputs: keep native picker behavior, but ensure icon is always visible via our UI component. */
+input.zeo-date-input {
+  color-scheme: dark;
+}
+
+/* Hide the native icon only for our styled inputs (Chrome/Safari), so we don't get double icons. */
+input.zeo-date-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+  width: 3.25rem;
+  height: 100%;
+  margin: 0;
+}
+
 

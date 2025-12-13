@@ -1,78 +1,71 @@
 import Link from "next/link";
+import { PageHeader, PageShell } from "@/app/_ui/shell";
+import { Button, ButtonLink, Card, CardBody, Input, Label } from "@/app/_ui/primitives";
 
 export default function NewPlacePage() {
   return (
-    <main className="mx-auto max-w-lg space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">플레이스 등록</h1>
-        <div className="text-sm text-zinc-400">
-          MVP에서는 플레이스명만으로도 등록 가능합니다.
-        </div>
-      </header>
+    <PageShell
+      header={
+        <PageHeader
+          eyebrow="ADVERTISER"
+          title="플레이스 등록"
+          description="MVP에서는 플레이스명만으로도 등록 가능합니다."
+          right={
+            <div className="flex flex-wrap gap-2">
+              <ButtonLink href="/advertiser/places" variant="secondary" size="sm">
+                목록
+              </ButtonLink>
+              <ButtonLink href="/advertiser/campaigns" variant="secondary" size="sm">
+                캠페인
+              </ButtonLink>
+              <ButtonLink href="/advertiser/reports" variant="secondary" size="sm">
+                리포트
+              </ButtonLink>
+              <ButtonLink href="/advertiser/billing" variant="secondary" size="sm">
+                결제/충전
+              </ButtonLink>
+              <ButtonLink href="/advertiser" variant="secondary" size="sm">
+                광고주 홈
+              </ButtonLink>
+              <ButtonLink href="/" variant="secondary" size="sm">
+                홈
+              </ButtonLink>
+              <form action="/api/auth/logout" method="post">
+                <Button type="submit" variant="danger" size="sm">
+                  로그아웃
+                </Button>
+              </form>
+            </div>
+          }
+        />
+      }
+    >
+      <Card>
+        <CardBody>
+          <form action="/api/advertiser/places" method="post" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">플레이스명</Label>
+              <Input id="name" name="name" required maxLength={255} placeholder="예: 상도동 막걸리 우이락" />
+            </div>
 
-      <form
-        action="/api/advertiser/places"
-        method="post"
-        className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/30 p-6"
-      >
-        <div className="space-y-2">
-          <label htmlFor="name" className="text-sm text-zinc-200">
-            플레이스명
-          </label>
-          <input
-            id="name"
-            name="name"
-            required
-            maxLength={255}
-            className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-600"
-            placeholder="예: 상도동 막걸리 우이락"
-          />
-        </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="externalProvider">외부 Provider(선택)</Label>
+                <Input id="externalProvider" name="externalProvider" maxLength={64} placeholder="예: NAVER_PLACE" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="externalId">외부 ID(선택)</Label>
+                <Input id="externalId" name="externalId" maxLength={128} placeholder="provider-specific id" />
+              </div>
+            </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <label htmlFor="externalProvider" className="text-sm text-zinc-200">
-              외부 Provider(선택)
-            </label>
-            <input
-              id="externalProvider"
-              name="externalProvider"
-              maxLength={64}
-              className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-600"
-              placeholder="예: NAVER_PLACE"
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="externalId" className="text-sm text-zinc-200">
-              외부 ID(선택)
-            </label>
-            <input
-              id="externalId"
-              name="externalId"
-              maxLength={128}
-              className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-600"
-              placeholder="provider-specific id"
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="w-full rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/15"
-        >
-          등록
-        </button>
-      </form>
-
-      <div className="flex gap-3">
-        <Link
-          href="/advertiser/places"
-          className="rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/15"
-        >
-          목록으로
-        </Link>
-      </div>
-    </main>
+            <Button type="submit" variant="primary" className="w-full">
+              등록
+            </Button>
+          </form>
+        </CardBody>
+      </Card>
+    </PageShell>
   );
 }
 

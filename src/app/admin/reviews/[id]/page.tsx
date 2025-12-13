@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
+import { PageHeader, PageShell } from "@/app/_ui/shell";
+import { Button, ButtonLink, Card, CardBody, Input, Pill } from "@/app/_ui/primitives";
+import { ImageLightbox } from "@/app/_ui/ImageLightbox";
 
 export default async function AdminReviewDetailPage(props: { params: { id: string } }) {
   const admin = await requireRole("ADMIN");
@@ -41,88 +44,107 @@ export default async function AdminReviewDetailPage(props: { params: { id: strin
   if (!participation) notFound();
 
   const evidence = participation.evidences[0] ?? null;
+  const evidenceSrc = evidence?.fileRef ? evidence.fileRef.trim() : null;
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">검수 상세</h1>
-        <div className="text-sm text-zinc-400">
-          관리자: {admin.email ?? admin.id}
-        </div>
-      </header>
-
-      <section className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-2">
-        <div className="text-sm text-zinc-200">
-          {participation.missionDay.campaign.place.name} · {participation.missionDay.campaign.missionType}
-        </div>
-        <div className="text-xs text-zinc-400">
-          참여자: {participation.rewarder.user.email ?? participation.rewarder.id} · 광고주:{" "}
-          {participation.missionDay.campaign.advertiser.user.email ??
-            participation.missionDay.campaign.advertiser.id}
-        </div>
-        <div className="text-xs text-zinc-500">
-          상태: {participation.status}
-          {participation.submittedAt ? ` · 제출: ${new Date(participation.submittedAt).toLocaleString("ko-KR")}` : ""}
-          {participation.decidedAt ? ` · 결정: ${new Date(participation.decidedAt).toLocaleString("ko-KR")}` : ""}
-        </div>
-        {participation.failureReason ? (
-          <div className="text-xs text-red-300">사유: {participation.failureReason}</div>
-        ) : null}
-      </section>
-
-      <section className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-3">
-        <div className="text-sm text-zinc-200">증빙(최근 1개)</div>
-        {evidence?.fileRef ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={evidence.fileRef}
-            alt="evidence"
-            className="w-full rounded-lg border border-zinc-800 bg-zinc-950 object-contain"
-          />
-        ) : (
-          <div className="text-sm text-zinc-400">증빙이 없습니다.</div>
-        )}
-      </section>
-
-      {(participation.status === "PENDING_REVIEW" || participation.status === "MANUAL_REVIEW") ? (
-        <section className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6">
-          <div className="flex flex-wrap gap-3">
-            <form action={`/api/admin/participations/${participation.id}/approve`} method="post">
-              <button
-                type="submit"
-                className="rounded-md bg-emerald-500/20 px-4 py-2 text-sm hover:bg-emerald-500/30"
-              >
-                승인
-              </button>
-            </form>
-            <form action={`/api/admin/participations/${participation.id}/reject`} method="post">
-              <input
-                name="reason"
-                className="mr-2 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-600"
-                placeholder="반려 사유"
-                maxLength={200}
-                required
-              />
-              <button
-                type="submit"
-                className="rounded-md bg-red-500/20 px-4 py-2 text-sm hover:bg-red-500/30"
-              >
-                반려
-              </button>
-            </form>
+    <PageShell
+      header={
+        <PageHeader
+          eyebrow="ADMIN"
+          title="검수 상세"
+          description={`관리자: ${admin.email ?? admin.id}`}
+          right={
+            <div className="flex flex-wrap gap-2">
+              <ButtonLink href="/admin/reviews" variant="secondary" size="sm">
+                목록
+              </ButtonLink>
+              <form action="/api/auth/logout" method="post">
+                <Button type="submit" variant="danger" size="sm">
+                  로그아웃
+                </Button>
+              </form>
+            </div>
+          }
+        />
+      }
+    >
+      <Card>
+        <CardBody className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-sm font-semibold text-zinc-50">
+              {participation.missionDay.campaign.place.name} · {participation.missionDay.campaign.missionType}
+            </div>
+            <Pill tone={participation.status === "PENDING_REVIEW" ? "cyan" : "indigo"}>{participation.status}</Pill>
           </div>
-        </section>
-      ) : null}
+          <div className="text-xs text-zinc-400">
+            참여자: {participation.rewarder.user.email ?? participation.rewarder.id} · 광고주:{" "}
+            {participation.missionDay.campaign.advertiser.user.email ??
+              participation.missionDay.campaign.advertiser.id}
+          </div>
+          <div className="text-xs text-zinc-500">
+            {participation.submittedAt ? `제출: ${new Date(participation.submittedAt).toLocaleString("ko-KR")}` : "제출: —"}
+            {participation.decidedAt ? ` · 결정: ${new Date(participation.decidedAt).toLocaleString("ko-KR")}` : ""}
+          </div>
+          {participation.failureReason ? <div className="text-xs text-red-200">사유: {participation.failureReason}</div> : null}
+        </CardBody>
+      </Card>
 
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/admin/reviews"
-          className="rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/15"
-        >
-          목록
-        </Link>
-      </div>
-    </main>
+      <Card>
+        <CardBody className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-zinc-50">증빙(최근 1개)</div>
+            {evidenceSrc ? <ImageLightbox src={evidenceSrc} /> : null}
+          </div>
+          {evidenceSrc ? (
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/60">
+              <div className="flex h-[52vh] min-h-[240px] max-h-[520px] w-full items-center justify-center bg-white/[0.02] p-3">
+                <ImageLightbox
+                  src={evidenceSrc}
+                  className="h-full w-full rounded-xl"
+                  trigger={
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={evidenceSrc}
+                      alt="evidence"
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full rounded-xl object-contain"
+                    />
+                  }
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-zinc-400">증빙이 없습니다.</div>
+          )}
+        </CardBody>
+      </Card>
+
+      {participation.status === "PENDING_REVIEW" || participation.status === "MANUAL_REVIEW" ? (
+        <Card>
+          <CardBody className="space-y-4">
+            <div className="text-sm font-semibold text-zinc-50">처리</div>
+            <div className="grid gap-3 md:grid-cols-2 md:items-center">
+              <form action={`/api/admin/participations/${participation.id}/approve`} method="post" className="md:justify-self-start">
+                <Button type="submit" variant="primary" className="w-full md:w-auto">
+                  승인
+                </Button>
+              </form>
+              <form
+                action={`/api/admin/participations/${participation.id}/reject`}
+                method="post"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center"
+              >
+                <Input name="reason" placeholder="반려 사유" maxLength={200} required className="w-full sm:w-auto sm:flex-1" />
+                <Button type="submit" variant="danger" className="w-full sm:w-auto">
+                  반려
+                </Button>
+              </form>
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
+    </PageShell>
   );
 }
 

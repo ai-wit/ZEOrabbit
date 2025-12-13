@@ -13,8 +13,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className="min-h-dvh bg-zinc-950 text-zinc-50 antialiased">
-        <div className="mx-auto max-w-5xl px-4 py-10">{children}</div>
+      <body className="zeo-body min-h-screen overflow-x-hidden bg-zinc-950 text-zinc-50 antialiased">
+        <div className="mx-auto max-w-6xl px-4 py-10">{children}</div>
       </body>
     </html>
   );

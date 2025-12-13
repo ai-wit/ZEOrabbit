@@ -1,4 +1,4 @@
-## Local setup (MySQL on localhost:3306, root with no password)
+## Local setup (MySQL on localhost:3306)
 
 ### 1) Create database
 
@@ -8,10 +8,10 @@ CREATE DATABASE IF NOT EXISTS zeorabbit CHARACTER SET utf8mb4 COLLATE utf8mb4_un
 
 ### 2) Set env var
 
-Set `DATABASE_URL` to (root with no password):
+Set `DATABASE_URL` (see `config/env.local` for the repo's local default):
 
 ```text
-mysql://root@localhost:3306/zeorabbit
+mysql://root:1234@localhost:3306/zeorabbit
 ```
 
 Note: In this repo, `.env` / `.env.local` may be blocked by your editor settings.
@@ -56,7 +56,14 @@ In production, set `CRON_SECRET` and call:
 
 ### 5) Generate demo data (DEV only)
 
-After the dev server is running, open:
+After the dev server is running, you can generate data in two ways:
+
+- **Full seed (recommended)**:
+  - `POST /api/dev/seed`
+- **Minimal demo set**:
+  - `POST /api/dev/bootstrap`
+
+Or open:
 
 `/dev/bootstrap`
 

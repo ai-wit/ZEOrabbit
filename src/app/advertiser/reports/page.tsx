@@ -4,6 +4,8 @@ import { prisma } from "@/server/prisma";
 import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-profile";
 import { getAdvertiserBudgetBalanceKrw } from "@/server/advertiser/balance";
 import { toDateOnlyUtc } from "@/server/date/date-only";
+import { PageHeader, PageShell } from "@/app/_ui/shell";
+import { Button, ButtonLink, Card, DividerList, EmptyState, Pill } from "@/app/_ui/primitives";
 
 export default async function AdvertiserReportsPage() {
   const user = await requireRole("ADVERTISER");
@@ -54,21 +56,46 @@ export default async function AdvertiserReportsPage() {
   }
 
   return (
-    <main className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">리포트</h1>
-        <div className="text-sm text-zinc-400">예산 잔액: {budgetBalance}원</div>
-      </header>
-
-      <section className="rounded-xl border border-zinc-800 bg-zinc-900/30">
-        <div className="border-b border-zinc-800 px-6 py-4 text-sm text-zinc-300">
+    <PageShell
+      header={
+        <PageHeader
+          eyebrow="ADVERTISER"
+          title="리포트"
+          description={`예산 잔액: ${budgetBalance}원`}
+          right={
+            <div className="flex flex-wrap gap-2">
+              <ButtonLink href="/advertiser/places" variant="secondary" size="sm">
+                플레이스
+              </ButtonLink>
+              <ButtonLink href="/advertiser/campaigns" variant="secondary" size="sm">
+                캠페인
+              </ButtonLink>
+              <ButtonLink href="/advertiser/billing" variant="secondary" size="sm">
+                결제/충전
+              </ButtonLink>
+              <ButtonLink href="/advertiser" variant="secondary" size="sm">
+                광고주 홈
+              </ButtonLink>
+              <ButtonLink href="/" variant="secondary" size="sm">
+                홈
+              </ButtonLink>
+              <form action="/api/auth/logout" method="post">
+                <Button type="submit" variant="danger" size="sm">
+                  로그아웃
+                </Button>
+              </form>
+            </div>
+          }
+        />
+      }
+    >
+      <Card>
+        <div className="border-b border-white/10 px-6 py-4 text-sm text-zinc-300">
           오늘 진행 중 캠페인 {activeCampaigns.length}개
         </div>
-        <div className="divide-y divide-zinc-800">
+        <DividerList>
           {activeCampaigns.length === 0 ? (
-            <div className="px-6 py-10 text-sm text-zinc-400">
-              활성화된 캠페인이 없습니다.
-            </div>
+            <EmptyState title="활성화된 캠페인이 없습니다." />
           ) : (
             activeCampaigns.map((c) => {
               const md = missionDayByCampaign.get(c.id);
@@ -83,47 +110,38 @@ export default async function AdvertiserReportsPage() {
 
               return (
                 <div key={c.id} className="px-6 py-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="font-medium">{c.name}</div>
-                      <div className="mt-1 text-xs text-zinc-400">
-                        {c.place.name} · {c.missionType} · 목표 {c.dailyTarget}건 · 단가 {c.unitPriceKrw}원
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="text-sm font-semibold text-zinc-50">{c.name}</div>
+                        <Pill tone="cyan">{c.missionType}</Pill>
+                      </div>
+                      <div className="text-xs text-zinc-400">
+                        {c.place.name} · 목표 {c.dailyTarget}건 · 단가 {c.unitPriceKrw}원 · 리워드 {c.rewardKrw}원
                       </div>
                       {md ? (
-                        <div className="mt-2 text-xs text-zinc-500">
+                        <div className="text-xs text-zinc-500">
                           오늘 수량 {md.quotaRemaining}/{md.quotaTotal} · 승인 {approved} · 반려 {rejected} · 대기{" "}
                           {pending} · 진행 {inProgress}
                           {approvalRate !== null ? ` · 승인율 ${approvalRate}%` : ""}
                         </div>
                       ) : (
-                        <div className="mt-2 text-xs text-zinc-500">오늘 미션이 아직 생성되지 않았습니다.</div>
+                        <div className="text-xs text-zinc-500">오늘 미션이 아직 생성되지 않았습니다.</div>
                       )}
                     </div>
-                    <div className="text-xs text-zinc-400">오늘 소진(승인 기준): {spentKrw}원</div>
+                    <div className="text-xs text-zinc-400">
+                      오늘 소진(승인 기준): <span className="font-semibold text-zinc-200">{spentKrw}원</span>
+                    </div>
                   </div>
                 </div>
               );
             })
           )}
-        </div>
-      </section>
-
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/advertiser"
-          className="rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/15"
-        >
-          광고주 홈
-        </Link>
-        <Link
-          href="/advertiser/billing"
-          className="rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/15"
-        >
-          결제/충전
-        </Link>
-      </div>
-    </main>
+        </DividerList>
+      </Card>
+    </PageShell>
   );
 }
+
 
 

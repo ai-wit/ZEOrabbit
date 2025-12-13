@@ -271,7 +271,8 @@ model VerificationEvidence {
   id              String   @id @default(cuid())
   participationId String
   type            String   // SCREENSHOT | LOG (keep flexible for MVP)
-  fileRef         String?
+  // In MVP we store images as data URLs (base64). This can exceed VARCHAR limits, so use LONGTEXT.
+  fileRef         String?  @db.LongText
   metadataJson    Json?
   ocrText         String?
   createdAt       DateTime @default(now())
