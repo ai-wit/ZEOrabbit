@@ -17,7 +17,12 @@
     "vercel:env:pull": "npx vercel env pull config/env.local",
     "vercel:deploy": "npx vercel",
     "vercel:deploy:prod": "npx vercel --prod",
-    "vercel:build": "npx vercel build"
+    "vercel:build": "npx vercel build",
+    "db:push": "prisma db push",
+    "db:seed": "tsx src/scripts/seed.ts",
+    "db:push:local": "node scripts/with-envlocal.mjs prisma db push --accept-data-loss",
+    "db:seed:local": "node scripts/with-envlocal.mjs tsx src/scripts/seed.ts",
+    "vercel-build": "node scripts/vercel-build.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -36,9 +41,9 @@
     "postcss": "^8.4.41",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.10",
+    "tsx": "^4.19.2",
     "typescript": "^5.5.4",
+    "vercel": "50.0.1",
     "vitest": "^2.1.8"
   }
 }
-
-

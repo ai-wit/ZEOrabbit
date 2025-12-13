@@ -18,7 +18,7 @@
 
 ```text
 config/env.local
-DATABASE_URL="mysql://root:1234@localhost:3306/zeorabbit"
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DB?sslmode=require"
 ```
 
 ### 1-2. DB 생성/마이그레이션
@@ -26,7 +26,7 @@ DATABASE_URL="mysql://root:1234@localhost:3306/zeorabbit"
 ```bash
 npm install
 npx prisma generate
-npx prisma migrate dev
+npx prisma db push
 ```
 
 ### 1-3. 개발 서버 실행

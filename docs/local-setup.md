@@ -1,17 +1,11 @@
-## Local setup (MySQL on localhost:3306)
-
-### 1) Create database
-
-```sql
-CREATE DATABASE IF NOT EXISTS zeorabbit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+## Local setup (PostgreSQL)
 
 ### 2) Set env var
 
 Set `DATABASE_URL` (see `config/env.local` for the repo's local default):
 
 ```text
-mysql://root:1234@localhost:3306/zeorabbit
+postgresql://USER:PASSWORD@HOST:5432/DB?sslmode=require
 ```
 
 Note: In this repo, `.env` / `.env.local` may be blocked by your editor settings.
@@ -22,18 +16,24 @@ As an alternative, you can store env vars in:
 Example:
 
 ```text
-DATABASE_URL="mysql://root@localhost:3306/zeorabbit"
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DB?sslmode=require"
 CRON_SECRET="dev_cron_secret_change_me"
 ```
 
-### 3) Apply Prisma migrations
+### 3) Apply Prisma schema (tables)
 
 Run:
 
 ```bash
 npm install
 npx prisma generate
-npx prisma migrate dev
+npx prisma db push
+```
+
+If `.env` loading conflicts with `config/env.local`, you can use:
+
+```bash
+npm run db:push:local
 ```
 
 ### 4) Run expiration batch (optional)
