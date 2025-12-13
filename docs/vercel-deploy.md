@@ -6,6 +6,40 @@
 - Vercel에서 **New Project** → 해당 레포 선택
 - Framework Preset은 **Next.js**
 
+## 1-1) CLI로 배포하기 (추천)
+
+사전 준비(최초 1회):
+
+```bash
+npm install
+npm i -D vercel
+```
+
+로그인/프로젝트 연결(최초 1회):
+
+```bash
+npx vercel login
+npm run vercel:link
+```
+
+프리뷰 배포:
+
+```bash
+npm run vercel:deploy
+```
+
+프로덕션 배포:
+
+```bash
+npm run vercel:deploy:prod
+```
+
+Vercel 환경변수를 로컬로 내려받기(필요할 때):
+
+```bash
+npm run vercel:env:pull
+```
+
 ## 2) 환경변수 설정 (Vercel Dashboard)
 
 Vercel 프로젝트 → **Settings → Environment Variables**에 아래 값을 추가합니다.

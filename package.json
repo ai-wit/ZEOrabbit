@@ -12,7 +12,12 @@
     "test": "vitest run",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "vercel:link": "npx vercel link",
+    "vercel:env:pull": "npx vercel env pull config/env.local",
+    "vercel:deploy": "npx vercel",
+    "vercel:deploy:prod": "npx vercel --prod",
+    "vercel:build": "npx vercel build"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
