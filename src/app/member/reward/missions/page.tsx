@@ -57,10 +57,10 @@ export default async function RewarderMissionsPage() {
               <ButtonLink href="/member" variant="secondary" size="sm">
                 리워더 홈
               </ButtonLink>
-              <ButtonLink href="/member/payouts" variant="secondary" size="sm">
+              <ButtonLink href="/member/reward/payouts" variant="secondary" size="sm">
                 출금/정산
               </ButtonLink>
-              <ButtonLink href="/member/participations" variant="secondary" size="sm">
+              <ButtonLink href="/member/reward/participations" variant="secondary" size="sm">
                 내 참여 내역
               </ButtonLink>
               <ButtonLink href="/" variant="secondary" size="sm">
@@ -99,7 +99,7 @@ export default async function RewarderMissionsPage() {
 
                     <div className="flex items-center gap-2">
                       {mine ? (
-                        <ButtonLink href={`/member/participations/${mine.id}`} variant="secondary" size="sm">
+                        <ButtonLink href={`/member/reward/participations/${mine.id}`} variant="secondary" size="sm">
                           내 진행 중
                         </ButtonLink>
                       ) : m.quotaRemaining > 0 ? (

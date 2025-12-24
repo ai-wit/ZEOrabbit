@@ -23,13 +23,13 @@ export default async function RewarderPayoutAccountPage() {
           description="현재 Primary 계좌를 관리합니다."
           right={
             <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/member/missions" variant="secondary" size="sm">
+              <ButtonLink href="/member/reward/missions" variant="secondary" size="sm">
                 오늘의 미션
               </ButtonLink>
-              <ButtonLink href="/member/participations" variant="secondary" size="sm">
+              <ButtonLink href="/member/reward/participations" variant="secondary" size="sm">
                 내 참여 내역
               </ButtonLink>
-              <ButtonLink href="/member/payouts" variant="secondary" size="sm">
+              <ButtonLink href="/member/reward/payouts" variant="secondary" size="sm">
                 출금/정산
               </ButtonLink>
               <ButtonLink href="/member" variant="secondary" size="sm">

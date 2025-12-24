@@ -45,10 +45,10 @@ export default async function RewarderParticipationsPage() {
           description="최근 50건까지 표시합니다."
           right={
             <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/member/missions" variant="secondary" size="sm">
+              <ButtonLink href="/member/reward/missions" variant="secondary" size="sm">
                 오늘의 미션
               </ButtonLink>
-              <ButtonLink href="/member/payouts" variant="secondary" size="sm">
+              <ButtonLink href="/member/reward/payouts" variant="secondary" size="sm">
                 출금/정산
               </ButtonLink>
               <ButtonLink href="/member" variant="secondary" size="sm">
@@ -94,7 +94,7 @@ export default async function RewarderParticipationsPage() {
                     </div>
                   </div>
 
-                  <ButtonLink href={`/member/participations/${p.id}`} variant="secondary" size="sm">
+                  <ButtonLink href={`/member/reward/participations/${p.id}`} variant="secondary" size="sm">
                     상세
                   </ButtonLink>
                 </div>
