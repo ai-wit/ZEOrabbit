@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
-import { getMemberProfileIdByUserId } from "@/server/member/member-profile";
+import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { toDateOnlyUtc } from "@/server/date/date-only";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, DividerList, EmptyState, Pill } from "@/app/_ui/primitives";
@@ -54,7 +54,7 @@ export default async function RewarderMissionsPage() {
           description="오늘 가능한 미션을 확인하고 슬롯을 확보하세요."
           right={
             <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/member" variant="secondary" size="sm">
+              <ButtonLink href="/rewarder" variant="secondary" size="sm">
                 리워더 홈
               </ButtonLink>
               <ButtonLink href="/member/reward/payouts" variant="secondary" size="sm">

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
-import { getMemberProfileIdByUserId } from "@/server/member/member-profile";
+import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, DividerList, Pill } from "@/app/_ui/primitives";
 
@@ -59,7 +59,7 @@ export default async function RewarderParticipationDetailPage(props: {
               <ButtonLink href="/member/reward/payouts" variant="secondary" size="sm">
                 출금/정산
               </ButtonLink>
-              <ButtonLink href="/member" variant="secondary" size="sm">
+              <ButtonLink href="/rewarder" variant="secondary" size="sm">
                 리워더 홈
               </ButtonLink>
               <ButtonLink href="/" variant="secondary" size="sm">
