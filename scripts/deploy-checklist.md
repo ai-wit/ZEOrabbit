@@ -1,4 +1,4 @@
-# ZEOrabbit 사용자 역할 체계 리팩토링 배포 체크리스트
+# LocalMom 사용자 역할 체계 리팩토링 배포 체크리스트
 
 ## 🎯 배포 개요
 - **변경사항**: REWARDER → MEMBER 역할 변경, 새로운 타입 필드 추가
@@ -29,13 +29,13 @@
 ### Phase 1: 데이터베이스 마이그레이션
 ```bash
 # 1. 프로덕션 DB 백업
-mysqldump zeorabbit > backup_pre_migration.sql
+mysqldump localmom > backup_pre_migration.sql
 
 # 2. 마이그레이션 실행
-mysql zeorabbit < scripts/migrate-user-roles.sql
+mysql localmom < scripts/migrate-user-roles.sql
 
 # 3. 마이그레이션 검증
-mysql zeorabbit -e "SELECT role, memberType, adminType, COUNT(*) as count FROM user GROUP BY role, memberType, adminType;"
+mysql localmom -e "SELECT role, memberType, adminType, COUNT(*) as count FROM user GROUP BY role, memberType, adminType;"
 ```
 
 ### Phase 2: 애플리케이션 배포
@@ -53,7 +53,7 @@ npm run build
 ### Phase 3: 배포 후 검증
 ```bash
 # 1. 헬스체크
-curl -f https://api.zeorabbit.com/health
+curl -f https://api.localmom.com/health
 
 # 2. 로그인 테스트
 # MEMBER 역할로 로그인 가능한지 확인
@@ -84,10 +84,10 @@ curl -f https://api.zeorabbit.com/health
 ### 긴급 롤백 (5분 내)
 ```bash
 # 1. 애플리케이션 롤백 (이전 버전으로)
-kubectl rollout undo deployment/zeorabbit-api
+kubectl rollout undo deployment/localmom-api
 
 # 2. DB 롤백 (필요시)
-mysql zeorabbit < backup_pre_migration.sql
+mysql localmom < backup_pre_migration.sql
 ```
 
 ### 점진적 롤백 (Feature Flag)

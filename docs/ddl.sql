@@ -1,4 +1,4 @@
--- ZEOrabbit base DDL for MySQL 8.x
+-- LocalMom base DDL for MySQL 8.x
 -- Generated to match the intent of prisma/schema.prisma (manual, MVP-oriented).
 -- Notes:
 -- - Use utf8mb4 for full Unicode support.

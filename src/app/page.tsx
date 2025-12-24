@@ -125,7 +125,7 @@ export default async function HomePage() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-100">
               <span className="h-2 w-2 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400" aria-hidden="true" />
-              ZEOrabbit
+              LocalMom
             </span>
             <span className="text-xs text-zinc-400">
               트래픽/저장/공유 미션을 “정책 기반”으로 운영하는 리워드 플랫폼
@@ -400,7 +400,7 @@ export default async function HomePage() {
       <footer className="border-t border-white/10 pt-10">
         <div className="grid gap-8 sm:grid-cols-2">
           <div className="space-y-2">
-            <div className="text-sm font-semibold text-zinc-50">ZEOrabbit</div>
+            <div className="text-sm font-semibold text-zinc-50">LocalMom</div>
             <p className="text-sm text-zinc-400">
               광고주와 회원을 연결하는 미션 운영 플랫폼. 정책 기반 운영과 투명한 정산을 목표로 합니다.
             </p>
@@ -431,7 +431,7 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="mt-10 text-xs text-zinc-500">
-          © ZEOrabbit. All rights reserved.
+          © LocalMom. All rights reserved.
         </div>
       </footer>
     </main>

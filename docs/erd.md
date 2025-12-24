@@ -1,4 +1,4 @@
-## ZEOrabbit ERD (Mermaid)
+## LocalMom ERD (Mermaid)
 
 아래 ERD는 `prisma/schema.prisma`의 핵심 모델 관계를 기준으로 작성했습니다.
 

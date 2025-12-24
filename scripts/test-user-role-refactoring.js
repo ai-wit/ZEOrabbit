@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * ZEOrabbit 사용자 역할 체계 리팩토링 테스트 스크립트
+ * LocalMom 사용자 역할 체계 리팩토링 테스트 스크립트
  *
  * 이 스크립트는 리팩토링된 사용자 역할 체계를 검증합니다:
  * - REWARDER → MEMBER 역할 변경
@@ -13,7 +13,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function runTests() {
-  console.log('🧪 ZEOrabbit 사용자 역할 체계 리팩토링 테스트 시작\n');
+  console.log('🧪 LocalMom 사용자 역할 체계 리팩토링 테스트 시작\n');
 
   try {
     // 1. 데이터베이스 연결 확인
