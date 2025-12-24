@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/server/auth/require-user";
 
 export async function GET() {
-  const user = await requireRole("REWARDER");
+  const user = await requireRole("MEMBER");
 
   // 간단한 테스트 데이터 반환
   return NextResponse.json({

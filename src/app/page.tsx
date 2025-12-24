@@ -105,8 +105,8 @@ export default async function HomePage() {
   const dashboardHref = user
     ? user.role === "ADVERTISER"
       ? "/advertiser"
-      : user.role === "REWARDER"
-        ? "/rewarder"
+      : user.role === "MEMBER"
+        ? "/member"
         : "/admin"
     : "/login";
 
@@ -139,7 +139,7 @@ export default async function HomePage() {
                 <br className="hidden sm:block" /> 투명한 정산을 한 곳에서
               </h1>
               <p className="max-w-2xl text-sm leading-relaxed text-zinc-300">
-                광고주는 예산과 단가를 정책으로 통제하며 캠페인을 운영하고, 리워더는 검증된 참여 흐름으로
+                광고주는 예산과 단가를 정책으로 통제하며 캠페인을 운영하고, 회원은 검증된 참여 흐름으로
                 안전하게 리워드를 적립/출금합니다. 운영 로그와 보안 정책으로 신뢰를 기본값으로 설계했습니다.
               </p>
 
@@ -169,7 +169,7 @@ export default async function HomePage() {
                 ) : (
                   <>
                     <PrimaryButton href="/signup">광고주로 시작하기</PrimaryButton>
-                    <SecondaryButton href="/signup">리워더로 시작하기</SecondaryButton>
+                    <SecondaryButton href="/signup">회원으로 시작하기</SecondaryButton>
                     <SecondaryButton href="/login">로그인</SecondaryButton>
                   </>
                 )}
@@ -310,7 +310,7 @@ export default async function HomePage() {
         />
         <div className="grid gap-4 lg:grid-cols-4">
           <StepCard n="1" title="캠페인 생성" desc="플레이스/미션 타입/단가/기간을 설정합니다." />
-          <StepCard n="2" title="참여 진행" desc="리워더가 참여하고 증빙을 제출합니다." />
+          <StepCard n="2" title="참여 진행" desc="회원이 참여하고 증빙을 제출합니다." />
           <StepCard n="3" title="검증/리뷰" desc="자동 판정 후 필요 시 관리자 리뷰로 확정합니다." />
           <StepCard n="4" title="정산/출금" desc="리워드 적립 및 출금 요청을 추적합니다." />
         </div>
@@ -350,7 +350,7 @@ export default async function HomePage() {
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7">
           <SectionTitle
             eyebrow="FOR REWARDERS"
-            title="리워더: 간단 참여 + 투명한 리워드"
+            title="회원: 간단 참여 + 투명한 리워드"
             desc="미션 참여 → 증빙 제출 → 검증 완료 후 적립. 흐름이 명확해 불확실성을 줄입니다."
           />
           <div className="mt-6 space-y-3 text-sm text-zinc-300">
@@ -369,9 +369,9 @@ export default async function HomePage() {
           </div>
           <div className="mt-7 flex flex-wrap gap-3">
             {user?.role === "REWARDER" ? (
-              <PrimaryButton href="/rewarder">리워더 대시보드</PrimaryButton>
+              <PrimaryButton href="/member">회원 대시보드</PrimaryButton>
             ) : (
-              <PrimaryButton href="/signup">리워더로 시작하기</PrimaryButton>
+              <PrimaryButton href="/signup">회원으로 시작하기</PrimaryButton>
             )}
             <SecondaryButton href="/rewarder/missions">미션 보기</SecondaryButton>
           </div>
@@ -402,7 +402,7 @@ export default async function HomePage() {
           <div className="space-y-2">
             <div className="text-sm font-semibold text-zinc-50">ZEOrabbit</div>
             <p className="text-sm text-zinc-400">
-              광고주와 리워더를 연결하는 미션 운영 플랫폼. 정책 기반 운영과 투명한 정산을 목표로 합니다.
+              광고주와 회원을 연결하는 미션 운영 플랫폼. 정책 기반 운영과 투명한 정산을 목표로 합니다.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-6 text-sm">

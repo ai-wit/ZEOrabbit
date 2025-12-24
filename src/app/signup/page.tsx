@@ -25,9 +25,9 @@ export default function SignupPage() {
                   선택해주세요
                 </option>
                 <option value="ADVERTISER">광고주(플레이스 운영자)</option>
-                <option value="REWARDER">리워더(참여자)</option>
+                <option value="MEMBER">회원(참여자)</option>
               </Select>
-              <Hint>리워더로 가입 시 리워더 가이드 동의가 필요합니다.</Hint>
+              <Hint>회원으로 가입 시 리워더 가이드 동의가 필요합니다.</Hint>
             </div>
 
             <div className="space-y-2">
@@ -51,7 +51,7 @@ export default function SignupPage() {
               </label>
               <label className="flex items-start gap-3 text-sm text-zinc-200">
                 <input type="checkbox" name="agreeRewarderGuide" value="yes" className="mt-1" />
-                <span>리워더 행동 가이드에 동의합니다(리워더 선택 시 필수)</span>
+                <span>리워더 행동 가이드에 동의합니다(회원 선택 시 필수)</span>
               </label>
             </div>
 

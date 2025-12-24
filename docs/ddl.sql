@@ -10,8 +10,10 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 CREATE TABLE IF NOT EXISTS user (
   id VARCHAR(32) NOT NULL,
-  role ENUM('ADVERTISER','REWARDER','ADMIN') NOT NULL,
+  role ENUM('ADVERTISER','MEMBER','ADMIN') NOT NULL,
   status ENUM('ACTIVE','SUSPENDED','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  memberType ENUM('NORMAL','TEAM_LEADER','TEAM_PRO_LEADER') NULL,
+  adminType ENUM('SUPER','MANAGER') NULL,
   email VARCHAR(255) NULL,
   name VARCHAR(255) NULL,
   createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -31,7 +33,7 @@ CREATE TABLE IF NOT EXISTS advertiser_profile (
   CONSTRAINT fk_adv_user FOREIGN KEY (userId) REFERENCES user(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS rewarder_profile (
+CREATE TABLE IF NOT EXISTS member_profile (
   id VARCHAR(32) NOT NULL,
   userId VARCHAR(32) NOT NULL,
   level INT NOT NULL DEFAULT 1,
@@ -40,8 +42,8 @@ CREATE TABLE IF NOT EXISTS rewarder_profile (
   createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updatedAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uq_rwd_userId (userId),
-  CONSTRAINT fk_rwd_user FOREIGN KEY (userId) REFERENCES user(id) ON DELETE RESTRICT ON UPDATE CASCADE
+  UNIQUE KEY uq_member_userId (userId),
+  CONSTRAINT fk_member_user FOREIGN KEY (userId) REFERENCES user(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS place (
@@ -116,7 +118,7 @@ CREATE TABLE IF NOT EXISTS participation (
   KEY ix_participation_missionday_status (missionDayId, status),
   KEY ix_participation_expires (expiresAt),
   CONSTRAINT fk_participation_missionday FOREIGN KEY (missionDayId) REFERENCES mission_day(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT fk_participation_rewarder FOREIGN KEY (rewarderId) REFERENCES rewarder_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT fk_participation_rewarder FOREIGN KEY (rewarderId) REFERENCES member_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS verification_evidence (
@@ -158,7 +160,7 @@ CREATE TABLE IF NOT EXISTS credit_ledger (
   PRIMARY KEY (id),
   UNIQUE KEY uq_credit_reason_ref (reason, refId),
   KEY ix_credit_rewarder_created (rewarderId, createdAt),
-  CONSTRAINT fk_credit_rewarder FOREIGN KEY (rewarderId) REFERENCES rewarder_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT fk_credit_rewarder FOREIGN KEY (rewarderId) REFERENCES member_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS budget_ledger (
@@ -185,7 +187,7 @@ CREATE TABLE IF NOT EXISTS payout_account (
   updatedAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   KEY ix_payout_account_rewarder_primary (rewarderId, isPrimary),
-  CONSTRAINT fk_payout_account_rewarder FOREIGN KEY (rewarderId) REFERENCES rewarder_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT fk_payout_account_rewarder FOREIGN KEY (rewarderId) REFERENCES member_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS payout_request (
@@ -203,7 +205,7 @@ CREATE TABLE IF NOT EXISTS payout_request (
   UNIQUE KEY uq_payout_idem (idempotencyKey),
   KEY ix_payout_rewarder_status_created (rewarderId, status, createdAt),
   KEY ix_payout_status_created (status, createdAt),
-  CONSTRAINT fk_payout_rewarder FOREIGN KEY (rewarderId) REFERENCES rewarder_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_payout_rewarder FOREIGN KEY (rewarderId) REFERENCES member_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT fk_payout_account FOREIGN KEY (payoutAccountId) REFERENCES payout_account(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -235,7 +237,7 @@ CREATE TABLE IF NOT EXISTS fraud_signal (
   PRIMARY KEY (id),
   KEY ix_fraud_rewarder_created (rewarderId, createdAt),
   KEY ix_fraud_type_created (type, createdAt),
-  CONSTRAINT fk_fraud_rewarder FOREIGN KEY (rewarderId) REFERENCES rewarder_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_fraud_rewarder FOREIGN KEY (rewarderId) REFERENCES member_profile(id) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT fk_fraud_participation FOREIGN KEY (participationId) REFERENCES participation(id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

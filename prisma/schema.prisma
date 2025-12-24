@@ -13,8 +13,19 @@ datasource db {
 
 enum UserRole {
   ADVERTISER
-  REWARDER
+  MEMBER
   ADMIN
+}
+
+enum MemberType {
+  NORMAL
+  TEAM_LEADER
+  TEAM_PRO_LEADER
+}
+
+enum AdminType {
+  SUPER
+  MANAGER
 }
 
 enum UserStatus {
@@ -102,6 +113,8 @@ model User {
   id        String     @id @default(cuid())
   role      UserRole
   status    UserStatus @default(ACTIVE)
+  memberType MemberType?
+  adminType  AdminType?
 
   email     String?    @unique
   name      String?
@@ -109,7 +122,7 @@ model User {
   updatedAt DateTime   @updatedAt
 
   advertiserProfile AdvertiserProfile?
-  rewarderProfile   RewarderProfile?
+  memberProfile      MemberProfile?
   credential         AuthCredential?
   sessions           Session[]
   terms              TermsAgreement[]
@@ -167,7 +180,7 @@ model AdvertiserProfile {
   payments Payment[]
 }
 
-model RewarderProfile {
+model MemberProfile {
   id          String   @id @default(cuid())
   userId      String   @unique
   level       Int      @default(1)
@@ -257,8 +270,8 @@ model Participation {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
-  missionDay MissionDay      @relation(fields: [missionDayId], references: [id], onDelete: Restrict)
-  rewarder   RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+  missionDay MissionDay   @relation(fields: [missionDayId], references: [id], onDelete: Restrict)
+  rewarder   MemberProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
   evidences  VerificationEvidence[]
   result     VerificationResult?
 
@@ -303,7 +316,7 @@ model CreditLedger {
   refId      String?      // participationId or payoutId, etc.
   createdAt  DateTime     @default(now())
 
-  rewarder RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+  rewarder MemberProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
 
   @@index([rewarderId, createdAt])
   @@unique([reason, refId])
@@ -333,7 +346,7 @@ model PayoutAccount {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  rewarder RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+  rewarder MemberProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
   payoutRequests PayoutRequest[]
 
   @@index([rewarderId, isPrimary])
@@ -351,7 +364,7 @@ model PayoutRequest {
   updatedAt     DateTime     @updatedAt
   decidedAt     DateTime?
 
-  rewarder RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+  rewarder MemberProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
   payoutAccount PayoutAccount @relation(fields: [payoutAccountId], references: [id], onDelete: Restrict)
 
   @@index([rewarderId, status, createdAt])
@@ -383,7 +396,7 @@ model FraudSignal {
   payloadJson   Json?
   createdAt     DateTime @default(now())
 
-  rewarder RewarderProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
+  rewarder MemberProfile @relation(fields: [rewarderId], references: [id], onDelete: Restrict)
 
   @@index([rewarderId, createdAt])
   @@index([type, createdAt])

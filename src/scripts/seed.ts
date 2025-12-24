@@ -13,7 +13,7 @@ const ONE_BY_ONE_PNG_DATA_URL =
   // 1x1 transparent png
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
-type UserRole = "ADVERTISER" | "REWARDER" | "ADMIN";
+type UserRole = "ADVERTISER" | "MEMBER" | "ADMIN";
 
 async function ensureUser(params: { email: string; role: UserRole }): Promise<{ userId: string }> {
   const email = params.email.toLowerCase();
@@ -46,8 +46,8 @@ async function ensureUser(params: { email: string; role: UserRole }): Promise<{ 
         ],
         skipDuplicates: true
       });
-    } else if (user.role === "REWARDER") {
-      await tx.rewarderProfile.create({ data: { userId: user.id } });
+    } else if (user.role === "MEMBER") {
+      await tx.memberProfile.create({ data: { userId: user.id } });
       await tx.termsAgreement.createMany({
         data: [
           { userId: user.id, type: "SERVICE", version: "v1" },
@@ -294,30 +294,67 @@ async function ensureParticipationScenario(params: {
 async function run(): Promise<void> {
   await ensurePolicies();
 
-  const admins = ["admin+1@example.com", "admin+2@example.com"];
+  // 다양한 역할 타입을 테스트하기 위한 사용자들
+  const admins = ["admin+super@example.com", "admin+manager@example.com"];
   const advertisers = ["advertiser+1@example.com", "advertiser+2@example.com"];
-  const rewarders = [
-    "rewarder+1@example.com",
-    "rewarder+2@example.com",
-    "rewarder+3@example.com",
-    "rewarder+4@example.com",
-    "rewarder+5@example.com",
-    "rewarder+6@example.com"
+  const members = [
+    "member+normal@example.com",
+    "member+team-leader@example.com",
+    "member+pro-leader@example.com",
+    "member+normal2@example.com",
+    "member+normal3@example.com",
+    "member+normal4@example.com"
   ];
 
   await Promise.all([
     ...admins.map((email) => ensureUser({ email, role: "ADMIN" })),
     ...advertisers.map((email) => ensureUser({ email, role: "ADVERTISER" })),
-    ...rewarders.map((email) => ensureUser({ email, role: "REWARDER" }))
+    ...members.map((email, index) => ensureUser({ email, role: "MEMBER" }))
   ]);
 
   const advertiserProfiles = await prisma.advertiserProfile.findMany({
     where: { user: { email: { in: advertisers.map((e) => e.toLowerCase()) } } },
     select: { id: true, user: { select: { email: true } } }
   });
-  const rewarderProfiles = await prisma.rewarderProfile.findMany({
-    where: { user: { email: { in: rewarders.map((e) => e.toLowerCase()) } } },
+  const memberProfiles = await prisma.memberProfile.findMany({
+    where: { user: { email: { in: members.map((e) => e.toLowerCase()) } } },
     select: { id: true, user: { select: { email: true } } }
+  });
+
+  // MEMBER 타입 설정 (다양한 타입)
+  await prisma.user.update({
+    where: { email: "member+normal@example.com" },
+    data: { memberType: "NORMAL" }
+  });
+  await prisma.user.update({
+    where: { email: "member+team-leader@example.com" },
+    data: { memberType: "TEAM_LEADER" }
+  });
+  await prisma.user.update({
+    where: { email: "member+pro-leader@example.com" },
+    data: { memberType: "TEAM_PRO_LEADER" }
+  });
+  await prisma.user.update({
+    where: { email: "member+normal2@example.com" },
+    data: { memberType: "NORMAL" }
+  });
+  await prisma.user.update({
+    where: { email: "member+normal3@example.com" },
+    data: { memberType: "NORMAL" }
+  });
+  await prisma.user.update({
+    where: { email: "member+normal4@example.com" },
+    data: { memberType: "NORMAL" }
+  });
+
+  // ADMIN 타입 설정 (다양한 타입)
+  await prisma.user.update({
+    where: { email: "admin+super@example.com" },
+    data: { adminType: "SUPER" }
+  });
+  await prisma.user.update({
+    where: { email: "admin+manager@example.com" },
+    data: { adminType: "MANAGER" }
   });
 
   await Promise.all(
@@ -412,8 +449,8 @@ async function run(): Promise<void> {
       select: { id: true }
     }));
 
-  const primaryRw = rewarderProfiles[0];
-  if (!primaryRw) return;
+  const primaryMember = memberProfiles[0];
+  if (!primaryMember) return;
 
   const now = new Date();
   const expiresSoon = new Date(now.getTime() + 7 * 60 * 1000);
@@ -421,7 +458,7 @@ async function run(): Promise<void> {
 
   await ensureParticipationScenario({
     missionDayId: missionSaveToday.id,
-    rewarderId: primaryRw.id,
+    rewarderId: primaryMember.id,
     idempotencyKey: "seed_pending_review_1",
     status: "PENDING_REVIEW",
     withEvidence: true,
@@ -431,7 +468,7 @@ async function run(): Promise<void> {
 
   await ensureParticipationScenario({
     missionDayId: missionTrafficToday.id,
-    rewarderId: primaryRw.id,
+    rewarderId: primaryMember.id,
     idempotencyKey: "seed_approved_1",
     status: "APPROVED",
     withEvidence: true,
@@ -441,9 +478,9 @@ async function run(): Promise<void> {
     creditRewardKrw: 50
   });
 
-  const payoutAccountId = await ensurePrimaryPayoutAccount(primaryRw.id, "01");
+  const payoutAccountId = await ensurePrimaryPayoutAccount(primaryMember.id, "01");
   await ensurePayoutRequest({
-    rewarderId: primaryRw.id,
+    rewarderId: primaryMember.id,
     payoutAccountId,
     idempotencyKey: "seed_payout_requested_1",
     amountKrw: 1000,

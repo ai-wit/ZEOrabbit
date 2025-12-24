@@ -13,7 +13,7 @@ const ONE_BY_ONE_PNG_DATA_URL =
 
 async function ensureUser(params: {
   email: string;
-  role: "ADVERTISER" | "REWARDER" | "ADMIN";
+  role: "ADVERTISER" | "MEMBER" | "ADMIN";
 }): Promise<{ userId: string }> {
   const email = params.email.toLowerCase();
   const existing = await prisma.user.findFirst({
@@ -45,8 +45,8 @@ async function ensureUser(params: {
           { userId: user.id, type: "PRIVACY", version: "v1" }
         ]
       });
-    } else if (user.role === "REWARDER") {
-      await tx.rewarderProfile.create({ data: { userId: user.id } });
+    } else if (user.role === "MEMBER") {
+      await tx.memberProfile.create({ data: { userId: user.id } });
       await tx.termsAgreement.createMany({
         data: [
           { userId: user.id, type: "SERVICE", version: "v1" },
@@ -133,13 +133,13 @@ export async function POST(req: Request) {
   await ensurePolicies();
 
   const advertiserEmail = "advertiser@example.com";
-  const rewarderEmail = "rewarder@example.com";
+  const memberEmail = "member@example.com";
   const adminEmail = "admin@example.com";
 
-  const [{ userId: advertiserUserId }, { userId: rewarderUserId }, { userId: adminUserId }] =
+  const [{ userId: advertiserUserId }, { userId: memberUserId }, { userId: adminUserId }] =
     await Promise.all([
       ensureUser({ email: advertiserEmail, role: "ADVERTISER" }),
-      ensureUser({ email: rewarderEmail, role: "REWARDER" }),
+      ensureUser({ email: memberEmail, role: "MEMBER" }),
       ensureUser({ email: adminEmail, role: "ADMIN" })
     ]);
 
@@ -147,11 +147,11 @@ export async function POST(req: Request) {
     where: { userId: advertiserUserId },
     select: { id: true }
   });
-  const rewarderProfile = await prisma.rewarderProfile.findUnique({
-    where: { userId: rewarderUserId },
+  const memberProfile = await prisma.memberProfile.findUnique({
+    where: { userId: memberUserId },
     select: { id: true }
   });
-  if (!advertiserProfile || !rewarderProfile) {
+  if (!advertiserProfile || !memberProfile) {
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 
@@ -246,7 +246,7 @@ export async function POST(req: Request) {
 
   // Create a participation already pending review with evidence.
   let participation = await prisma.participation.findFirst({
-    where: { missionDayId: missionDay.id, rewarderId: rewarderProfile.id },
+    where: { missionDayId: missionDay.id, rewarderId: memberProfile.id },
     select: { id: true, status: true }
   });
 
@@ -260,7 +260,7 @@ export async function POST(req: Request) {
       const p = await tx.participation.create({
         data: {
           missionDayId: missionDay.id,
-          rewarderId: rewarderProfile.id,
+          rewarderId: memberProfile.id,
           status: "PENDING_REVIEW",
           expiresAt: new Date(Date.now() + 60 * 60 * 1000),
           submittedAt: new Date()
@@ -283,17 +283,17 @@ export async function POST(req: Request) {
 
   // Ensure payout account + one payout request to test admin payout flow.
   const primary = await prisma.payoutAccount.findFirst({
-    where: { rewarderId: rewarderProfile.id, isPrimary: true },
+    where: { rewarderId: memberProfile.id, isPrimary: true },
     select: { id: true }
   });
 
   const payoutAccountId =
     primary?.id ??
     (await prisma.$transaction(async (tx) => {
-      await tx.payoutAccount.updateMany({ where: { rewarderId: rewarderProfile.id }, data: { isPrimary: false } });
+      await tx.payoutAccount.updateMany({ where: { rewarderId: memberProfile.id }, data: { isPrimary: false } });
       const acc = await tx.payoutAccount.create({
         data: {
-          rewarderId: rewarderProfile.id,
+          rewarderId: memberProfile.id,
           bankName: "국민은행",
           accountNumberMasked: maskAccountNumber("1234-5678-9012-3456"),
           accountHolderName: "데모",
@@ -305,14 +305,14 @@ export async function POST(req: Request) {
     }));
 
   const payoutExisting = await prisma.payoutRequest.findFirst({
-    where: { rewarderId: rewarderProfile.id, status: { in: ["REQUESTED", "APPROVED"] } },
+    where: { rewarderId: memberProfile.id, status: { in: ["REQUESTED", "APPROVED"] } },
     select: { id: true }
   });
 
   if (!payoutExisting) {
     await prisma.payoutRequest.create({
       data: {
-        rewarderId: rewarderProfile.id,
+        rewarderId: memberProfile.id,
         payoutAccountId,
         amountKrw: 1000,
         status: "REQUESTED",
@@ -325,7 +325,7 @@ export async function POST(req: Request) {
     ok: true,
     credentials: {
       advertiser: { email: advertiserEmail, password: DEFAULT_PASSWORD },
-      rewarder: { email: rewarderEmail, password: DEFAULT_PASSWORD },
+      member: { email: memberEmail, password: DEFAULT_PASSWORD },
       admin: { email: adminEmail, password: DEFAULT_PASSWORD }
     },
     created: {

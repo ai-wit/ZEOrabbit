@@ -7,7 +7,7 @@ import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
 
 const SignupSchema = z.object({
-  role: z.enum(["ADVERTISER", "REWARDER"]),
+  role: z.enum(["ADVERTISER", "MEMBER"]),
   email: z.string().email().max(255),
   password: z.string().min(8).max(100),
   agreeService: z.literal("yes"),
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   }
 
   const data = parsed.data;
-  if (data.role === "REWARDER" && data.agreeRewarderGuide !== "yes") {
+  if (data.role === "MEMBER" && data.agreeRewarderGuide !== "yes") {
     return NextResponse.redirect(new URL("/signup", req.url), 303);
   }
 
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
           data: { userId: created.id }
         });
       } else {
-        await tx.rewarderProfile.create({
+        await tx.memberProfile.create({
           data: { userId: created.id }
         });
       }
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
         data: [
           { userId: created.id, type: "SERVICE", version },
           { userId: created.id, type: "PRIVACY", version },
-          ...(created.role === "REWARDER"
+          ...(created.role === "MEMBER"
             ? [{ userId: created.id, type: "REWARDER_GUIDE", version } as const]
             : [])
         ]
@@ -97,8 +97,8 @@ export async function POST(req: Request) {
     const redirectTo =
       user.role === "ADVERTISER"
         ? "/advertiser"
-        : user.role === "REWARDER"
-          ? "/rewarder"
+        : user.role === "MEMBER"
+          ? "/member"
           : "/";
 
     return NextResponse.redirect(new URL(redirectTo, req.url), 303);

@@ -8,5 +8,3 @@ export async function getMemberProfileIdByUserId(userId: string): Promise<string
   if (!profile) throw new Error("Member profile not found");
   return profile.id;
 }
-
-

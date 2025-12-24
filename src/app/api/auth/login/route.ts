@@ -49,8 +49,8 @@ export async function POST(req: Request) {
   const redirectTo =
     user.role === "ADVERTISER"
       ? "/advertiser"
-      : user.role === "REWARDER"
-        ? "/rewarder"
+      : user.role === "MEMBER"
+        ? "/member"
         : "/admin";
 
   return NextResponse.redirect(new URL(redirectTo, req.url), 303);

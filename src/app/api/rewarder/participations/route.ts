@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
-import { getRewarderProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
+import { getMemberProfileIdByUserId } from "@/server/member/member-profile";
 import { getMissionTimeoutMs } from "@/server/rewarder/policy";
 import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
@@ -16,8 +16,8 @@ export async function POST(req: Request) {
     return NextResponse.redirect(new URL("/rewarder/missions", req.url), 303);
   }
 
-  const user = await requireRole("REWARDER");
-  const rewarderId = await getRewarderProfileIdByUserId(user.id);
+  const user = await requireRole("MEMBER");
+  const memberId = await getMemberProfileIdByUserId(user.id);
 
   const form = await req.formData();
   const parsed = ClaimSchema.safeParse({
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
       const existing = await tx.participation.findFirst({
         where: {
-          rewarderId,
+          rewarderId: memberId,
           missionDayId,
           status: { in: ["IN_PROGRESS", "PENDING_REVIEW", "MANUAL_REVIEW"] }
         },
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       const created = await tx.participation.create({
         data: {
           missionDayId,
-          rewarderId,
+          rewarderId: memberId,
           status: "IN_PROGRESS",
           expiresAt
         },
@@ -86,11 +86,11 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.redirect(
-      new URL(`/rewarder/participations/${participation.id}`, req.url),
+      new URL(`/member/participations/${participation.id}`, req.url),
       303
     );
   } catch {
-    return NextResponse.redirect(new URL("/rewarder/missions", req.url), 303);
+    return NextResponse.redirect(new URL("/member/missions", req.url), 303);
   }
 }
 
