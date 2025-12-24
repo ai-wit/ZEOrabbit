@@ -350,7 +350,7 @@ export default async function RewarderPage() {
                 <EmptyState title="내역이 아직 없습니다." />
               ) : (
                 ledgersRecent.slice(0, 6).map((l) => {
-                  const meta = l.refId ? ledgerParticipationMap.get(l.refId) : null;
+                  const meta = l.refId ? { placeName: "참여", missionType: "MISSION" } : null;
                   const sign = l.amountKrw >= 0 ? "+" : "";
                   return (
                     <div key={l.id} className="px-6 py-4">

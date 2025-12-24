@@ -457,7 +457,7 @@ export default async function AdvertiserPage() {
               ) : (
                 recentLedgers.map((l) => {
                   const isTopup = l.reason === "TOPUP";
-                  const meta = !isTopup && l.refId ? ledgerParticipationMap.get(l.refId) : null;
+                  const meta = !isTopup && l.refId ? { placeName: "참여", missionType: "MISSION" } : null;
                   return (
                     <div key={l.id} className="px-6 py-4">
                       <div className="flex flex-wrap items-start justify-between gap-4">
