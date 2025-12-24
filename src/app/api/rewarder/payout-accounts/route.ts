@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
-import { getRewarderProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
+import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { maskAccountNumber } from "@/server/rewarder/mask";
 
 const Schema = z.object({
@@ -12,8 +12,8 @@ const Schema = z.object({
 });
 
 export async function POST(req: Request) {
-  const user = await requireRole("REWARDER");
-  const rewarderId = await getRewarderProfileIdByUserId(user.id);
+  const user = await requireRole("MEMBER");
+  const rewarderId = await getMemberProfileIdByUserId(user.id);
 
   const form = await req.formData();
   const parsed = Schema.safeParse({

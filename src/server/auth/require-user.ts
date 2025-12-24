@@ -18,7 +18,7 @@ export async function requireRole(
 // requireMemberRole 헬퍼 함수 추가 (선택사항)
 export async function requireMemberRole(): Promise<CurrentUser & { role: "MEMBER" }> {
   const user = await requireRole("MEMBER");
-  return user;
+  return user as CurrentUser & { role: "MEMBER" };
 }
 
 

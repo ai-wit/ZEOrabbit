@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
-import { getRewarderProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
+import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { toDateOnlyUtc } from "@/server/date/date-only";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, DividerList, EmptyState, Pill } from "@/app/_ui/primitives";
 
 export default async function RewarderMissionsPage() {
-  const user = await requireRole("REWARDER");
-  const rewarderId = await getRewarderProfileIdByUserId(user.id);
+  const user = await requireRole("MEMBER");
+  const rewarderId = await getMemberProfileIdByUserId(user.id);
 
   const today = toDateOnlyUtc(new Date());
 

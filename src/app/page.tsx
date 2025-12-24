@@ -368,7 +368,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="mt-7 flex flex-wrap gap-3">
-            {user?.role === "REWARDER" ? (
+            {user?.role === "MEMBER" ? (
               <PrimaryButton href="/member">회원 대시보드</PrimaryButton>
             ) : (
               <PrimaryButton href="/signup">회원으로 시작하기</PrimaryButton>

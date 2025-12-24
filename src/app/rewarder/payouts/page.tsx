@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
-import { getRewarderProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
+import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { getRewarderAvailableBalanceKrw, getRewarderBalanceKrw } from "@/server/rewarder/balance";
 import { getPayoutPolicy } from "@/server/policy/get-policy";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, DividerList, EmptyState, Input, Label, Pill } from "@/app/_ui/primitives";
 
 export default async function RewarderPayoutsPage() {
-  const user = await requireRole("REWARDER");
-  const rewarderId = await getRewarderProfileIdByUserId(user.id);
+  const user = await requireRole("MEMBER");
+  const rewarderId = await getMemberProfileIdByUserId(user.id);
 
   const balance = await getRewarderBalanceKrw(rewarderId);
   const available = await getRewarderAvailableBalanceKrw(rewarderId);

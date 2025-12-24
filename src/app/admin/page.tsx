@@ -72,7 +72,7 @@ export default async function AdminPage() {
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { role: "ADVERTISER" } }),
-    prisma.user.count({ where: { role: "REWARDER" } }),
+    prisma.user.count({ where: { role: "MEMBER" } }),
     prisma.user.count({ where: { role: "ADMIN" } }),
     prisma.campaign.count({ where: { status: "ACTIVE" } }),
     prisma.campaign.count({ where: { status: "DRAFT" } }),

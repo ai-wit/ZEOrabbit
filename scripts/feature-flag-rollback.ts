@@ -31,7 +31,7 @@ export function getDashboardRedirectPath(userRole: UserRole): string {
     switch (userRole) {
       case 'ADVERTISER':
         return '/advertiser';
-      case 'REWARDER':
+      case 'MEMBER':
         return '/rewarder';
       case 'ADMIN':
         return '/admin';
@@ -48,7 +48,7 @@ export function hasMemberAccess(userRole: UserRole): boolean {
   if (USE_NEW_ROLE_SYSTEM) {
     return userRole === 'MEMBER';
   } else {
-    return userRole === 'REWARDER';
+    return userRole === 'MEMBER'; // 롤백 모드에서도 MEMBER로 처리
   }
 }
 
@@ -71,7 +71,7 @@ export function getRoleDisplayText(userRole: UserRole): string {
     switch (userRole) {
       case 'ADVERTISER':
         return '광고주';
-      case 'REWARDER':
+      case 'MEMBER':
         return '리워더';
       case 'ADMIN':
         return '관리자';

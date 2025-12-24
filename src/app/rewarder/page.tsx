@@ -1,7 +1,7 @@
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 import { toDateOnlyUtc } from "@/server/date/date-only";
-import { getRewarderProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
+import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { getRewarderAvailableBalanceKrw, getRewarderBalanceKrw } from "@/server/rewarder/balance";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import {
@@ -19,8 +19,8 @@ import {
 } from "@/app/_ui/primitives";
 
 export default async function RewarderPage() {
-  const user = await requireRole("REWARDER");
-  const rewarderId = await getRewarderProfileIdByUserId(user.id);
+  const user = await requireRole("MEMBER");
+  const rewarderId = await getMemberProfileIdByUserId(user.id);
 
   const today = toDateOnlyUtc(new Date());
   const weekStart = toDateOnlyUtc(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000));

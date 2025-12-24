@@ -10,7 +10,7 @@ const ONE_BY_ONE_PNG_DATA_URL =
   // 1x1 transparent png
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
-type UserRole = "ADVERTISER" | "REWARDER" | "ADMIN";
+type UserRole = "ADVERTISER" | "MEMBER" | "ADMIN";
 
 async function ensureUser(params: { email: string; role: UserRole }): Promise<{ userId: string }> {
   const email = params.email.toLowerCase();
@@ -48,8 +48,8 @@ async function ensureUser(params: { email: string; role: UserRole }): Promise<{ 
         ],
         skipDuplicates: true
       });
-    } else if (user.role === "REWARDER") {
-      await tx.rewarderProfile.create({ data: { userId: user.id } });
+    } else if (user.role === "MEMBER") {
+      await tx.memberProfile.create({ data: { userId: user.id } });
       await tx.termsAgreement.createMany({
         data: [
           { userId: user.id, type: "SERVICE", version: "v1" },
@@ -388,7 +388,7 @@ export async function POST(req: Request) {
   const createdUsers = await Promise.all([
     ...admins.map((email) => ensureUser({ email, role: "ADMIN" })),
     ...advertisers.map((email) => ensureUser({ email, role: "ADVERTISER" })),
-    ...rewarders.map((email) => ensureUser({ email, role: "REWARDER" }))
+    ...rewarders.map((email) => ensureUser({ email, role: "MEMBER" }))
   ]);
 
   // Resolve profiles.
@@ -396,7 +396,7 @@ export async function POST(req: Request) {
     where: { user: { email: { in: advertisers.map((e) => e.toLowerCase()) } } },
     select: { id: true, user: { select: { email: true } } }
   });
-  const rewarderProfiles = await prisma.rewarderProfile.findMany({
+  const rewarderProfiles = await prisma.memberProfile.findMany({
     where: { user: { email: { in: rewarders.map((e) => e.toLowerCase()) } } },
     select: { id: true, user: { select: { email: true } } }
   });

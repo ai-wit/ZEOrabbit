@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
-import { getRewarderProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
+import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { isJpeg, isPng, isWebp } from "@/server/upload/magic";
 import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
@@ -18,8 +18,8 @@ export async function POST(
     return NextResponse.redirect(new URL("/rewarder/participations", req.url), 303);
   }
 
-  const user = await requireRole("REWARDER");
-  const rewarderId = await getRewarderProfileIdByUserId(user.id);
+  const user = await requireRole("MEMBER");
+  const rewarderId = await getMemberProfileIdByUserId(user.id);
   const participationId = ctx.params.id;
 
   const participation = await prisma.participation.findFirst({
