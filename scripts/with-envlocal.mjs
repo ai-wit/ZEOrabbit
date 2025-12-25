@@ -11,7 +11,7 @@ function stripQuotes(value) {
 }
 
 function loadEnvLocal() {
-  const filePath = path.join(process.cwd(), "config", "env.local");
+  const filePath = path.join(process.cwd(), ".env.local");
   if (!fs.existsSync(filePath)) return;
   const text = fs.readFileSync(filePath, "utf-8");
   for (const rawLine of text.split("\n")) {

@@ -40,6 +40,32 @@ enum TermsType {
   REWARDER_GUIDE
 }
 
+enum ExperienceCampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum TeamStatus {
+  FORMING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TeamMembershipRole {
+  LEADER
+  MEMBER
+}
+
+enum TeamMembershipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
 enum CampaignStatus {
   DRAFT
   ACTIVE
@@ -129,6 +155,15 @@ model User {
 
   auditLogs     AuditLog[]
   notifications Notification[]
+
+  // 체험단 시스템 관계들
+  assignedAdvertisers AdvertiserManager[] @relation("AssignedByUser") // SUPER admin이 배정한 관계들
+  managedAdvertisers  AdvertiserManager[] @relation("ManagerUser")    // MANAGER가 관리하는 광고주들
+  experienceCampaigns ExperienceCampaign[] // MANAGER가 생성한 체험단 공고들
+  teamLeaderTeams     Team[]              // TEAM_LEADER가 이끄는 팀들
+  teamMemberships     TeamMembership[]    // 팀 멤버십들 (팀장/팀원 모두)
+  decidedMemberships  TeamMembership[]    @relation("DecidedByUser") // 승인/거절한 팀 멤버십들
+  invitationCodes     InvitationCode[]    // 생성한 초대코드들
 }
 
 model AuthCredential {
@@ -178,6 +213,8 @@ model AdvertiserProfile {
   campaigns Campaign[]
   budgetLedgers BudgetLedger[]
   payments Payment[]
+  advertiserManagers AdvertiserManager[]
+  experienceCampaigns ExperienceCampaign[]
 }
 
 model MemberProfile {
@@ -208,6 +245,7 @@ model Place {
 
   advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
   campaigns  Campaign[]
+  experienceCampaigns ExperienceCampaign[]
 
   @@index([advertiserId])
   @@index([externalProvider, externalId])
@@ -455,6 +493,115 @@ model AuditLog {
   @@index([actorUserId, createdAt])
   @@index([action, createdAt])
   @@index([targetType, targetId])
+}
+
+// 체험단 시스템 모델들
+
+model AdvertiserManager {
+  id           String   @id @default(cuid())
+  advertiserId String
+  managerId    String   // AdminType이 MANAGER인 사용자
+  assignedBy   String   // AdminType이 SUPER인 사용자
+  assignedAt   DateTime @default(now())
+  isActive     Boolean  @default(true)
+
+  advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+  manager    User            @relation("ManagerUser", fields: [managerId], references: [id], onDelete: Restrict)
+  assignedByUser User       @relation("AssignedByUser", fields: [assignedBy], references: [id], onDelete: Restrict)
+
+  @@unique([advertiserId, managerId])
+  @@index([advertiserId])
+  @@index([managerId])
+}
+
+model ExperienceCampaign {
+  id            String                  @id @default(cuid())
+  managerId     String                  // AdminType이 MANAGER인 사용자
+  advertiserId  String                  // 배정된 광고주
+  placeId       String                  // 광고주의 장소
+  title         String
+  description   String?                 @db.Text
+  targetTeamCount Int                   @default(1) // 목표 팀 수
+  maxMembersPerTeam Int                @default(5) // 팀당 최대 인원
+  applicationDeadline DateTime          // 신청 마감일
+  startDate     DateTime                // 체험 시작일
+  endDate       DateTime                // 체험 종료일
+  status        ExperienceCampaignStatus @default(DRAFT)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  manager     User             @relation(fields: [managerId], references: [id], onDelete: Restrict)
+  advertiser  AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+  place       Place            @relation(fields: [placeId], references: [id], onDelete: Restrict)
+  teams       Team[]
+
+  @@index([managerId, status])
+  @@index([advertiserId])
+  @@index([placeId])
+  @@index([applicationDeadline])
+}
+
+model Team {
+  id            String       @id @default(cuid())
+  experienceCampaignId String
+  leaderId      String       // TEAM_LEADER인 사용자
+  name          String
+  description   String?      @db.Text
+  status        TeamStatus   @default(FORMING)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  experienceCampaign ExperienceCampaign @relation(fields: [experienceCampaignId], references: [id], onDelete: Restrict)
+  leader            User              @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  memberships       TeamMembership[]
+  invitationCodes   InvitationCode[]
+
+  @@index([experienceCampaignId])
+  @@index([leaderId])
+  @@index([status])
+}
+
+model TeamMembership {
+  id            String                @id @default(cuid())
+  teamId        String
+  memberId      String                // MEMBER인 사용자
+  role          TeamMembershipRole
+  status        TeamMembershipStatus  @default(PENDING)
+  appliedAt     DateTime              @default(now())
+  decidedAt     DateTime?
+  decidedBy     String?               // 승인/거절한 사용자 ID
+  failureReason String?
+  invitedByCode String?               // 초대코드로 참여한 경우
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  team     Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  member   User  @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  decidedByUser User? @relation("DecidedByUser", fields: [decidedBy], references: [id], onDelete: SetNull)
+
+  @@unique([teamId, memberId])
+  @@index([teamId, status])
+  @@index([memberId, status])
+  @@index([decidedBy])
+}
+
+model InvitationCode {
+  id            String   @id @default(cuid())
+  teamId        String
+  code          String   @unique
+  createdBy     String   // TEAM_LEADER인 사용자
+  expiresAt     DateTime
+  maxUses       Int      @default(1)
+  currentUses   Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  team       Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([teamId])
+  @@index([code])
+  @@index([expiresAt])
 }
 
 
