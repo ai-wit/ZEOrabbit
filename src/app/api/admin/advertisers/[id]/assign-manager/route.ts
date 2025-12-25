@@ -55,21 +55,15 @@ export async function POST(
       );
     }
 
-    // 이미 할당된 관계가 있는지 확인
-    const existingAssignment = await prisma.advertiserManager.findFirst({
+    // 기존에 해당 매니저-광고주 관계가 존재하는지 확인 (활성 상태와 무관)
+    const existingAssignment = await prisma.advertiserManager.findUnique({
       where: {
-        advertiserId: advertiser.id,
-        managerId,
-        isActive: true
+        advertiserId_managerId: {
+          advertiserId: advertiser.id,
+          managerId
+        }
       }
     });
-
-    if (existingAssignment) {
-      return NextResponse.json(
-        { error: "이미 할당된 매니저입니다" },
-        { status: 409 }
-      );
-    }
 
     // 기존 활성 배정을 비활성화 (하나의 광고주에 하나의 매니저만 할당)
     await prisma.advertiserManager.updateMany({
@@ -80,23 +74,51 @@ export async function POST(
       data: { isActive: false }
     });
 
-    // 새로운 배정 생성
-    const assignment = await prisma.advertiserManager.create({
-      data: {
-        advertiserId: advertiser.id,
-        managerId,
-        assignedBy: superAdmin.id,
-      },
-      include: {
-        advertiser: {
-          include: {
-            user: { select: { name: true } }
+    let assignment;
+
+    if (existingAssignment) {
+      // 기존 관계가 있으면 재활성화
+      assignment = await prisma.advertiserManager.update({
+        where: {
+          advertiserId_managerId: {
+            advertiserId: advertiser.id,
+            managerId
           }
         },
-        manager: { select: { name: true, email: true } },
-        assignedByUser: { select: { name: true } }
-      }
-    });
+        data: {
+          isActive: true,
+          assignedBy: superAdmin.id,
+          assignedAt: new Date()
+        },
+        include: {
+          advertiser: {
+            include: {
+              user: { select: { name: true } }
+            }
+          },
+          manager: { select: { name: true, email: true } },
+          assignedByUser: { select: { name: true } }
+        }
+      });
+    } else {
+      // 새로운 관계 생성
+      assignment = await prisma.advertiserManager.create({
+        data: {
+          advertiserId: advertiser.id,
+          managerId,
+          assignedBy: superAdmin.id,
+        },
+        include: {
+          advertiser: {
+            include: {
+              user: { select: { name: true } }
+            }
+          },
+          manager: { select: { name: true, email: true } },
+          assignedByUser: { select: { name: true } }
+        }
+      });
+    }
 
     return NextResponse.json({
       message: "매니저가 성공적으로 할당되었습니다",

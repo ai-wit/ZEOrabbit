@@ -20,9 +20,6 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
           <ButtonLink href="/admin/advertisers" variant="secondary" size="sm">
             🏢 광고주
           </ButtonLink>
-          <ButtonLink href="/admin/advertiser-assignments" variant="secondary" size="sm">
-            🔗 배정
-          </ButtonLink>
           <ButtonLink href="/admin/experience-campaigns" variant="secondary" size="sm">
             🎯 체험단
           </ButtonLink>

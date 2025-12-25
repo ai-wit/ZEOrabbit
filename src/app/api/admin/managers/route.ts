@@ -27,12 +27,19 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
+    const q = searchParams.get("q") || "";
     const offset = (page - 1) * limit;
 
     const managers = await prisma.user.findMany({
       where: {
         role: "ADMIN",
-        adminType: "MANAGER"
+        adminType: "MANAGER",
+        ...(q && {
+          OR: [
+            { name: { contains: q,  } },
+            { email: { contains: q,  } }
+          ]
+        })
       },
       include: {
         _count: {
@@ -75,7 +82,13 @@ export async function GET(request: NextRequest) {
     const total = await prisma.user.count({
       where: {
         role: "ADMIN",
-        adminType: "MANAGER"
+        adminType: "MANAGER",
+        ...(q && {
+          OR: [
+            { name: { contains: q,  } },
+            { email: { contains: q,  } }
+          ]
+        })
       }
     });
 

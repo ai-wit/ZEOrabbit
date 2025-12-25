@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageShell } from "@/app/_ui/shell";
 import {
@@ -42,6 +42,15 @@ interface Manager {
   email: string;
   assignedBy: string;
   assignedAt: string;
+}
+
+interface ManagerSearchResult {
+  id: string;
+  name: string;
+  email: string;
+  _count: {
+    managedAdvertisers: number;
+  };
 }
 
 interface BudgetLedger {
@@ -107,6 +116,13 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
   const [data, setData] = useState<AdvertiserDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 매니저 검색 관련 상태
+  const [managerSearchQuery, setManagerSearchQuery] = useState('');
+  const [managerSearchResults, setManagerSearchResults] = useState<ManagerSearchResult[]>([]);
+  const [managerSearching, setManagerSearching] = useState(false);
+  const [managerAssigning, setManagerAssigning] = useState<string | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // 폼 데이터
   const [formData, setFormData] = useState({
     name: '',
@@ -120,6 +136,15 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
   useEffect(() => {
     loadData();
   }, [params.id]);
+
+  // 클린업: 컴포넌트 언마운트 시 타임아웃 정리
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const loadData = async () => {
     try {
@@ -157,11 +182,112 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
     }
   };
 
+  // 매니저 검색
+  const searchManagers = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setManagerSearchResults([]);
+      return;
+    }
+
+    try {
+      setManagerSearching(true);
+      const response = await fetch(`/api/admin/managers?q=${encodeURIComponent(query)}&limit=10`);
+      if (!response.ok) {
+        console.error('매니저 검색 실패');
+        return;
+      }
+
+      const result = await response.json();
+      setManagerSearchResults(result.managers || []);
+    } catch (error) {
+      console.error('매니저 검색 오류:', error);
+      setManagerSearchResults([]);
+    } finally {
+      setManagerSearching(false);
+    }
+  }, []);
+
+  // 매니저 할당
+  const assignManager = async (managerId: string) => {
+    if (!data) return;
+
+    try {
+      setManagerAssigning(managerId);
+      const response = await fetch(`/api/admin/advertisers/${params.id}/assign-manager`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ managerId })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.error || '매니저 할당 중 오류가 발생했습니다.');
+        return;
+      }
+
+      alert('매니저가 성공적으로 할당되었습니다.');
+      setManagerSearchQuery('');
+      setManagerSearchResults([]);
+      loadData(); // 데이터 새로고침
+    } catch (error) {
+      console.error('매니저 할당 실패:', error);
+      alert('매니저 할당 중 오류가 발생했습니다.');
+    } finally {
+      setManagerAssigning(null);
+    }
+  };
+
+  // 매니저 할당 해제
+  const unassignManager = async (managerId: string) => {
+    if (!data) return;
+
+    if (!confirm('정말로 이 매니저의 할당을 해제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/advertisers/${params.id}/assign-manager?managerId=${managerId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.error || '매니저 할당 해제 중 오류가 발생했습니다.');
+        return;
+      }
+
+      alert('매니저 할당이 성공적으로 해제되었습니다.');
+      loadData(); // 데이터 새로고침
+    } catch (error) {
+      console.error('매니저 할당 해제 실패:', error);
+      alert('매니저 할당 해제 중 오류가 발생했습니다.');
+    }
+  };
+
   // 폼 입력 핸들러
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setError(null); // 입력 시 에러 초기화
   };
+
+  // 매니저 검색 입력 핸들러
+  const handleManagerSearchChange = useCallback((value: string) => {
+    setManagerSearchQuery(value);
+
+    // 이전 타임아웃 취소
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // 디바운싱을 위한 검색 호출
+    if (value.trim()) {
+      searchTimeoutRef.current = setTimeout(() => {
+        searchManagers(value);
+      }, 300);
+    } else {
+      setManagerSearchResults([]);
+    }
+  }, [searchManagers]);
 
   // 정보 수정
   const handleUpdate = async () => {
@@ -440,13 +566,65 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
           </CardBody>
         </Card>
 
-        {/* 할당된 매니저 목록 */}
+        {/* 할당된 매니저 관리 */}
         <Card>
-          <CardBody className="space-y-4">
+          <CardBody className="space-y-6">
             <div className="text-sm font-semibold text-zinc-50">
               할당된 매니저 ({formatNumber(data.managers.length)}명)
             </div>
 
+            {/* 매니저 검색 및 추가 */}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="managerSearch">매니저 검색 및 추가</Label>
+                <Input
+                  id="managerSearch"
+                  type="text"
+                  placeholder="매니저 이름 또는 이메일로 검색..."
+                  value={managerSearchQuery || ''}
+                  onChange={(e) => handleManagerSearchChange(e.target.value)}
+                />
+              </div>
+
+              {/* 검색 결과 */}
+              {managerSearchQuery && (
+                <div className="rounded-lg border border-white/10 bg-white/[0.02] max-h-60 overflow-y-auto">
+                  {managerSearching ? (
+                    <div className="px-4 py-3 text-sm text-zinc-400">검색 중...</div>
+                  ) : managerSearchResults.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-zinc-400">검색 결과가 없습니다.</div>
+                  ) : (
+                    <div className="divide-y divide-white/10">
+                      {managerSearchResults.map((manager) => {
+                        const isAlreadyAssigned = data.managers.some(m => m.id === manager.id);
+                        const isAssigning = managerAssigning === manager.id;
+                        return (
+                          <div key={manager.id} className="px-4 py-3 flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-zinc-50">{manager.name}</div>
+                              <div className="text-xs text-zinc-400">{manager.email}</div>
+                              <div className="text-xs text-zinc-500">
+                                할당된 광고주: {formatNumber(manager._count.managedAdvertisers)}개
+                              </div>
+                            </div>
+                            <Button
+                              onClick={() => assignManager(manager.id)}
+                              disabled={isAlreadyAssigned || isAssigning}
+                              variant={isAlreadyAssigned ? "secondary" : "primary"}
+                              size="sm"
+                            >
+                              {isAssigning ? '할당 중...' : isAlreadyAssigned ? '이미 할당됨' : '할당'}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 할당된 매니저 목록 */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.02]">
               <DividerList>
                 {data.managers.length === 0 ? (
@@ -471,6 +649,13 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
                             배정자: {manager.assignedBy} · 배정일: {formatDateTime(manager.assignedAt)}
                           </div>
                         </div>
+                        <Button
+                          onClick={() => unassignManager(manager.id)}
+                          variant="danger"
+                          size="sm"
+                        >
+                          해제
+                        </Button>
                       </div>
                     </div>
                   ))
