@@ -24,6 +24,9 @@
     "db:seed:local": "node scripts/with-envlocal.mjs tsx src/scripts/seed.ts",
     "vercel-build": "node scripts/vercel-build.mjs"
   },
+  "prisma": {
+    "seed": "tsx src/scripts/seed.ts"
+  },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
