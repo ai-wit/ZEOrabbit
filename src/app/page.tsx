@@ -128,15 +128,15 @@ export default async function HomePage() {
               LocalMom
             </span>
             <span className="text-xs text-zinc-400">
-              트래픽/저장/공유 미션을 “정책 기반”으로 운영하는 리워드 플랫폼
+              체험단 운영과 리워드 시스템을 정책 기반으로 연결하는 로컬 홍보 플랫폼
             </span>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-[1.3fr,0.7fr] lg:items-center">
             <div className="space-y-6">
               <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
-                신뢰할 수 있는 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-cyan-200">미션 운영</span>과
-                <br className="hidden sm:block" /> 투명한 정산을 한 곳에서
+                로컬 매장 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-cyan-200">체험단 운영</span>과
+                <br className="hidden sm:block" /> 투명한 리워드 시스템을 한 곳에서
               </h1>
               <p className="max-w-2xl text-sm leading-relaxed text-zinc-300">
                 광고주는 예산과 단가를 정책으로 통제하며 캠페인을 운영하고, 회원은 검증된 참여 흐름으로
@@ -299,6 +299,19 @@ export default async function HomePage() {
               </svg>
             }
           />
+          <Card
+            tone="indigo"
+            title="체험단 기반 로컬 홍보"
+            desc="실제 매장 방문과 체험을 통해 생성된 양질의 콘텐츠로 신뢰할 수 있는 로컬 홍보를 실현합니다."
+            icon={
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-indigo-200" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5Z"
+                />
+              </svg>
+            }
+          />
         </div>
       </section>
 
@@ -326,14 +339,18 @@ export default async function HomePage() {
           <div className="mt-6 space-y-3 text-sm text-zinc-300">
             <div className="flex gap-3">
               <span className="mt-1 h-2 w-2 rounded-full bg-indigo-300/90" aria-hidden="true" />
-              <span>일 단위 미션 운영으로 과집행을 방지</span>
+              <span>체험단 운영을 쉽게 설정하고 양질의 사용자 생성 콘텐츠로 매장 홍보</span>
             </div>
             <div className="flex gap-3">
               <span className="mt-1 h-2 w-2 rounded-full bg-cyan-300/90" aria-hidden="true" />
-              <span>검증 흐름으로 참여 품질 기준을 유지</span>
+              <span>일 단위 미션 운영으로 과집행을 방지</span>
             </div>
             <div className="flex gap-3">
               <span className="mt-1 h-2 w-2 rounded-full bg-emerald-300/90" aria-hidden="true" />
+              <span>검증 흐름으로 참여 품질 기준을 유지</span>
+            </div>
+            <div className="flex gap-3">
+              <span className="mt-1 h-2 w-2 rounded-full bg-indigo-300/90" aria-hidden="true" />
               <span>운영 로그로 이슈 대응과 정산 근거 확보</span>
             </div>
           </div>
@@ -356,14 +373,18 @@ export default async function HomePage() {
           <div className="mt-6 space-y-3 text-sm text-zinc-300">
             <div className="flex gap-3">
               <span className="mt-1 h-2 w-2 rounded-full bg-cyan-300/90" aria-hidden="true" />
-              <span>검증 상태가 명확해 결과를 예측 가능</span>
+              <span>로컬 매장을 체험하면서 수익도 얻는 체험단 참여로 가치 실현</span>
             </div>
             <div className="flex gap-3">
               <span className="mt-1 h-2 w-2 rounded-full bg-indigo-300/90" aria-hidden="true" />
-              <span>보상/출금 정책이 공개되어 혼선 최소화</span>
+              <span>검증 상태가 명확해 결과를 예측 가능</span>
             </div>
             <div className="flex gap-3">
               <span className="mt-1 h-2 w-2 rounded-full bg-emerald-300/90" aria-hidden="true" />
+              <span>보상/출금 정책이 공개되어 혼선 최소화</span>
+            </div>
+            <div className="flex gap-3">
+              <span className="mt-1 h-2 w-2 rounded-full bg-cyan-300/90" aria-hidden="true" />
               <span>부정 행위 방지로 건강한 생태계 유지</span>
             </div>
           </div>
@@ -383,7 +404,7 @@ export default async function HomePage() {
           <div className="space-y-2">
             <div className="text-sm font-semibold text-zinc-50">바로 시작해보세요</div>
             <div className="text-sm text-zinc-300">
-              미션 운영과 정산을 하나의 워크플로우로. 팀이 신뢰할 수 있는 운영 기준을 만듭니다.
+              체험단 운영과 리워드 시스템을 하나의 워크플로우로. 로컬 매장과 회원이 함께 성장하는 생태계를 만듭니다.
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
