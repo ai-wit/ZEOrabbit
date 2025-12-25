@@ -75,6 +75,7 @@ export function Button(props: {
   size?: "sm" | "md";
   disabled?: boolean;
   className?: string;
+  onClick?: () => void;
 }) {
   const variant =
     props.variant === "primary"
@@ -89,6 +90,7 @@ export function Button(props: {
     <button
       type={props.type ?? "button"}
       disabled={props.disabled}
+      onClick={props.onClick}
       className={cn(
         "inline-flex items-center justify-center font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
         size,

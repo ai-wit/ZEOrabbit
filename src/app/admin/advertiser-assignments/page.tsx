@@ -1,279 +1,141 @@
-'use client';
+import { prisma } from "@/server/prisma";
+import { PageShell } from "@/app/_ui/shell";
+import {
+  ButtonLink,
+  Card,
+  CardBody,
+  DividerList,
+  EmptyState,
+  Pill
+} from "@/app/_ui/primitives";
+import { AdminHeader } from "../_components/AdminHeader";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-interface AdvertiserManager {
-  id: string;
-  assignedAt: string;
-  isActive: boolean;
-  advertiser: {
-    user: {
-      name: string;
-      email: string;
-    };
-  };
-  manager: {
-    name: string;
-    email: string;
-  };
-  assignedByUser: {
-    name: string;
-  };
+function formatNumber(n: number): string {
+  return new Intl.NumberFormat("ko-KR").format(n);
 }
 
-interface Advertiser {
-  id: string;
-  user: {
-    name: string;
-    email: string;
-  };
+function formatDateTime(d: Date): string {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(d);
 }
 
-interface Manager {
-  id: string;
-  name: string;
-  email: string;
-}
+export default async function AdvertiserAssignmentsPage() {
 
-export default function AdvertiserAssignmentsPage() {
-  const [assignments, setAssignments] = useState<AdvertiserManager[]>([]);
-  const [advertisers, setAdvertisers] = useState<Advertiser[]>([]);
-  const [managers, setManagers] = useState<Manager[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedAdvertiser, setSelectedAdvertiser] = useState('');
-  const [selectedManager, setSelectedManager] = useState('');
-  const [assigning, setAssigning] = useState(false);
-  const router = useRouter();
+  const assignments = await prisma.advertiserManager.findMany({
+    where: { isActive: true },
+    include: {
+      advertiser: {
+        include: {
+          user: { select: { name: true, email: true } },
+          places: { select: { id: true } },
+          campaigns: { select: { id: true, status: true } }
+        }
+      },
+      manager: { select: { name: true, email: true } },
+      assignedByUser: { select: { name: true } }
+    },
+    orderBy: { assignedAt: "desc" }
+  });
 
-  // 데이터 로드
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [assignmentsRes, advertisersRes, managersRes] = await Promise.all([
-        fetch('/api/admin/advertiser-assignments'),
-        fetch('/api/admin/advertisers'), // TODO: 광고주 목록 API 필요
-        fetch('/api/admin/managers') // TODO: 매니저 목록 API 필요
-      ]);
-
-      if (assignmentsRes.ok) {
-        const data = await assignmentsRes.json();
-        setAssignments(data.assignments);
-      }
-
-      if (advertisersRes.ok) {
-        setAdvertisers(await advertisersRes.json());
-      }
-
-      if (managersRes.ok) {
-        setManagers(await managersRes.json());
-      }
-    } catch (error) {
-      console.error('데이터 로드 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 광고주 배정
-  const handleAssign = async () => {
-    if (!selectedAdvertiser || !selectedManager) return;
-
-    try {
-      setAssigning(true);
-      const response = await fetch('/api/admin/advertiser-assignments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          advertiserId: selectedAdvertiser,
-          managerId: selectedManager
-        })
-      });
-
-      if (response.ok) {
-        setShowAssignModal(false);
-        setSelectedAdvertiser('');
-        setSelectedManager('');
-        loadData(); // 목록 새로고침
-      } else {
-        const error = await response.json();
-        alert(error.error || '배정 실패');
-      }
-    } catch (error) {
-      console.error('배정 실패:', error);
-      alert('배정 중 오류가 발생했습니다');
-    } finally {
-      setAssigning(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">로딩 중...</div>
-      </div>
-    );
-  }
+  // 통계 계산
+  const totalAssignments = assignments.length;
+  const activeCampaigns = assignments.reduce((sum, assignment) =>
+    sum + assignment.advertiser.campaigns.filter(c => c.status === "ACTIVE").length, 0
+  );
+  const totalPlaces = assignments.reduce((sum, assignment) =>
+    sum + assignment.advertiser.places.length, 0
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">광고주-매니저 배정 관리</h1>
-          <p className="mt-2 text-gray-600">
-            Super 관리자가 광고주를 매니저에게 배정하고 관리합니다.
-          </p>
-        </div>
-
-        {/* 배정 버튼 */}
-        <div className="mb-6">
-          <button
-            onClick={() => setShowAssignModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            새 배정 추가
-          </button>
+    <PageShell
+      header={
+        <AdminHeader
+          title="광고주-매니저 배정 관리"
+          description="광고주와 매니저 간의 배정 관계를 관리합니다."
+        />
+      }
+    >
+      <div className="space-y-6">
+        {/* 등록 버튼 - 배정 관리에서는 필요 없음 */}
+        {/* 통계 카드 */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardBody className="text-center">
+              <div className="text-2xl font-bold text-zinc-50">{formatNumber(totalAssignments)}</div>
+              <div className="text-sm text-zinc-400">총 배정 수</div>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody className="text-center">
+              <div className="text-2xl font-bold text-zinc-50">{formatNumber(activeCampaigns)}</div>
+              <div className="text-sm text-zinc-400">활성 캠페인</div>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody className="text-center">
+              <div className="text-2xl font-bold text-zinc-50">{formatNumber(totalPlaces)}</div>
+              <div className="text-sm text-zinc-400">등록 장소</div>
+            </CardBody>
+          </Card>
         </div>
 
         {/* 배정 목록 */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  광고주
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  매니저
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  배정일
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  배정자
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상태
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {assignments.map((assignment) => (
-                <tr key={assignment.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {assignment.advertiser.user.name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {assignment.advertiser.user.email}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {assignment.manager.name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {assignment.manager.email}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(assignment.assignedAt).toLocaleDateString('ko-KR')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {assignment.assignedByUser.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      assignment.isActive
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {assignment.isActive ? '활성' : '비활성'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {assignments.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                    배정된 관계가 없습니다.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* 배정 모달 */}
-        {showAssignModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">광고주 배정</h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    광고주 선택
-                  </label>
-                  <select
-                    value={selectedAdvertiser}
-                    onChange={(e) => setSelectedAdvertiser(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">선택하세요</option>
-                    {advertisers.map((advertiser) => (
-                      <option key={advertiser.id} value={advertiser.id}>
-                        {advertiser.user.name} ({advertiser.user.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    매니저 선택
-                  </label>
-                  <select
-                    value={selectedManager}
-                    onChange={(e) => setSelectedManager(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">선택하세요</option>
-                    {managers.map((manager) => (
-                      <option key={manager.id} value={manager.id}>
-                        {manager.name} ({manager.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  onClick={() => setShowAssignModal(false)}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                  disabled={assigning}
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleAssign}
-                  disabled={!selectedAdvertiser || !selectedManager || assigning}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {assigning ? '배정 중...' : '배정'}
-                </button>
-              </div>
+        <Card>
+          <CardBody className="space-y-4">
+            <div className="text-sm font-semibold text-zinc-50">
+              배정 목록 ({formatNumber(assignments.length)}개)
             </div>
-          </div>
-        )}
+
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02]">
+              <DividerList>
+                {assignments.length === 0 ? (
+                  <EmptyState title="배정된 관계가 없습니다." />
+                ) : (
+                  assignments.map((assignment) => (
+                    <div key={assignment.id} className="px-6 py-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="text-sm font-semibold text-zinc-50">
+                              {assignment.advertiser.user.name}
+                            </div>
+                            <Pill tone="cyan">광고주</Pill>
+                            <span className="text-xs text-zinc-400">→</span>
+                            <div className="text-sm font-semibold text-zinc-50">
+                              {assignment.manager.name}
+                            </div>
+                            <Pill tone="indigo">매니저</Pill>
+                          </div>
+                          <div className="text-xs text-zinc-400">
+                            광고주: {assignment.advertiser.user.email} · 매니저: {assignment.manager.email}
+                          </div>
+                          <div className="text-xs text-zinc-500">
+                            장소: {formatNumber(assignment.advertiser.places.length)}개 · 캠페인: {formatNumber(assignment.advertiser.campaigns.length)}개
+                            (활성: {formatNumber(assignment.advertiser.campaigns.filter(c => c.status === "ACTIVE").length)}개)
+                          </div>
+                          <div className="text-xs text-zinc-500">
+                            배정자: {assignment.assignedByUser.name} · 배정일: {formatDateTime(assignment.assignedAt)}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <ButtonLink href={`/admin/advertisers/${assignment.advertiserId}`} variant="secondary" size="sm">
+                            광고주 상세
+                          </ButtonLink>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </DividerList>
+            </div>
+          </CardBody>
+        </Card>
       </div>
-    </div>
+    </PageShell>
   );
 }

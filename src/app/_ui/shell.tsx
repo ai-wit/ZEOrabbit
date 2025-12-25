@@ -8,7 +8,7 @@ export function PageHeader(props: {
   right?: ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-4">
+    <header className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
       <div className="space-y-2">
         {props.eyebrow ? (
           <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-cyan-200/90">
@@ -20,10 +20,10 @@ export function PageHeader(props: {
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
             {props.title}
           </h1>
-          {props.description ? <p className="text-sm text-zinc-400">{props.description}</p> : null}
+          {props.description ? <p className="text-sm text-zinc-400 leading-relaxed">{props.description}</p> : null}
         </div>
       </div>
-      {props.right ? <div className="shrink-0">{props.right}</div> : null}
+      {props.right ? <div className="shrink-0 sm:justify-self-end">{props.right}</div> : null}
     </header>
   );
 }

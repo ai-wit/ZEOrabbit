@@ -1,7 +1,7 @@
-import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
-import { PageHeader, PageShell } from "@/app/_ui/shell";
+import { PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, DividerList, EmptyState, Input, Label, Pill, Select } from "@/app/_ui/primitives";
+import { AdminHeader } from "../_components/AdminHeader";
 import { DateInput } from "@/app/_ui/DateInput";
 import type { Prisma, ParticipationStatus } from "@prisma/client";
 
@@ -19,8 +19,6 @@ function parseDateOnly(value: string | undefined): Date | null {
 export default async function AdminReviewsPage(props: {
   searchParams?: { status?: string; q?: string; from?: string; to?: string };
 }) {
-  await requireRole("ADMIN");
-
   const statusParam = props.searchParams?.status ?? "ALL";
   const q = (props.searchParams?.q ?? "").trim().toLowerCase();
   const from = parseDateOnly(props.searchParams?.from);
@@ -87,25 +85,9 @@ export default async function AdminReviewsPage(props: {
   return (
     <PageShell
       header={
-        <PageHeader
-          eyebrow="ADMIN"
+        <AdminHeader
           title="검수 대기"
           description="상태/이메일/기간으로 필터링합니다."
-          right={
-            <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/admin" variant="secondary" size="sm">
-                관리자 홈
-              </ButtonLink>
-              <ButtonLink href="/admin/reviews" variant="secondary" size="sm">
-                초기화
-              </ButtonLink>
-              <form action="/api/auth/logout" method="post">
-                <Button type="submit" variant="danger" size="sm">
-                  로그아웃
-                </Button>
-              </form>
-            </div>
-          }
         />
       }
     >

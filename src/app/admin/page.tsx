@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 import { toDateOnlyUtc } from "@/server/date/date-only";
-import { PageHeader, PageShell } from "@/app/_ui/shell";
+import { PageShell } from "@/app/_ui/shell";
 import {
   Button,
   ButtonLink,
@@ -16,6 +16,7 @@ import {
   SparkBars,
   StatCard
 } from "@/app/_ui/primitives";
+import { AdminHeader } from "./_components/AdminHeader";
 
 function formatNumber(n: number): string {
   return new Intl.NumberFormat("ko-KR").format(n);
@@ -175,28 +176,9 @@ export default async function AdminPage() {
   return (
     <PageShell
       header={
-        <PageHeader
-          eyebrow="ADMIN"
+        <AdminHeader
           title="관리자"
           description={`${user.email ?? user.id} (${user.role})`}
-          right={
-            <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/admin/reviews" variant="secondary" size="sm">
-                검수 대기
-              </ButtonLink>
-              <ButtonLink href="/admin/payouts" variant="secondary" size="sm">
-                출금 요청
-              </ButtonLink>
-              <ButtonLink href="/" variant="secondary" size="sm">
-                홈
-              </ButtonLink>
-              <form action="/api/auth/logout" method="post">
-                <Button type="submit" variant="danger" size="sm">
-                  로그아웃
-                </Button>
-              </form>
-            </div>
-          }
         />
       }
     >
