@@ -2,9 +2,10 @@ import Link from "next/link";
 import { requireRole } from "@/server/auth/require-user";
 import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-profile";
 import { prisma } from "@/server/prisma";
-import { PageHeader, PageShell } from "@/app/_ui/shell";
+import { PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, EmptyState, Hint, Input, Label, Select } from "@/app/_ui/primitives";
 import { DateInput } from "@/app/_ui/DateInput";
+import { AdvertiserHeader } from "../../_components/AdvertiserHeader";
 
 export default async function NewCampaignPage() {
   const user = await requireRole("ADVERTISER");
@@ -19,37 +20,9 @@ export default async function NewCampaignPage() {
   return (
     <PageShell
       header={
-        <PageHeader
-          eyebrow="ADVERTISER"
+        <AdvertiserHeader
           title="캠페인 생성"
           description="MVP 기본값으로 트래픽(방문) 캠페인을 생성합니다."
-          right={
-            <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/advertiser/campaigns" variant="secondary" size="sm">
-                목록
-              </ButtonLink>
-              <ButtonLink href="/advertiser/places" variant="secondary" size="sm">
-                플레이스
-              </ButtonLink>
-              <ButtonLink href="/advertiser/reports" variant="secondary" size="sm">
-                리포트
-              </ButtonLink>
-              <ButtonLink href="/advertiser/billing" variant="secondary" size="sm">
-                결제/충전
-              </ButtonLink>
-              <ButtonLink href="/advertiser" variant="secondary" size="sm">
-                광고주 홈
-              </ButtonLink>
-              <ButtonLink href="/" variant="secondary" size="sm">
-                홈
-              </ButtonLink>
-              <form action="/api/auth/logout" method="post">
-                <Button type="submit" variant="danger" size="sm">
-                  로그아웃
-                </Button>
-              </form>
-            </div>
-          }
         />
       }
     >

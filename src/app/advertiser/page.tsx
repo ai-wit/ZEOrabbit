@@ -4,8 +4,9 @@ import { prisma } from "@/server/prisma";
 import { toDateOnlyUtc } from "@/server/date/date-only";
 import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-profile";
 import { getAdvertiserBudgetBalanceKrw } from "@/server/advertiser/balance";
-import { PageHeader, PageShell } from "@/app/_ui/shell";
+import { PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Callout, Card, CardBody, DividerList, EmptyState, KeyValueRow, Pill, SparkBars, StatCard } from "@/app/_ui/primitives";
+import { AdvertiserHeader } from "./_components/AdvertiserHeader";
 
 export default async function AdvertiserPage() {
   const user = await requireRole("ADVERTISER");
@@ -174,34 +175,9 @@ export default async function AdvertiserPage() {
   return (
     <PageShell
       header={
-        <PageHeader
-          eyebrow="ADVERTISER"
+        <AdvertiserHeader
           title="광고주 대시보드"
           description={`${user.email ?? user.id} (${user.role})`}
-          right={
-            <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/advertiser/places" variant="secondary" size="sm">
-                플레이스
-              </ButtonLink>
-              <ButtonLink href="/advertiser/campaigns" variant="secondary" size="sm">
-                캠페인
-              </ButtonLink>
-              <ButtonLink href="/advertiser/reports" variant="secondary" size="sm">
-                리포트
-              </ButtonLink>
-              <ButtonLink href="/advertiser/billing" variant="secondary" size="sm">
-                결제/충전
-              </ButtonLink>
-              <ButtonLink href="/" variant="secondary" size="sm">
-                홈
-              </ButtonLink>
-              <form action="/api/auth/logout" method="post">
-                <Button type="submit" variant="danger" size="sm">
-                  로그아웃
-                </Button>
-              </form>
-            </div>
-          }
         />
       }
     >

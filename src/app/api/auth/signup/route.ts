@@ -10,6 +10,9 @@ const SignupSchema = z.object({
   role: z.enum(["ADVERTISER", "MEMBER"]),
   email: z.string().email().max(255),
   password: z.string().min(8).max(100),
+  name: z.string().min(1).max(100),
+  phone: z.string().min(10).max(20),
+  businessNumber: z.union([z.string().max(20), z.undefined()]),
   agreeService: z.literal("yes"),
   agreePrivacy: z.literal("yes"),
   agreeRewarderGuide: z.union([z.literal("yes"), z.undefined()])
@@ -25,6 +28,9 @@ export async function POST(req: Request) {
     role: form.get("role"),
     email: form.get("email"),
     password: form.get("password"),
+    name: form.get("name"),
+    phone: form.get("phone"),
+    businessNumber: form.get("businessNumber") ?? undefined,
     agreeService: form.get("agreeService"),
     agreePrivacy: form.get("agreePrivacy"),
     agreeRewarderGuide: form.get("agreeRewarderGuide") ?? undefined
@@ -47,7 +53,9 @@ export async function POST(req: Request) {
       const created = await tx.user.create({
         data: {
           role: data.role,
-          email
+          email,
+          name: data.name,
+          phone: data.phone
         },
         select: { id: true, role: true }
       });
@@ -61,7 +69,10 @@ export async function POST(req: Request) {
 
       if (created.role === "ADVERTISER") {
         await tx.advertiserProfile.create({
-          data: { userId: created.id }
+          data: {
+            userId: created.id,
+            businessNumber: data.businessNumber
+          }
         });
       } else {
         await tx.memberProfile.create({

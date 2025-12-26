@@ -2,8 +2,9 @@ import Link from "next/link";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-profile";
-import { PageHeader, PageShell } from "@/app/_ui/shell";
+import { PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, DividerList, EmptyState, Pill } from "@/app/_ui/primitives";
+import { AdvertiserHeader } from "../_components/AdvertiserHeader";
 
 export default async function AdvertiserCampaignsPage() {
   const user = await requireRole("ADVERTISER");
@@ -29,40 +30,17 @@ export default async function AdvertiserCampaignsPage() {
   return (
     <PageShell
       header={
-        <PageHeader
-          eyebrow="ADVERTISER"
+        <AdvertiserHeader
           title="캠페인 관리"
           description="DRAFT로 생성 후 활성화하면 일별 미션이 생성됩니다."
-          right={
-            <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/advertiser/campaigns/new" variant="primary" size="sm">
-                새 캠페인
-              </ButtonLink>
-              <ButtonLink href="/advertiser/places" variant="secondary" size="sm">
-                플레이스
-              </ButtonLink>
-              <ButtonLink href="/advertiser/reports" variant="secondary" size="sm">
-                리포트
-              </ButtonLink>
-              <ButtonLink href="/advertiser/billing" variant="secondary" size="sm">
-                결제/충전
-              </ButtonLink>
-              <ButtonLink href="/advertiser" variant="secondary" size="sm">
-                광고주 홈
-              </ButtonLink>
-              <ButtonLink href="/" variant="secondary" size="sm">
-                홈
-              </ButtonLink>
-              <form action="/api/auth/logout" method="post">
-                <Button type="submit" variant="danger" size="sm">
-                  로그아웃
-                </Button>
-              </form>
-            </div>
-          }
         />
       }
     >
+      <div className="mb-6 flex justify-end">
+        <ButtonLink href="/advertiser/campaigns/new" variant="primary" size="sm">
+          새 캠페인
+        </ButtonLink>
+      </div>
       <Card>
         <div className="border-b border-white/10 px-6 py-4 text-sm text-zinc-300">총 {campaigns.length}개</div>
         <DividerList>

@@ -144,6 +144,7 @@ model User {
 
   email     String?    @unique
   name      String?
+  phone     String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -202,11 +203,12 @@ model TermsAgreement {
 }
 
 model AdvertiserProfile {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  displayName  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  displayName    String?
+  businessNumber String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Restrict)
   places   Place[]
@@ -475,6 +477,18 @@ model Notification {
 
   @@index([userId, createdAt])
   @@index([type, createdAt])
+}
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  code      String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@index([expiresAt])
 }
 
 model AuditLog {

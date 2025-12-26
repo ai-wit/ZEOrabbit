@@ -1,42 +1,15 @@
 import Link from "next/link";
-import { PageHeader, PageShell } from "@/app/_ui/shell";
+import { PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Input, Label } from "@/app/_ui/primitives";
+import { AdvertiserHeader } from "../../_components/AdvertiserHeader";
 
 export default function NewPlacePage() {
   return (
     <PageShell
       header={
-        <PageHeader
-          eyebrow="ADVERTISER"
+        <AdvertiserHeader
           title="플레이스 등록"
           description="MVP에서는 플레이스명만으로도 등록 가능합니다."
-          right={
-            <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/advertiser/places" variant="secondary" size="sm">
-                목록
-              </ButtonLink>
-              <ButtonLink href="/advertiser/campaigns" variant="secondary" size="sm">
-                캠페인
-              </ButtonLink>
-              <ButtonLink href="/advertiser/reports" variant="secondary" size="sm">
-                리포트
-              </ButtonLink>
-              <ButtonLink href="/advertiser/billing" variant="secondary" size="sm">
-                결제/충전
-              </ButtonLink>
-              <ButtonLink href="/advertiser" variant="secondary" size="sm">
-                광고주 홈
-              </ButtonLink>
-              <ButtonLink href="/" variant="secondary" size="sm">
-                홈
-              </ButtonLink>
-              <form action="/api/auth/logout" method="post">
-                <Button type="submit" variant="danger" size="sm">
-                  로그아웃
-                </Button>
-              </form>
-            </div>
-          }
         />
       }
     >
