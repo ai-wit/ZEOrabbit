@@ -52,7 +52,7 @@ export default async function ExperienceCampaignsPage() {
       <div className="space-y-6">
         {/* 등록 버튼 */}
         <div className="flex justify-end">
-          <ButtonLink href="/admin/experience-campaigns/new" variant="primary" size="sm">
+          <ButtonLink href="/admin/experience/new" variant="primary" size="sm">
             새 공고 생성
           </ButtonLink>
         </div>
@@ -97,7 +97,7 @@ export default async function ExperienceCampaignsPage() {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <ButtonLink href={`/admin/experience-campaigns/${campaign.id}`} variant="secondary" size="sm">
+                          <ButtonLink href={`/admin/experience/${campaign.id}`} variant="secondary" size="sm">
                             상세
                           </ButtonLink>
                         </div>

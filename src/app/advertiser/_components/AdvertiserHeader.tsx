@@ -26,6 +26,9 @@ export function AdvertiserHeader({ title, description }: AdvertiserHeaderProps) 
           <ButtonLink href="/advertiser/campaigns" variant="secondary" size="sm">
             캠페인
           </ButtonLink>
+          <ButtonLink href="/advertiser/experience" variant="secondary" size="sm">
+            체험단
+          </ButtonLink>
           <ButtonLink href="/advertiser/reports" variant="secondary" size="sm">
             리포트
           </ButtonLink>
