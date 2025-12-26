@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, Pill } from '@/app/_ui/primitives';
 
@@ -42,11 +42,51 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
     return `${formatNumber(n)}원`;
   }
 
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() => {
+    // URL 파라미터에서 step 값 읽기
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const stepParam = urlParams.get('step');
+      if (stepParam && !isNaN(Number(stepParam))) {
+        return Number(stepParam);
+      }
+    }
+    return 1;
+  });
+
+  // URL 파라미터에서 정보 읽기
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentId = urlParams.get('paymentId');
+      const paymentAmount = urlParams.get('paymentAmount');
+      const paymentStatus = urlParams.get('paymentStatus');
+      const placeType = urlParams.get('placeType');
+
+      if (paymentId && paymentAmount && paymentStatus) {
+        setPaymentInfo({
+          id: paymentId,
+          amount: parseInt(paymentAmount),
+          status: paymentStatus as any
+        });
+      }
+
+      if (placeType) {
+        setSelectedPlaceType(placeType as PlaceType);
+      }
+    }
+  }, []);
   const [selectedPlaceType, setSelectedPlaceType] = useState<PlaceType | null>(null);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
+
+  // 결제 관련 상태
+  const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'BANK_TRANSFER'>('CARD');
+  const [taxInvoiceRequested, setTaxInvoiceRequested] = useState(false);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [paymentInfo, setPaymentInfo] = useState<any>(null);
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
 
   // Step 5: 추가 정보 입력을 위한 상태
   const [additionalInfo, setAdditionalInfo] = useState({
@@ -81,6 +121,84 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
   };
 
   const canProceedToStep2 = selectedPlaceType && termsAgreed;
+
+  // 결제 처리 함수
+  const handlePayment = async () => {
+    if (!selectedPlan || !selectedPlaceType) {
+      alert('요금제와 매장 유형을 선택해주세요.');
+      return;
+    }
+
+    setIsPaymentProcessing(true);
+
+    try {
+      // 체험단 신청 및 결제 생성
+      const applicationData = {
+        pricingPlanId: selectedPlan.id,
+        placeType: selectedPlaceType,
+        paymentMethod,
+        taxInvoiceRequested,
+        // 추가 정보
+        businessName: additionalInfo.businessName,
+        openingDate: additionalInfo.openingDate,
+        shootingStartDate: additionalInfo.shootingStartDate,
+        currentRanking: additionalInfo.currentRanking,
+        monthlyTeamCapacity: additionalInfo.monthlyTeamCapacity,
+        address: additionalInfo.address,
+        representativeMenu: additionalInfo.representativeMenu,
+        localMomBenefit: additionalInfo.localMomBenefit,
+        contactPhone: additionalInfo.contactPhone,
+      };
+
+      const response = await fetch('/api/advertiser/experience/applications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(applicationData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || '신청 처리 중 오류가 발생했습니다.');
+      }
+
+      setApplicationId(result.application.id);
+      if (result.payment) {
+        setPaymentInfo({
+          id: result.payment.id,
+          amount: result.payment.amount,
+          status: result.payment.status
+        });
+      }
+
+      // 무통장 입금의 경우 바로 step 4로 이동
+      if (paymentMethod === 'BANK_TRANSFER') {
+        setCurrentStep(4);
+        return;
+      }
+
+      // 카드 결제의 경우 토스페이먼츠로 이동
+      if (paymentMethod === 'CARD' && result.payment) {
+        // 체험단 신청 API에서 이미 결제가 생성되었으므로 바로 토스페이먼츠 결제 페이지로 이동
+        const tossUrl = new URL('/advertiser/billing/toss', window.location.origin);
+        tossUrl.searchParams.set('orderId', result.payment.id);
+        tossUrl.searchParams.set('amount', result.payment.amount.toString());
+        tossUrl.searchParams.set('orderName', `${selectedPlan.displayName} 체험단 신청`);
+        tossUrl.searchParams.set('customerName', advertiserInfo.name);
+        tossUrl.searchParams.set('customerEmail', advertiserInfo.email);
+
+        window.location.href = tossUrl.toString();
+      }
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert(error instanceof Error ? error.message : '결제 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsPaymentProcessing(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -306,24 +424,87 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
         <Card className="p-8">
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-zinc-50">결제 정보 입력</h2>
-            <div className="bg-white/[0.03] border border-white/10 p-6 rounded-lg">
-              <div className="text-center py-8">
-                <h3 className="text-lg font-semibold text-zinc-50 mb-4">결제하기 - 개발 진행 중</h3>
-                <p className="text-zinc-400 mb-6">결제 시스템은 현재 개발 중입니다.</p>
-                <div className="bg-cyan-400/10 border border-cyan-400/20 p-4 rounded-lg">
-                  <p className="text-sm text-cyan-100 font-medium">선택된 요금제</p>
-                  <p className="text-lg font-semibold text-zinc-50 mt-1">
-                    {selectedPlan?.displayName} ({formatKrw(selectedPlan?.priceKrw || 0)})
-                  </p>
-                </div>
+
+            {/* 요금제 정보 */}
+            <div className="bg-cyan-400/10 border border-cyan-400/20 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-cyan-100 mb-4">선택된 요금제</h3>
+              <div className="space-y-2">
+                <p className="text-xl font-semibold text-zinc-50">
+                  {selectedPlan?.displayName}
+                </p>
+                <p className="text-2xl font-bold text-cyan-400">
+                  {formatKrw(selectedPlan?.priceKrw || 0)}
+                </p>
               </div>
             </div>
+
+            {/* 결제 수단 선택 */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-zinc-50">결제 수단</h3>
+              <div className="space-y-3">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="CARD"
+                    checked={paymentMethod === 'CARD'}
+                    onChange={(e) => setPaymentMethod(e.target.value as 'CARD')}
+                    className="text-cyan-400 focus:ring-cyan-400"
+                  />
+                  <span className="text-zinc-300">신용카드 / 간편결제</span>
+                </label>
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="BANK_TRANSFER"
+                    checked={paymentMethod === 'BANK_TRANSFER'}
+                    onChange={(e) => setPaymentMethod(e.target.value as 'BANK_TRANSFER')}
+                    className="text-cyan-400 focus:ring-cyan-400"
+                  />
+                  <span className="text-zinc-300">무통장 입금</span>
+                </label>
+              </div>
+            </div>
+
+            {/* 세금계산서 발행 */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-zinc-50">세금계산서 발행</h3>
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={taxInvoiceRequested}
+                  onChange={(e) => setTaxInvoiceRequested(e.target.checked)}
+                  className="text-cyan-400 focus:ring-cyan-400"
+                />
+                <span className="text-zinc-300">세금계산서 발행을 요청합니다</span>
+              </label>
+              {taxInvoiceRequested && (
+                <div className="bg-white/[0.03] border border-white/10 p-4 rounded-lg">
+                  <p className="text-sm text-zinc-400">
+                    세금계산서는 결제 완료 후 3-5일 이내에 발행됩니다.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 결제 안내 */}
+            <div className="bg-amber-400/10 border border-amber-400/20 p-4 rounded-lg">
+              <h4 className="text-sm font-semibold text-amber-100 mb-2">결제 안내</h4>
+              <ul className="text-sm text-amber-200 space-y-1">
+                <li>• 결제 완료 후 체험단 신청이 확정됩니다.</li>
+                <li>• 카드 결제의 경우 즉시 처리되며, 무통장 입금은 입금 확인 후 처리됩니다.</li>
+                <li>• 결제 취소는 신청 후 24시간 이내에만 가능합니다.</li>
+              </ul>
+            </div>
+
             <div className="flex justify-between pt-6">
               <Button variant="secondary" onClick={() => setCurrentStep(2)}>
                 이전 단계
               </Button>
-              <Button onClick={() => setCurrentStep(4)}>
-                결제하기
+              <Button
+                onClick={handlePayment}
+                disabled={isPaymentProcessing}
+              >
+                {isPaymentProcessing ? '처리 중...' : '결제하기'}
               </Button>
             </div>
           </div>
@@ -339,20 +520,87 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-zinc-50 mb-4">결제완료 - 개발 진행 중</h2>
-            <p className="text-zinc-400 mb-6">결제가 성공적으로 처리되었습니다.</p>
-            <div className="bg-cyan-400/10 border border-cyan-400/20 p-4 rounded-lg mb-6">
-              <p className="text-sm text-cyan-100 font-medium">결제 완료된 요금제</p>
-              <p className="text-lg font-semibold text-zinc-50 mt-1">
-                {selectedPlan?.displayName} ({formatKrw(selectedPlan?.priceKrw || 0)})
+            <h2 className="text-xl font-semibold text-zinc-50 mb-4">결제 완료</h2>
+            <p className="text-zinc-400 mb-6">
+              {paymentMethod === 'CARD'
+                ? '결제가 성공적으로 처리되었습니다.'
+                : '무통장 입금 신청이 완료되었습니다. 입금 확인 후 서비스가 시작됩니다.'
+              }
+            </p>
+
+            {/* 결제 정보 */}
+            <div className="bg-cyan-400/10 border border-cyan-400/20 p-6 rounded-lg mb-6">
+              <h3 className="text-lg font-semibold text-cyan-100 mb-4">결제 정보</h3>
+              <div className="space-y-3 text-left">
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">요금제</span>
+                  <span className="text-zinc-50 font-medium">{selectedPlan?.displayName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">결제 금액</span>
+                  <span className="text-zinc-50 font-medium">
+                    {formatKrw(paymentInfo?.amount || selectedPlan?.priceKrw || 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">결제 수단</span>
+                  <span className="text-zinc-50 font-medium">
+                    {paymentMethod === 'CARD' ? '신용카드' : '무통장 입금'}
+                  </span>
+                </div>
+                {paymentInfo && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">결제 상태</span>
+                      <span className={`font-medium ${
+                        paymentInfo.status === 'PAID' ? 'text-green-400' :
+                        paymentInfo.status === 'CREATED' ? 'text-yellow-400' : 'text-zinc-400'
+                      }`}>
+                        {paymentInfo.status === 'PAID' ? '결제 완료' :
+                         paymentInfo.status === 'CREATED' ? '결제 대기' : paymentInfo.status}
+                      </span>
+                    </div>
+                    {paymentInfo.id && (
+                      <div className="flex justify-between">
+                        <span className="text-zinc-400">결제 ID</span>
+                        <span className="text-zinc-50 font-mono text-sm">{paymentInfo.id}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* 다음 단계 안내 */}
+            <div className="bg-emerald-400/10 border border-emerald-400/20 p-4 rounded-lg mb-6">
+              <h4 className="text-sm font-semibold text-emerald-100 mb-2">다음 단계</h4>
+              <p className="text-sm text-emerald-200">
+                {paymentMethod === 'CARD'
+                  ? '담당 매니저가 24시간 내에 배정되어 체험단 운영을 도와드립니다.'
+                  : '입금 확인 후 담당 매니저가 배정되어 체험단 운영을 도와드립니다.'
+                }
               </p>
             </div>
             <div className="flex justify-center space-x-4">
-              <Button variant="secondary" onClick={() => setCurrentStep(3)}>
-                이전 단계
+              <Button variant="secondary" onClick={() => router.push('/advertiser/experience')}>
+                체험단 목록 보기
               </Button>
-              <Button onClick={() => setCurrentStep(5)}>
-                다음 단계
+              <Button               onClick={() => {
+                if (!selectedPlaceType) {
+                  alert('매장 유형을 먼저 선택해주세요.');
+                  setCurrentStep(1);
+                  return;
+                }
+                setCurrentStep(5);
+                // URL 파라미터 업데이트
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('step', '5');
+                  url.searchParams.set('placeType', selectedPlaceType);
+                  window.history.replaceState({}, '', url.toString());
+                }
+              }}>
+                추가 정보 입력하기
               </Button>
             </div>
           </div>
@@ -364,8 +612,23 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
         <Card className="p-8">
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-zinc-50">추가 정보 입력</h2>
+            <div className="text-sm text-zinc-400">
+              선택된 매장 유형: {selectedPlaceType || '없음'}
+            </div>
 
-            {selectedPlaceType === 'OPENING_SOON' && (
+            {!selectedPlaceType && (
+              <div className="bg-red-400/10 border border-red-400/20 p-4 rounded-lg">
+                <p className="text-red-100">매장 유형을 먼저 선택해주세요.</p>
+                <button
+                  onClick={() => setCurrentStep(1)}
+                  className="mt-2 text-sm text-red-300 underline hover:text-red-200"
+                >
+                  매장 유형 선택하기
+                </button>
+              </div>
+            )}
+
+            {selectedPlaceType && selectedPlaceType === 'OPENING_SOON' && (
               <div className="space-y-6">
                 <div className="bg-cyan-400/10 border border-cyan-400/20 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold text-cyan-100 mb-4">오픈 예정 매장 정보</h3>

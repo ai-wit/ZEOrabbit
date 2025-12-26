@@ -37,56 +37,100 @@ export default function TossPaymentSuccessPage() {
           return;
         }
 
-        // For development: simulate successful confirmation
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Development mode: simulating payment confirmation');
+        // 체험단 결제인지 일반 충전 결제인지 구분
+        const isExperiencePayment = orderId.startsWith('exp_');
 
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        if (isExperiencePayment) {
+          // 체험단 결제의 경우 체험단 결제 확인 API 사용
+          const parts = orderId.split('_');
+          const applicationId = parts[1]; // exp_{applicationId}_{timestamp}_{random}
 
-          setResult({
-            success: true,
-            payment: {
-              id: orderId,
-              amount: parseInt(amount),
-              status: 'PAID'
-            }
+          const response = await fetch('/api/advertiser/experience/applications/confirm', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              applicationId,
+              paymentKey,
+              orderId,
+              amount: parseInt(amount)
+            })
           });
-          setIsConfirming(false);
-          return;
-        }
 
-        // Production: confirm payment with API
-        if (!paymentKey) {
-          setResult({
-            success: false,
-            error: '결제 정보가 올바르지 않습니다.'
-          });
-          setIsConfirming(false);
-          return;
-        }
+          const data = await response.json();
 
-        const response = await fetch('/api/payments/confirm', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            paymentKey,
-            orderId,
-            amount: parseInt(amount)
-          })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          setResult({ success: true, payment: data.payment });
+          if (response.ok && data.success) {
+            // 체험단 결제 성공 시 결제 정보를 포함해서 체험단 신청 페이지로 리다이렉트
+            const params = new URLSearchParams({
+              step: '4',
+              paymentId: data.payment.id,
+              paymentAmount: data.payment.amount.toString(),
+              paymentStatus: data.payment.status,
+              applicationId: data.application.id,
+              placeType: data.application.placeType
+            });
+            window.location.href = `/advertiser/experience/new?${params.toString()}`;
+            return;
+          } else {
+            setResult({
+              success: false,
+              error: data.error || '결제 확인 중 오류가 발생했습니다.'
+            });
+          }
         } else {
-          setResult({
-            success: false,
-            error: data.error || '결제 확인 중 오류가 발생했습니다.'
+          // 일반 충전 결제
+          // For development: simulate successful confirmation
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Development mode: simulating payment confirmation');
+
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            setResult({
+              success: true,
+              payment: {
+                id: orderId,
+                amount: parseInt(amount),
+                status: 'PAID'
+              }
+            });
+            setIsConfirming(false);
+            return;
+          }
+
+          // Production: confirm payment with API
+          if (!paymentKey) {
+            setResult({
+              success: false,
+              error: '결제 정보가 올바르지 않습니다.'
+            });
+            setIsConfirming(false);
+            return;
+          }
+
+          const response = await fetch('/api/payments/confirm', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              paymentKey,
+              orderId,
+              amount: parseInt(amount)
+            })
           });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            setResult({ success: true, payment: data.payment });
+          } else {
+            setResult({
+              success: false,
+              error: data.error || '결제 확인 중 오류가 발생했습니다.'
+            });
+          }
         }
 
       } catch (error) {
