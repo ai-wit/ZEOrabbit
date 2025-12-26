@@ -33,13 +33,13 @@ export default async function AdvertiserExperienceCampaignsPage() {
       header={
         <AdvertiserHeader
           title="체험단 관리"
-          description="체험단 모집 공고를 생성하고 관리합니다."
+          description="체험단을 신청하고 결과를 확인 하실 수 있습니다."
         />
       }
     >
       <div className="mb-6 flex justify-end">
         <ButtonLink href="/advertiser/experience/new" variant="primary" size="sm">
-          새 체험단 공고
+          새 체험단 신청
         </ButtonLink>
       </div>
       <Card>
@@ -50,12 +50,6 @@ export default async function AdvertiserExperienceCampaignsPage() {
           {experienceCampaigns.length === 0 ? (
             <EmptyState
               title="아직 체험단 공고가 없습니다."
-              description="새로운 체험단 공고를 생성해보세요."
-              action={
-                <ButtonLink href="/advertiser/experience/new" variant="primary" size="sm">
-                  체험단 공고 생성
-                </ButtonLink>
-              }
             />
           ) : (
             experienceCampaigns.map((campaign) => (

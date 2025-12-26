@@ -47,6 +47,23 @@ enum ExperienceCampaignStatus {
   ENDED
 }
 
+enum ExperienceApplicationStatus {
+  DRAFT // 초안
+  BASIC_INFO_COMPLETED // 기본 정보 완료
+  PRICING_SELECTED // 요금제 선택 완료
+  PAYMENT_INFO_COMPLETED // 결제 정보 완료
+  PAYMENT_COMPLETED // 결제 완료
+  ADDITIONAL_INFO_COMPLETED // 추가 정보 완료
+  COMPLETED // 신청 완료
+  CANCELLED // 취소됨
+}
+
+enum PlaceType {
+  OPENING_SOON
+  OPERATING
+}
+
+
 enum TeamStatus {
   FORMING
   ACTIVE
@@ -217,6 +234,7 @@ model AdvertiserProfile {
   payments Payment[]
   advertiserManagers AdvertiserManager[]
   experienceCampaigns ExperienceCampaign[]
+  experienceApplications ExperienceApplication[]
 }
 
 model MemberProfile {
@@ -423,6 +441,7 @@ model Payment {
   updatedAt     DateTime      @updatedAt
 
   advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+  experienceApplications ExperienceApplication[]
 
   @@index([advertiserId, status, createdAt])
 }
@@ -528,8 +547,10 @@ model AdvertiserManager {
   @@index([managerId])
 }
 
+
 model ExperienceCampaign {
   id            String                  @id @default(cuid())
+  applicationId String?                 // 연결된 신청서 (관리자 직접 생성 시 null)
   managerId     String                  // AdminType이 MANAGER인 사용자
   advertiserId  String                  // 배정된 광고주
   placeId       String                  // 광고주의 장소
@@ -544,11 +565,13 @@ model ExperienceCampaign {
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
 
+  application ExperienceApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
   manager     User             @relation(fields: [managerId], references: [id], onDelete: Restrict)
   advertiser  AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
   place       Place            @relation(fields: [placeId], references: [id], onDelete: Restrict)
   teams       Team[]
 
+  @@index([applicationId])
   @@index([managerId, status])
   @@index([advertiserId])
   @@index([placeId])
@@ -617,5 +640,74 @@ model InvitationCode {
   @@index([code])
   @@index([expiresAt])
 }
+
+model ExperiencePricingPlan {
+  id          String     @id @default(cuid())
+  placeType   PlaceType  // 적용되는 매장 유형
+  name        String     // 요금제 이름 (Basic, Pro, VIP 등)
+  displayName String     // 표시 이름
+  priceKrw    Int        // 가격 (원)
+  description String?    @db.Text // 설명
+
+  // 요금제 세부 정보
+  teamCount   Int?       // 팀 수
+  leaderLevel String?    // 팀장 레벨 (Lv1, Lv2 등)
+  reviewCount Int?       // 리뷰 수
+  hasRankingBoost Boolean @default(false) // 순위 부스팅 포함 여부
+  trafficTarget Int?     // 유입 목표 수
+  saveTarget   Int?      // 저장 목표 수
+
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  applications ExperienceApplication[]
+
+  @@index([placeType, isActive])
+  @@unique([placeType, name])
+}
+
+model ExperienceApplication {
+  id                String                    @id @default(cuid())
+  advertiserId      String                    // 신청 광고주
+  placeType         PlaceType                 // 매장 유형
+  pricingPlanId     String                    // 선택한 요금제
+  status            ExperienceApplicationStatus @default(DRAFT)
+
+  // 약관 동의 정보
+  termsAgreed       Boolean                   @default(false)
+  termsAgreedAt     DateTime?
+
+  // 결제 정보
+  paymentId         String?                   // 연결된 Payment ID
+  paymentMethod     String?                   // CARD | BANK_TRANSFER
+  taxInvoiceRequested Boolean                @default(false)
+  taxInvoiceInfo    Json?                     // 세금계산서 발행 정보
+
+  // 추가 정보 (유형에 따라 다름)
+  businessName      String?                   // 상호명
+  openingDate       DateTime?                 // 오픈 예정일 (오픈 예정 유형)
+  shootingStartDate DateTime?                 // 촬영 가능 시작일 (오픈 예정 유형)
+  currentRanking    String?                   // 현재 네이버 플레이스 순위 고민 (운영 중 유형)
+  monthlyTeamCapacity Int?                    // 월 방문 가능 팀 수 (운영 중 유형)
+  address           String?                   // 매장 위치
+  representativeMenu String?                  // 대표 메뉴
+  localMomBenefit   String?                   // 로컬맘 제공 혜택 (만원 단위)
+  contactPhone      String?                   // 담당자 휴대폰 번호
+
+  // 메타데이터
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  completedAt       DateTime?                 // 신청 완료 시각
+
+  advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+  pricingPlan ExperiencePricingPlan @relation(fields: [pricingPlanId], references: [id], onDelete: Restrict)
+  payment     Payment?           @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  campaigns   ExperienceCampaign[]
+
+  @@index([advertiserId, status])
+  @@index([status, createdAt])
+}
+
 
 

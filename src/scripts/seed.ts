@@ -15,6 +15,7 @@ const ONE_BY_ONE_PNG_DATA_URL =
 
 type UserRole = "ADVERTISER" | "MEMBER" | "ADMIN";
 
+
 async function ensureUser(params: { email: string; role: UserRole }): Promise<{ userId: string }> {
   const email = params.email.toLowerCase();
   const existing = await prisma.user.findFirst({ where: { email }, select: { id: true } });
@@ -291,6 +292,174 @@ async function ensureParticipationScenario(params: {
   return created;
 }
 
+async function seedAdvertiserInfo(): Promise<void> {
+  console.log('광고주 정보 시드 중...');
+
+  // 광고주 1 정보 업데이트
+  await prisma.user.update({
+    where: { email: "advertiser+1@example.com" },
+    data: {
+      name: "홍길동",
+      phone: "010-1234-5678"
+    }
+  });
+
+  const advertiser1User = await prisma.user.findUnique({
+    where: { email: "advertiser+1@example.com" },
+    select: { id: true }
+  });
+
+  if (advertiser1User) {
+    await prisma.advertiserProfile.update({
+      where: { userId: advertiser1User.id },
+      data: {
+        displayName: "홍길동",
+        businessNumber: "123-45-67890"
+      }
+    });
+  }
+
+  // 광고주 2 정보 업데이트
+  await prisma.user.update({
+    where: { email: "advertiser+2@example.com" },
+    data: {
+      name: "김철수",
+      phone: "010-9876-5432"
+    }
+  });
+
+  const advertiser2User = await prisma.user.findUnique({
+    where: { email: "advertiser+2@example.com" },
+    select: { id: true }
+  });
+
+  if (advertiser2User) {
+    await prisma.advertiserProfile.update({
+      where: { userId: advertiser2User.id },
+      data: {
+        displayName: "김철수",
+        businessNumber: "987-65-43210"
+      }
+    });
+  }
+
+  console.log('광고주 정보 시드 완료.');
+}
+
+async function seedExperiencePricingPlans() {
+  console.log('체험단 요금제 시드 중...');
+
+  const plans = [
+    // 오픈 예정 매장 요금제
+    {
+      placeType: 'OPENING_SOON' as const,
+      name: 'Basic',
+      displayName: 'Basic 29만원',
+      priceKrw: 290000,
+      description: '오픈 준비 팩 - 리뷰 0개인 민망한 상태만 피하자. (사진/기본리뷰 확보)',
+      teamCount: 1,
+      leaderLevel: 'Lv1',
+      reviewCount: 25,
+      hasRankingBoost: false,
+      trafficTarget: 3000,
+      saveTarget: 100,
+    },
+    {
+      placeType: 'OPENING_SOON' as const,
+      name: 'Pro',
+      displayName: 'Pro 49만원',
+      priceKrw: 490000,
+      description: '그랜드 오픈 팩 - 오픈 첫 주에 리뷰 50개 깔아서 기선 제압하자.',
+      teamCount: 1,
+      leaderLevel: 'Lv1',
+      reviewCount: 50,
+      hasRankingBoost: true,
+      trafficTarget: 3000,
+      saveTarget: 100,
+    },
+    {
+      placeType: 'OPENING_SOON' as const,
+      name: 'VIP',
+      displayName: 'VIP 79만원',
+      priceKrw: 790000,
+      description: '런칭 컨설팅 팩 - 첫 단추부터 전문가가 끼워준다. SEO/키워드 완벽 세팅.',
+      teamCount: 1,
+      leaderLevel: 'Lv2',
+      reviewCount: 50,
+      hasRankingBoost: true,
+      trafficTarget: 5000,
+      saveTarget: 300,
+    },
+    // 운영 중인 매장 요금제
+    {
+      placeType: 'OPERATING' as const,
+      name: 'Basic',
+      displayName: '① 29만원 (실속형)',
+      priceKrw: 290000,
+      description: '자료 수집 & 기본 리뷰',
+      teamCount: 1,
+      leaderLevel: 'Lv1',
+      reviewCount: 25,
+      hasRankingBoost: false,
+      trafficTarget: 3000,
+      saveTarget: 100,
+    },
+    {
+      placeType: 'OPERATING' as const,
+      name: 'Tech',
+      displayName: '② 49만원 A (기술형)',
+      priceKrw: 490000,
+      description: '리뷰 + 순위 부스팅',
+      teamCount: 1,
+      leaderLevel: 'Lv1',
+      reviewCount: 25,
+      hasRankingBoost: true,
+      trafficTarget: 3000,
+      saveTarget: 100,
+    },
+    {
+      placeType: 'OPERATING' as const,
+      name: 'Volume',
+      displayName: '③ 49만원 B (물량형)',
+      priceKrw: 490000,
+      description: '리뷰 폭격 (물량 2배) - 도배 효과',
+      teamCount: 2,
+      leaderLevel: 'Lv1',
+      reviewCount: 50,
+      hasRankingBoost: false,
+      trafficTarget: 3000,
+      saveTarget: 100,
+    },
+    {
+      placeType: 'OPERATING' as const,
+      name: 'VIP',
+      displayName: '④ 79만원 (VIP형)',
+      priceKrw: 790000,
+      description: '지역 1등 만들기 (Total) - 고퀄리티 보장',
+      teamCount: 2,
+      leaderLevel: 'Lv2',
+      reviewCount: 50,
+      hasRankingBoost: true,
+      trafficTarget: 5000,
+      saveTarget: 300,
+    },
+  ];
+
+  for (const planData of plans) {
+    await prisma.experiencePricingPlan.upsert({
+      where: {
+        placeType_name: {
+          placeType: planData.placeType,
+          name: planData.name,
+        },
+      },
+      update: planData,
+      create: planData,
+    });
+  }
+  console.log('체험단 요금제 시드 완료.');
+}
+
 async function run(): Promise<void> {
   await ensurePolicies();
 
@@ -486,6 +655,12 @@ async function run(): Promise<void> {
     amountKrw: 1000,
     status: "REQUESTED"
   });
+
+  // 체험단 요금제 시드
+  await seedExperiencePricingPlans();
+
+  // 광고주 정보 시드
+  await seedAdvertiserInfo();
 
   await prisma.auditLog.create({
     data: { actorUserId: null, action: "CLI_SEED_DONE", payloadJson: { at: new Date().toISOString() } }

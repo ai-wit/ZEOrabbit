@@ -17,13 +17,14 @@ function parseDateOnly(value: string | undefined): Date | null {
 }
 
 export default async function AdminReviewsPage(props: {
-  searchParams?: { status?: string; q?: string; from?: string; to?: string };
+  searchParams?: { status?: string; q?: string; from?: string; to?: string; campaignId?: string };
 }) {
   const statusParam = props.searchParams?.status ?? "ALL";
   const q = (props.searchParams?.q ?? "").trim().toLowerCase();
   const from = parseDateOnly(props.searchParams?.from);
   const to = parseDateOnly(props.searchParams?.to);
   const toExclusive = to ? new Date(to.getTime() + 24 * 60 * 60 * 1000) : null;
+  const campaignId = props.searchParams?.campaignId;
 
   const statusFilter =
     statusParam === "PENDING_REVIEW" || statusParam === "MANUAL_REVIEW"
@@ -37,6 +38,11 @@ export default async function AdminReviewsPage(props: {
     status: (statusFilter as ParticipationStatus | null)
       ? (statusFilter as ParticipationStatus)
       : { in: defaultStatuses },
+    ...(campaignId
+      ? {
+          missionDay: { campaignId }
+        }
+      : {}),
     ...(q
       ? {
           OR: [
@@ -82,17 +88,41 @@ export default async function AdminReviewsPage(props: {
     }
   });
 
+  // 특정 캠페인 필터링 시 캠페인 정보 조회
+  let campaignInfo = null;
+  if (campaignId) {
+    campaignInfo = await prisma.campaign.findUnique({
+      where: { id: campaignId },
+      select: {
+        name: true,
+        place: { select: { name: true } }
+      }
+    });
+  }
+
+  const pageTitle = campaignId ? `${campaignInfo?.place.name ?? '캠페인'} 검수 대기` : "검수 대기";
+  const pageDescription = campaignId
+    ? `${campaignInfo?.name ?? ''} 캠페인의 검수 대기 항목입니다.`
+    : "상태/이메일/기간으로 필터링합니다.";
+
   return (
     <PageShell
       header={
         <AdminHeader
-          title="검수 대기"
-          description="상태/이메일/기간으로 필터링합니다."
+          title={pageTitle}
+          description={pageDescription}
         />
       }
     >
       <Card>
         <div className="border-b border-white/10 px-6 py-5">
+          {campaignId && (
+            <div className="mb-4">
+              <ButtonLink href="/admin/reviews" variant="secondary" size="sm">
+                전체 검수 대기 보기
+              </ButtonLink>
+            </div>
+          )}
           <form method="get" className="grid gap-4 sm:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="status">상태</Label>
