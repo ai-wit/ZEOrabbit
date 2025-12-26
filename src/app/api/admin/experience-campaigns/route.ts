@@ -4,10 +4,11 @@ import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 
 const createCampaignSchema = z.object({
-  advertiserId: z.string(),
-  placeId: z.string(),
+  applicationId: z.string(), // 체험단 신청서 ID
+  placeId: z.string(), // 장소 ID
   title: z.string().min(1).max(100),
-  description: z.string().optional(),
+  missionGuide: z.string().min(1), // 미션 가이드 (촬영 포인트)
+  benefits: z.string().min(1), // 제공 내역
   targetTeamCount: z.number().min(1).max(50).default(1),
   maxMembersPerTeam: z.number().min(2).max(10).default(5),
   applicationDeadline: z.string().datetime(),
@@ -38,10 +39,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = createCampaignSchema.parse(body);
 
+    // 체험단 신청 정보 조회
+    const application = await prisma.experienceApplication.findUnique({
+      where: { id: data.applicationId },
+      include: {
+        advertiser: true,
+        pricingPlan: true
+      }
+    });
+
+    if (!application) {
+      return NextResponse.json(
+        { error: "존재하지 않는 체험단 신청입니다" },
+        { status: 404 }
+      );
+    }
+
     // 광고주 배정 확인
     const assignment = await prisma.advertiserManager.findFirst({
       where: {
-        advertiser: { userId: data.advertiserId },
+        advertiserId: application.advertiserId,
         managerId: user.id,
         isActive: true
       }
@@ -49,34 +66,48 @@ export async function POST(request: NextRequest) {
 
     if (!assignment) {
       return NextResponse.json(
-        { error: "배정되지 않은 광고주입니다" },
+        { error: "배정되지 않은 광고주의 체험단 신청입니다" },
         { status: 403 }
       );
     }
 
-    // 장소 소유권 확인
+    // 이미 공고가 등록된 신청인지 확인
+    const existingCampaign = await prisma.experienceCampaign.findFirst({
+      where: { applicationId: data.applicationId }
+    });
+
+    if (existingCampaign) {
+      return NextResponse.json(
+        { error: "이미 공고가 등록된 체험단 신청입니다" },
+        { status: 400 }
+      );
+    }
+
+    // 선택된 장소 검증
     const place = await prisma.place.findFirst({
       where: {
         id: data.placeId,
-        advertiserId: assignment.advertiserId
+        advertiserId: application.advertiserId
       }
     });
 
     if (!place) {
       return NextResponse.json(
-        { error: "광고주의 장소가 아닙니다" },
-        { status: 404 }
+        { error: "존재하지 않거나 접근할 수 없는 장소입니다" },
+        { status: 400 }
       );
     }
 
     // 공고 생성
     const campaign = await prisma.experienceCampaign.create({
       data: {
+        applicationId: data.applicationId,
         managerId: user.id,
-        advertiserId: assignment.advertiserId,
-        placeId: data.placeId,
+        advertiserId: application.advertiserId,
+        placeId: place.id,
         title: data.title,
-        description: data.description,
+        missionGuide: data.missionGuide,
+        benefits: data.benefits,
         targetTeamCount: data.targetTeamCount,
         maxMembersPerTeam: data.maxMembersPerTeam,
         applicationDeadline: new Date(data.applicationDeadline),
@@ -86,7 +117,12 @@ export async function POST(request: NextRequest) {
       include: {
         advertiser: { include: { user: { select: { name: true } } } },
         place: true,
-        manager: { select: { name: true } }
+        manager: { select: { name: true } },
+        application: {
+          include: {
+            pricingPlan: { select: { displayName: true } }
+          }
+        }
       }
     });
 

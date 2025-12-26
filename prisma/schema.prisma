@@ -83,6 +83,23 @@ enum TeamMembershipStatus {
   EXPIRED
 }
 
+enum SubmissionStatus {
+  DRAFT // 초안
+  SUBMITTED // 제출됨
+  UNDER_REVIEW // 검토 중
+  APPROVED // 승인됨
+  REJECTED // 거절됨
+  REVISION_REQUESTED // 수정 요청
+}
+
+enum ReportStatus {
+  PENDING // 생성 대기
+  GENERATED // 생성됨
+  UNDER_REVIEW // 검토 중
+  APPROVED // 승인됨
+  REJECTED // 거절됨
+}
+
 enum CampaignStatus {
   DRAFT
   ACTIVE
@@ -182,6 +199,10 @@ model User {
   teamMemberships     TeamMembership[]    // 팀 멤버십들 (팀장/팀원 모두)
   decidedMemberships  TeamMembership[]    @relation("DecidedByUser") // 승인/거절한 팀 멤버십들
   invitationCodes     InvitationCode[]    // 생성한 초대코드들
+  experienceSubmissions ExperienceSubmission[] // 제출한 자료/컨텐츠들
+  reviewedSubmissions  ExperienceSubmission[] @relation("SubmissionReviewer") // 검토한 제출물들
+  generatedReports     ExperienceReport[] // 생성한 리포트들
+  reviewedReports      ExperienceReport[] @relation("ReportReviewer") // 검토한 리포트들
 }
 
 model AuthCredential {
@@ -556,6 +577,8 @@ model ExperienceCampaign {
   placeId       String                  // 광고주의 장소
   title         String
   description   String?                 @db.Text
+  missionGuide  String?                 @db.Text // 미션 가이드 (촬영 포인트)
+  benefits      String?                 @db.Text // 제공 내역
   targetTeamCount Int                   @default(1) // 목표 팀 수
   maxMembersPerTeam Int                @default(5) // 팀당 최대 인원
   applicationDeadline DateTime          // 신청 마감일
@@ -570,6 +593,7 @@ model ExperienceCampaign {
   advertiser  AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
   place       Place            @relation(fields: [placeId], references: [id], onDelete: Restrict)
   teams       Team[]
+  report      ExperienceReport? // 체험단 완료 후 생성되는 리포트
 
   @@index([applicationId])
   @@index([managerId, status])
@@ -592,6 +616,7 @@ model Team {
   leader            User              @relation(fields: [leaderId], references: [id], onDelete: Restrict)
   memberships       TeamMembership[]
   invitationCodes   InvitationCode[]
+  submission        ExperienceSubmission? // 팀의 제출물
 
   @@index([experienceCampaignId])
   @@index([leaderId])
@@ -707,6 +732,81 @@ model ExperienceApplication {
 
   @@index([advertiserId, status])
   @@index([status, createdAt])
+}
+
+model ExperienceSubmission {
+  id            String            @id @default(cuid())
+  teamId        String            // 제출하는 팀
+  submittedBy   String            // 제출한 사용자 (팀장)
+  status        SubmissionStatus  @default(DRAFT)
+
+  // 자료 정보 (파일 업로드)
+  materialsPath String?           // 업로드된 자료 파일 경로 (zip 파일)
+  materialsSize Int?              // 파일 크기 (bytes)
+  materialsUploadedAt DateTime?   // 자료 업로드 시각
+
+  // 컨텐츠 정보 (텍스트/링크)
+  contentTitle  String?           // 컨텐츠 제목
+  contentBody   String?           @db.Text // 컨텐츠 본문
+  contentLinks  Json?             // 관련 링크들 (배열)
+  contentSubmittedAt DateTime?    // 컨텐츠 제출 시각
+
+  // 검토 정보
+  reviewedBy    String?           // 검토한 관리자
+  reviewedAt    DateTime?         // 검토 시각
+  reviewComments String?          @db.Text // 검토 의견
+  revisionRequestedAt DateTime?   // 수정 요청 시각
+  revisionComments String?        @db.Text // 수정 요청 내용
+
+  // 메타데이터
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  team         Team  @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  submitter    User  @relation(fields: [submittedBy], references: [id], onDelete: Restrict)
+  reviewer     User? @relation("SubmissionReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@index([teamId])
+  @@index([submittedBy])
+  @@index([status])
+  @@index([reviewedBy])
+  @@unique([teamId]) // 팀당 하나의 제출만 가능
+}
+
+model ExperienceReport {
+  id            String        @id @default(cuid())
+  campaignId    String        // 리포트 대상 체험단 공고
+  generatedBy   String        // 리포트 생성한 관리자
+  status        ReportStatus  @default(PENDING)
+
+  // 리포트 내용
+  title         String        // 리포트 제목
+  summary       String?       @db.Text // 요약
+  statistics    Json          // 통계 데이터 (팀 수, 참여자 수, 제출률 등)
+  insights      String?       @db.Text // 인사이트 및 분석
+  recommendations String?     @db.Text // 권장사항
+
+  // 첨부 파일들
+  attachments   Json?         // 첨부 파일 정보 (제출된 자료들, 컨텐츠 등)
+
+  // 검토 정보
+  reviewedBy    String?       // 검토한 관리자
+  reviewedAt    DateTime?     // 검토 시각
+  reviewComments String?      @db.Text // 검토 의견
+
+  // 메타데이터
+  generatedAt   DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  campaign ExperienceCampaign @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  generator User              @relation(fields: [generatedBy], references: [id], onDelete: Restrict)
+  reviewer  User?             @relation("ReportReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([generatedBy])
+  @@index([status])
+  @@index([reviewedBy])
+  @@unique([campaignId]) // 체험단 공고당 하나의 리포트만 가능
 }
 
 

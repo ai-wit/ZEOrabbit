@@ -146,6 +146,9 @@ export default async function ExperienceApplicationDetailPage(props: {
 
         {/* 액션 버튼들 */}
         <div className="flex flex-wrap items-center gap-2">
+          <ButtonLink href={`/admin/experience/${application.id}/campaigns/new`} variant="primary" size="sm">
+            공고 등록
+          </ButtonLink>
           <ButtonLink href="/admin/experience" variant="secondary" size="sm">
             목록으로 돌아가기
           </ButtonLink>

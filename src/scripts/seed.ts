@@ -1140,9 +1140,199 @@ async function run(): Promise<void> {
   await seedAdditionalPayments();
   console.log('추가 결제 데이터 시드 완료');
 
+  // 체험단 전체 워크플로우 시드
+  console.log('체험단 워크플로우 시드 시작...');
+  await seedExperienceWorkflow();
+  console.log('체험단 워크플로우 시드 완료');
+
   await prisma.auditLog.create({
     data: { actorUserId: null, action: "CLI_SEED_DONE", payloadJson: { at: new Date().toISOString() } }
   });
+}
+
+async function seedExperienceWorkflow(): Promise<void> {
+  console.log('체험단 워크플로우 시드 중...');
+
+  // 관리자 조회
+  const managerUser = await prisma.user.findFirst({
+    where: { role: "ADMIN", adminType: "MANAGER" },
+    select: { id: true }
+  });
+
+  if (!managerUser) {
+    console.log('매니저 사용자를 찾을 수 없습니다. 시드를 건너뜁니다.');
+    return;
+  }
+
+  // 완료된 체험단 신청 조회
+  const completedApplications = await prisma.experienceApplication.findMany({
+    where: { status: "COMPLETED" },
+    include: {
+      advertiser: true,
+      pricingPlan: true
+    },
+    take: 2 // 2개만 테스트용으로 사용
+  });
+
+  for (const application of completedApplications) {
+    // 체험단 공고 생성
+    const campaign = await prisma.experienceCampaign.create({
+      data: {
+        applicationId: application.id,
+        managerId: managerUser.id,
+        advertiserId: application.advertiserId,
+        placeId: application.advertiser.places[0]?.id || (await prisma.place.findFirst({ select: { id: true } }))?.id,
+        title: `${application.businessName} 체험단`,
+        description: `${application.businessName}의 체험단 공고입니다.`,
+        targetTeamCount: application.pricingPlan.teamCount || 1,
+        maxMembersPerTeam: 5,
+        applicationDeadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7일 후
+        startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14일 후
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30일 후
+        status: "ACTIVE"
+      }
+    });
+
+    console.log(`체험단 공고 생성: ${campaign.title}`);
+
+    // 팀장 사용자들 조회
+    const teamLeaders = await prisma.user.findMany({
+      where: {
+        role: "MEMBER",
+        memberType: "TEAM_LEADER"
+      },
+      take: campaign.targetTeamCount
+    });
+
+    // 각 팀장마다 팀 생성
+    for (let i = 0; i < Math.min(teamLeaders.length, campaign.targetTeamCount); i++) {
+      const leader = teamLeaders[i];
+
+      // 팀 생성 (매니저 승인)
+      const team = await prisma.team.create({
+        data: {
+          experienceCampaignId: campaign.id,
+          leaderId: leader.id,
+          name: `${leader.name || '팀장'}의 팀 ${i + 1}`,
+          description: `체험단을 함께할 팀입니다.`,
+          status: i === 0 ? "ACTIVE" : "FORMING" // 첫 번째 팀만 ACTIVE 상태로
+        }
+      });
+
+      // 팀장 멤버십 생성
+      await prisma.teamMembership.create({
+        data: {
+          teamId: team.id,
+          memberId: leader.id,
+          role: "LEADER",
+          status: "APPROVED",
+          decidedAt: new Date(),
+          decidedBy: managerUser.id
+        }
+      });
+
+      console.log(`팀 생성: ${team.name} (팀장: ${leader.name || leader.email})`);
+
+      // 첫 번째 팀에만 팀원 추가 (다른 상태들을 테스트하기 위해)
+      if (i === 0) {
+        // 일반 멤버들 조회
+        const members = await prisma.user.findMany({
+          where: {
+            role: "MEMBER",
+            memberType: "NORMAL"
+          },
+          take: 3
+        });
+
+        // 팀원 멤버십 생성 (2명 승인, 1명 대기)
+        for (let j = 0; j < members.length; j++) {
+          const member = members[j];
+          const status = j < 2 ? "APPROVED" : "PENDING";
+
+          await prisma.teamMembership.create({
+            data: {
+              teamId: team.id,
+              memberId: member.id,
+              role: "MEMBER",
+              status,
+              decidedAt: status === "APPROVED" ? new Date() : undefined,
+              decidedBy: status === "APPROVED" ? leader.id : undefined
+            }
+          });
+        }
+
+        // 제출물 생성 (팀이 ACTIVE 상태이므로)
+        await prisma.experienceSubmission.create({
+          data: {
+            teamId: team.id,
+            submittedBy: leader.id,
+            status: "SUBMITTED",
+            materialsPath: `uploads/materials/${team.id}/sample.zip`,
+            materialsSize: 1024 * 1024, // 1MB
+            contentTitle: "체험단 후기",
+            contentBody: `${application.businessName} 체험단에 참여하여 좋은 경험을 했습니다. 음식도 맛있고 서비스도 친절했습니다.`,
+            contentLinks: ["https://example.com/review1", "https://example.com/review2"]
+          }
+        });
+
+        console.log(`제출물 생성: ${team.name}`);
+      }
+    }
+
+    // 하나의 공고는 종료 상태로 만들어 리포트 테스트
+    if (application === completedApplications[0]) {
+      await prisma.experienceCampaign.update({
+        where: { id: campaign.id },
+        data: { status: "ENDED" }
+      });
+
+      // 리포트 생성
+      const teams = await prisma.team.findMany({
+        where: { experienceCampaignId: campaign.id },
+        include: {
+          memberships: { where: { status: "APPROVED" } },
+          submission: true
+        }
+      });
+
+      const totalTeams = teams.length;
+      const activeTeams = teams.filter(team => team.status === "ACTIVE").length;
+      const totalMembers = teams.reduce((sum, team) => sum + team.memberships.length, 0);
+      const submittedTeams = teams.filter(team => team.submission).length;
+      const approvedSubmissions = teams.filter(team =>
+        team.submission && team.submission.status === "APPROVED"
+      ).length;
+
+      const statistics = {
+        totalTeams,
+        activeTeams,
+        totalMembers,
+        submittedTeams,
+        approvedSubmissions,
+        submissionRate: totalTeams > 0 ? (submittedTeams / totalTeams * 100) : 0,
+        approvalRate: submittedTeams > 0 ? (approvedSubmissions / submittedTeams * 100) : 0
+      };
+
+      await prisma.experienceReport.create({
+        data: {
+          campaignId: campaign.id,
+          generatedBy: managerUser.id,
+          title: `${campaign.title} - 체험단 리포트`,
+          statistics,
+          summary: `체험단 기간 동안 ${totalTeams}개 팀이 참여하였으며, ${submittedTeams}개 팀이 자료를 제출하였습니다.`,
+          insights: `참여율 ${(submittedTeams / totalTeams * 100).toFixed(1)}%, 승인율 ${(approvedSubmissions / submittedTeams * 100).toFixed(1)}%로 체험단이 성공적으로 진행되었습니다.`,
+          recommendations: "참여자들의 피드백을 바탕으로 매장 개선에 활용하시기 바랍니다.",
+          status: "APPROVED", // 광고주가 확인할 수 있도록 승인 상태로
+          reviewedBy: managerUser.id,
+          reviewedAt: new Date()
+        }
+      });
+
+      console.log(`리포트 생성: ${campaign.title}`);
+    }
+  }
+
+  console.log('체험단 워크플로우 시드 완료');
 }
 
 run()

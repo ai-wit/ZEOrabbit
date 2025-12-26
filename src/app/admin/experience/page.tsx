@@ -43,6 +43,33 @@ interface ManagedAdvertiser {
   };
 }
 
+interface ExperienceCampaign {
+  id: string;
+  title: string;
+  status: string;
+  targetTeamCount: number;
+  applicationDeadline: string;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  advertiser: {
+    user: { name: string | null };
+  };
+  place: {
+    name: string;
+  };
+  teams: Array<{
+    id: string;
+    status: string;
+    _count: { memberships: number };
+  }>;
+  application?: {
+    pricingPlan: {
+      displayName: string;
+    };
+  };
+}
+
 interface User {
   id: string;
   role: string;
@@ -64,11 +91,20 @@ function formatDateTime(d: string | Date): string {
   }).format(new Date(d));
 }
 
+function formatDate(d: string | Date): string {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date(d));
+}
+
 export default function ExperienceApplicationsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const activeTab = searchParams?.get('tab') || 'applications';
   const page = Number(searchParams?.get('page')) || 1;
-  const pageSize = 10; // 한 페이지에 보여줄 항목 수
+  const pageSize = 10;
   const advertiserId = searchParams?.get('advertiserId') || undefined;
 
   const [loading, setLoading] = useState(true);
@@ -77,11 +113,9 @@ export default function ExperienceApplicationsPage() {
   const [managedAdvertisers, setManagedAdvertisers] = useState<ManagedAdvertiser[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [campaigns, setCampaigns] = useState<ExperienceCampaign[]>([]);
+  const [totalCampaigns, setTotalCampaigns] = useState(0);
 
-  const isManager = user?.adminType === "MANAGER";
-  const totalPages = Math.ceil(totalCount / pageSize);
-
-  // 데이터 로드
   useEffect(() => {
     loadData();
   }, [page, advertiserId]);
@@ -122,19 +156,16 @@ export default function ExperienceApplicationsPage() {
       // 쿼리 조건 설정
       const whereCondition: any = {};
       if (isManager) {
-        // 매니저는 담당 광고주만 조회
         if (advertiserId && allowedAdvertiserIds.includes(advertiserId)) {
           whereCondition.advertiserId = advertiserId;
         } else if (allowedAdvertiserIds.length > 0) {
           whereCondition.advertiserId = { in: allowedAdvertiserIds };
         } else {
-          // 담당 광고주가 없는 경우 빈 결과 반환
           setApplications([]);
           setTotalCount(0);
           return;
         }
       } else if (advertiserId) {
-        // 슈퍼관리자는 특정 광고주 필터링 가능
         whereCondition.advertiserId = advertiserId;
       }
 
@@ -158,6 +189,16 @@ export default function ExperienceApplicationsPage() {
       setApplications(applicationsData.applications || []);
       setTotalCount(applicationsData.totalCount || 0);
 
+      // 공고 목록 조회 (매니저인 경우)
+      if (isManager) {
+        const campaignsResponse = await fetch('/api/admin/experience-campaigns');
+        if (campaignsResponse.ok) {
+          const campaignsData = await campaignsResponse.json();
+          setCampaigns(campaignsData.campaigns || []);
+          setTotalCampaigns(campaignsData.pagination?.total || 0);
+        }
+      }
+
     } catch (error) {
       console.error('데이터 로드 실패:', error);
       setError(error instanceof Error ? error.message : '데이터를 불러올 수 없습니다.');
@@ -165,6 +206,9 @@ export default function ExperienceApplicationsPage() {
       setLoading(false);
     }
   };
+
+  const isManager = user?.adminType === "MANAGER";
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   if (loading) {
     return (
@@ -213,150 +257,251 @@ export default function ExperienceApplicationsPage() {
       }
     >
       <div className="space-y-6">
-        {/* 신청 목록 */}
-            <Card>
-              <CardBody className="space-y-4">
-                <div className="text-sm font-semibold text-zinc-50">
-                  체험단 신청 목록 ({formatNumber(totalCount)}개)
-                </div>
+        {/* 탭 */}
+        <div className="border-b border-white/10">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => {
+                const params = new URLSearchParams();
+                params.set('tab', 'applications');
+                if (advertiserId) params.set('advertiserId', advertiserId);
+                router.push(`/admin/experience?${params.toString()}`);
+              }}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'applications'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-zinc-400 hover:text-zinc-300 hover:border-zinc-600'
+              }`}
+            >
+              신청 관리
+            </button>
+            <button
+              onClick={() => {
+                const params = new URLSearchParams();
+                params.set('tab', 'campaigns');
+                router.push(`/admin/experience?${params.toString()}`);
+              }}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'campaigns'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-zinc-400 hover:text-zinc-300 hover:border-zinc-600'
+              }`}
+            >
+              공고 관리
+            </button>
+          </nav>
+        </div>
 
-                {/* 매니저 필터링 */}
-                {isManager && managedAdvertisers.length > 0 && (
-                  <div className="flex items-center gap-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
-                    <span className="text-sm text-zinc-300">광고주 필터:</span>
-                    <select
-                      value={advertiserId || ""}
-                      onChange={(e) => {
-                        const newAdvertiserId = e.target.value;
-                        const params = new URLSearchParams();
-                        if (newAdvertiserId) {
-                          params.set('advertiserId', newAdvertiserId);
-                        }
-                        // 페이지는 1로 리셋
-                        router.push(`/admin/experience?${params.toString()}`);
+        {/* 탭 컨텐츠 */}
+        {activeTab === 'applications' && (
+          <Card>
+            <CardBody className="space-y-4">
+              <div className="text-sm font-semibold text-zinc-50">
+                체험단 신청 목록 ({formatNumber(totalCount)}개)
+              </div>
+
+              {/* 매니저 필터링 */}
+              {isManager && managedAdvertisers.length > 0 && (
+                <div className="flex items-center gap-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+                  <span className="text-sm text-zinc-300">광고주 필터:</span>
+                  <select
+                    value={advertiserId || ""}
+                    onChange={(e) => {
+                      const newAdvertiserId = e.target.value;
+                      const params = new URLSearchParams();
+                      if (newAdvertiserId) {
+                        params.set('advertiserId', newAdvertiserId);
+                      }
+                      router.push(`/admin/experience?${params.toString()}`);
+                    }}
+                    className="px-3 py-2 text-sm bg-zinc-700 border border-zinc-600 rounded-md text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">전체 담당 광고주</option>
+                    {managedAdvertisers.map((am) => (
+                      <option key={am.advertiserId} value={am.advertiserId}>
+                        {am.advertiser.user.name}
+                      </option>
+                    ))}
+                  </select>
+                  {advertiserId && (
+                    <Button
+                      onClick={() => {
+                        router.push('/admin/experience');
                       }}
-                      className="px-3 py-2 text-sm bg-zinc-700 border border-zinc-600 rounded-md text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      variant="secondary"
+                      size="sm"
                     >
-                      <option value="">전체 담당 광고주</option>
-                      {managedAdvertisers.map((am) => (
-                        <option key={am.advertiserId} value={am.advertiserId}>
-                          {am.advertiser.user.name}
-                        </option>
-                      ))}
-                    </select>
-                    {advertiserId && (
+                      필터 해제
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02]">
+                <DividerList>
+                  {applications.length === 0 ? (
+                    <EmptyState title="신청된 체험단이 없습니다." />
+                  ) : (
+                    applications.map((application) => (
+                      <div key={application.id} className="px-6 py-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="text-sm font-semibold text-zinc-50">
+                                {application.businessName}
+                              </div>
+                              <Pill tone={
+                                application.status === "PAYMENT_COMPLETED" ? "emerald" :
+                                application.status === "PAYMENT_INFO_COMPLETED" ? "cyan" :
+                                application.status === "COMPLETED" ? "indigo" : "neutral"
+                              }>
+                                {application.status === "PAYMENT_COMPLETED" ? "결제완료" :
+                                 application.status === "PAYMENT_INFO_COMPLETED" ? "결제대기" :
+                                 application.status === "COMPLETED" ? "신청완료" : application.status}
+                              </Pill>
+                            </div>
+                            <div className="text-xs text-zinc-400">
+                              광고주: {application.advertiser.user.name} · 유형: {application.placeType === "OPENING_SOON" ? "오픈예정" : "운영중"}
+                            </div>
+                            <div className="text-xs text-zinc-500">
+                              요금제: {application.pricingPlan.displayName} ({formatNumber(application.pricingPlan.priceKrw)}원)
+                            </div>
+                            {application.payment && (
+                              <div className="text-xs text-zinc-500">
+                                결제: {application.payment.provider === "TOSS" ? "토스페이먼츠" : application.payment.provider} · {application.payment.status === "PAID" ? "결제완료" : application.payment.status}
+                              </div>
+                            )}
+                            <div className="text-xs text-zinc-500">
+                              신청일: {formatDateTime(application.createdAt)}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <ButtonLink href={`/admin/experience/${application.id}`} variant="secondary" size="sm">
+                              상세
+                            </ButtonLink>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </DividerList>
+              </div>
+
+              {/* 페이지 네비게이션 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-zinc-400">
+                    {formatNumber((page - 1) * pageSize + 1)} - {formatNumber(Math.min(page * pageSize, totalCount))} / {formatNumber(totalCount)}개
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {page > 1 ? (
                       <Button
                         onClick={() => {
-                          router.push('/admin/experience');
+                          const params = new URLSearchParams(searchParams?.toString());
+                          params.set('page', (page - 1).toString());
+                          if (advertiserId) params.set('advertiserId', advertiserId);
+                          router.push(`/admin/experience?${params.toString()}`);
                         }}
                         variant="secondary"
                         size="sm"
                       >
-                        필터 해제
+                        이전
                       </Button>
+                    ) : (
+                      <span className="text-sm text-zinc-600 px-3 py-1">이전</span>
+                    )}
+                    <span className="text-sm text-zinc-400 px-3">
+                      {page} / {totalPages}
+                    </span>
+                    {page < totalPages ? (
+                      <Button
+                        onClick={() => {
+                          const params = new URLSearchParams(searchParams?.toString());
+                          params.set('page', (page + 1).toString());
+                          if (advertiserId) params.set('advertiserId', advertiserId);
+                          router.push(`/admin/experience?${params.toString()}`);
+                        }}
+                        variant="secondary"
+                        size="sm"
+                      >
+                        다음
+                      </Button>
+                    ) : (
+                      <span className="text-sm text-zinc-600 px-3 py-1">다음</span>
                     )}
                   </div>
-                )}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.02]">
-              <DividerList>
-                {applications.length === 0 ? (
-                  <EmptyState title="신청된 체험단이 없습니다." />
-                ) : (
-                  applications.map((application) => (
-                    <div key={application.id} className="px-6 py-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="text-sm font-semibold text-zinc-50">
-                              {application.businessName}
+        {activeTab === 'campaigns' && (
+          <Card>
+            <CardBody className="space-y-4">
+              <div className="text-sm font-semibold text-zinc-50">
+                체험단 공고 목록 ({formatNumber(totalCampaigns)}개)
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02]">
+                <DividerList>
+                  {campaigns.length === 0 ? (
+                    <EmptyState title="등록된 체험단 공고가 없습니다." />
+                  ) : (
+                    campaigns.map((campaign) => (
+                      <div key={campaign.id} className="px-6 py-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="text-sm font-semibold text-zinc-50">
+                                {campaign.title}
+                              </div>
+                              <Pill tone={
+                                campaign.status === "ACTIVE" ? "emerald" :
+                                campaign.status === "DRAFT" ? "neutral" :
+                                campaign.status === "PAUSED" ? "yellow" : "gray"
+                              }>
+                                {campaign.status === "ACTIVE" ? "진행중" :
+                                 campaign.status === "DRAFT" ? "초안" :
+                                 campaign.status === "PAUSED" ? "일시중지" : campaign.status}
+                              </Pill>
                             </div>
-                            <Pill tone={
-                              application.status === "PAYMENT_COMPLETED" ? "emerald" :
-                              application.status === "PAYMENT_INFO_COMPLETED" ? "cyan" :
-                              application.status === "COMPLETED" ? "indigo" : "neutral"
-                            }>
-                              {application.status === "PAYMENT_COMPLETED" ? "결제완료" :
-                               application.status === "PAYMENT_INFO_COMPLETED" ? "결제대기" :
-                               application.status === "COMPLETED" ? "신청완료" : application.status}
-                            </Pill>
-                          </div>
-                          <div className="text-xs text-zinc-400">
-                            광고주: {application.advertiser.user.name} · 유형: {application.placeType === "OPENING_SOON" ? "오픈예정" : "운영중"}
-                          </div>
-                          <div className="text-xs text-zinc-500">
-                            요금제: {application.pricingPlan.displayName} ({formatNumber(application.pricingPlan.priceKrw)}원)
-                          </div>
-                          {application.payment && (
+                            <div className="text-xs text-zinc-400">
+                              광고주: {campaign.advertiser.user.name} · 장소: {campaign.place.name}
+                            </div>
+                            {campaign.application && (
+                              <div className="text-xs text-zinc-500">
+                                요금제: {campaign.application.pricingPlan.displayName}
+                              </div>
+                            )}
                             <div className="text-xs text-zinc-500">
-                              결제: {application.payment.provider === "TOSS" ? "토스페이먼츠" : application.payment.provider} · {application.payment.status === "PAID" ? "결제완료" : application.payment.status}
+                              목표 팀 수: {campaign.targetTeamCount}팀 · 신청 마감: {formatDateTime(campaign.applicationDeadline)}
                             </div>
-                          )}
-                          <div className="text-xs text-zinc-500">
-                            신청일: {formatDateTime(application.createdAt)}
+                            <div className="text-xs text-zinc-500">
+                              체험 기간: {formatDate(campaign.startDate)} ~ {formatDate(campaign.endDate)}
+                            </div>
+                            <div className="text-xs text-zinc-500">
+                              팀 현황: {campaign.teams.filter(t => t.status === 'ACTIVE').length}/{campaign.targetTeamCount}팀 모집중
+                            </div>
+                            <div className="text-xs text-zinc-500">
+                              생성일: {formatDateTime(campaign.createdAt)}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <ButtonLink href={`/admin/experience/${application.id}`} variant="secondary" size="sm">
-                            상세
-                          </ButtonLink>
+                          <div className="flex gap-2">
+                            <ButtonLink href={`/admin/experience-campaigns/${campaign.id}`} variant="secondary" size="sm">
+                              상세
+                            </ButtonLink>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </DividerList>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* 페이지 네비게이션 */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-zinc-400">
-              {formatNumber((page - 1) * pageSize + 1)} - {formatNumber(Math.min(page * pageSize, totalCount))} / {formatNumber(totalCount)}개
-            </div>
-            <div className="flex items-center gap-2">
-              {page > 1 ? (
-                <Button
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams?.toString());
-                    params.set('page', (page - 1).toString());
-                    if (advertiserId) params.set('advertiserId', advertiserId);
-                    router.push(`/admin/experience?${params.toString()}`);
-                  }}
-                  variant="secondary"
-                  size="sm"
-                >
-                  이전
-                </Button>
-              ) : (
-                <span className="text-sm text-zinc-600 px-3 py-1">이전</span>
-              )}
-              <span className="text-sm text-zinc-400 px-3">
-                {page} / {totalPages}
-              </span>
-              {page < totalPages ? (
-                <Button
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams?.toString());
-                    params.set('page', (page + 1).toString());
-                    if (advertiserId) params.set('advertiserId', advertiserId);
-                    router.push(`/admin/experience?${params.toString()}`);
-                  }}
-                  variant="secondary"
-                  size="sm"
-                >
-                  다음
-                </Button>
-              ) : (
-                <span className="text-sm text-zinc-600 px-3 py-1">다음</span>
-              )}
-            </div>
-          </div>
+                    ))
+                  )}
+                </DividerList>
+              </div>
+            </CardBody>
+          </Card>
         )}
       </div>
     </PageShell>
   );
 }
-

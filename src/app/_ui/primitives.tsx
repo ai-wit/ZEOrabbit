@@ -146,6 +146,59 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { cla
   );
 }
 
+export function TextInput(props: {
+  label?: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+  min?: string;
+  className?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      {props.label && <label className="text-sm font-semibold text-zinc-200">{props.label}</label>}
+      <Input
+        type={props.type || "text"}
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+        placeholder={props.placeholder}
+        required={props.required}
+        min={props.min}
+        className={props.className}
+      />
+    </div>
+  );
+}
+
+export function TextArea(props: {
+  label?: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+  required?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      {props.label && <label className="text-sm font-semibold text-zinc-200">{props.label}</label>}
+      <textarea
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+        placeholder={props.placeholder}
+        rows={props.rows || 3}
+        required={props.required}
+        className={cn(
+          "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10",
+          props.className
+        )}
+      />
+    </div>
+  );
+}
+
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { className?: string }) {
   return (
     <select
