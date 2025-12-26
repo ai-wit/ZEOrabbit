@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
+import { UserRole } from "@prisma/client";
 import { toDateOnlyUtc } from "@/server/date/date-only";
 import { PageShell } from "@/app/_ui/shell";
 import {
@@ -72,9 +73,9 @@ export default async function AdminPage() {
     payoutsLast7d
   ] = await Promise.all([
     prisma.user.count(),
-    prisma.user.count({ where: { role: "ADVERTISER" } }),
-    prisma.user.count({ where: { role: "MEMBER" } }),
-    prisma.user.count({ where: { role: "ADMIN" } }),
+    prisma.user.count({ where: { role: UserRole.ADVERTISER } }),
+    prisma.user.count({ where: { role: UserRole.MEMBER } }),
+    prisma.user.count({ where: { role: UserRole.ADMIN } }),
     prisma.campaign.count({ where: { status: "ACTIVE" } }),
     prisma.campaign.count({ where: { status: "DRAFT" } }),
     prisma.campaign.count({ where: { status: "PAUSED" } }),
