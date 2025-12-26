@@ -92,7 +92,7 @@ export default async function CampaignsPage() {
                             <Pill tone={
                               campaign.status === "ACTIVE" ? "emerald" :
                               campaign.status === "DRAFT" ? "cyan" :
-                              campaign.status === "PAUSED" ? "yellow" : "neutral"
+                              campaign.status === "PAUSED" ? "neutral" : "neutral"
                             }>
                               {campaign.status === "ACTIVE" ? "활성" :
                                campaign.status === "DRAFT" ? "초안" :

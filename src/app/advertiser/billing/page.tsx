@@ -45,8 +45,20 @@ export default async function AdvertiserBillingPage() {
               <Label htmlFor="amountKrw">금액(원)</Label>
               <Input id="amountKrw" name="amountKrw" type="number" min={1000} step={1000} required placeholder="예: 50000" />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentMethod">결제 수단</Label>
+              <select
+                id="paymentMethod"
+                name="paymentMethod"
+                className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg text-zinc-50 focus:border-cyan-400/50 focus:outline-none"
+                required
+              >
+                <option value="DEV">DEV 즉시 반영 (개발용)</option>
+                <option value="TOSS">토스페이먼츠 카드 결제</option>
+              </select>
+            </div>
             <Button type="submit" variant="primary" className="w-full">
-              충전(DEV 즉시 반영)
+              충전하기
             </Button>
           </form>
         </CardBody>

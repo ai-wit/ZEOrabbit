@@ -6,7 +6,8 @@ import { prisma } from "@/server/prisma";
 import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-profile";
 
 const Schema = z.object({
-  amountKrw: z.coerce.number().int().min(1000).max(100_000_000)
+  amountKrw: z.coerce.number().int().min(1000).max(100_000_000),
+  paymentMethod: z.enum(["DEV", "TOSS"])
 });
 
 export async function POST(req: Request) {
@@ -14,47 +15,108 @@ export async function POST(req: Request) {
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
   const form = await req.formData();
+  console.log('Topup request form data:', Object.fromEntries(form.entries()));
+
   const parsed = Schema.safeParse({
-    amountKrw: form.get("amountKrw")
+    amountKrw: form.get("amountKrw"),
+    paymentMethod: form.get("paymentMethod")
   });
+
+  console.log('Parsed data:', parsed);
+
   if (!parsed.success) {
+    console.error('Validation failed:', parsed.error);
     return NextResponse.redirect(new URL("/advertiser/billing", req.url), 303);
   }
 
-  const providerRef = `dev_${crypto.randomUUID()}`;
+  const { amountKrw, paymentMethod } = parsed.data;
+  console.log('Processing payment:', { amountKrw, paymentMethod });
 
-  await prisma.$transaction(async (tx) => {
-    const payment = await tx.payment.create({
-      data: {
-        advertiserId,
-        amountKrw: parsed.data.amountKrw,
-        status: "PAID",
-        provider: "DEV",
-        providerRef
-      },
-      select: { id: true }
+  if (paymentMethod === "DEV") {
+    // 기존 DEV 즉시 결제 로직
+    const providerRef = `dev_${crypto.randomUUID()}`;
+
+    await prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.create({
+        data: {
+          advertiserId,
+          amountKrw,
+          status: "PAID",
+          provider: "DEV",
+          providerRef
+        },
+        select: { id: true }
+      });
+
+      await tx.budgetLedger.create({
+        data: {
+          advertiserId,
+          amountKrw,
+          reason: "TOPUP",
+          refId: payment.id
+        }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorUserId: user.id,
+          action: "ADVERTISER_TOPUP_DEV",
+          targetType: "Payment",
+          targetId: payment.id,
+          payloadJson: { amountKrw }
+        }
+      });
     });
 
-    await tx.budgetLedger.create({
-      data: {
-        advertiserId,
-        amountKrw: parsed.data.amountKrw,
-        reason: "TOPUP",
-        refId: payment.id
-      }
-    });
+    return NextResponse.redirect(new URL("/advertiser/billing", req.url), 303);
 
-    await tx.auditLog.create({
-      data: {
-        actorUserId: user.id,
-        action: "ADVERTISER_TOPUP_DEV",
-        targetType: "Payment",
-        targetId: payment.id,
-        payloadJson: { amountKrw: parsed.data.amountKrw }
-      }
-    });
-  });
+  } else if (paymentMethod === "TOSS") {
+    // 토스페이먼츠 결제 로직
+    try {
+      // Create payment record first
+      const orderId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      await prisma.payment.create({
+        data: {
+          id: orderId,
+          advertiserId,
+          amountKrw,
+          status: "CREATED",
+          provider: "TOSS",
+          providerRef: orderId, // Will be updated with actual paymentKey after confirmation
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+      });
+
+      // Create audit log
+      await prisma.auditLog.create({
+        data: {
+          actorUserId: user.id,
+          action: "ADVERTISER_TOPUP_TOSS_INIT",
+          targetType: "Payment",
+          targetId: orderId,
+          payloadJson: { amountKrw, paymentMethod: "TOSS" }
+        }
+      });
+
+      // Redirect to Toss payment page with payment parameters
+      const paymentUrl = new URL("/advertiser/billing/toss", req.url);
+      paymentUrl.searchParams.set("orderId", orderId);
+      paymentUrl.searchParams.set("amount", amountKrw.toString());
+      paymentUrl.searchParams.set("orderName", `${amountKrw.toLocaleString()}원 충전`);
+
+      return NextResponse.redirect(paymentUrl, 303);
+
+      return NextResponse.redirect(paymentUrl, 303);
+
+    } catch (error) {
+      console.error("Toss payment initialization error:", error);
+      return NextResponse.redirect(new URL("/advertiser/billing?error=toss_init_failed", req.url), 303);
+    }
+  }
+
+  // Fallback
   return NextResponse.redirect(new URL("/advertiser/billing", req.url), 303);
 }
 
