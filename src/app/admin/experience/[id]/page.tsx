@@ -1,12 +1,9 @@
 import { prisma } from "@/server/prisma";
 import { PageShell } from "@/app/_ui/shell";
 import {
-  Button,
   ButtonLink,
   Card,
   CardBody,
-  DividerList,
-  EmptyState,
   KeyValueRow,
   Pill
 } from "@/app/_ui/primitives";
@@ -35,43 +32,27 @@ function formatDate(d: Date): string {
   }).format(d);
 }
 
-export default async function ExperienceCampaignDetailPage(props: {
+export default async function ExperienceApplicationDetailPage(props: {
   params: { id: string };
 }) {
-  const campaign = await prisma.experienceCampaign.findUnique({
+  const application = await prisma.experienceApplication.findUnique({
     where: { id: props.params.id },
     include: {
-      manager: {
-        select: {
-          user: { select: { email: true, name: true } }
-        }
+      pricingPlan: {
+        select: { name: true, displayName: true, priceKrw: true, description: true }
       },
       advertiser: {
         include: {
           user: { select: { name: true, email: true } }
         }
       },
-      place: { select: { name: true } },
-      teams: {
-        include: {
-          leader: {
-            select: {
-              user: { select: { email: true, name: true } }
-            }
-          },
-          _count: {
-            select: { memberships: true }
-          }
-        },
-        orderBy: { createdAt: "desc" }
-      },
-      _count: {
-        select: { teams: true }
+      payment: {
+        select: { id: true, status: true, amountKrw: true, provider: true, createdAt: true }
       }
     }
   });
 
-  if (!campaign) {
+  if (!application) {
     notFound();
   }
 
@@ -79,105 +60,89 @@ export default async function ExperienceCampaignDetailPage(props: {
     <PageShell
       header={
         <AdminHeader
-          title={`${campaign.place.name} 체험단 공고`}
-          description={`${campaign.title} - ${campaign.manager.user.name ?? campaign.manager.user.email} 담당`}
+          title={`${application.businessName} 체험단 신청`}
+          description={`${application.advertiser.user.name}님의 신청 - ${application.pricingPlan.displayName}`}
         />
       }
     >
       <div className="space-y-6">
-        {/* 공고 기본 정보 */}
+        {/* 신청 기본 정보 */}
         <Card>
           <CardBody className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div className="space-y-1">
-                <div className="text-sm font-semibold text-zinc-50">{campaign.title}</div>
+                <div className="text-sm font-semibold text-zinc-50">{application.businessName}</div>
                 <div className="text-xs text-zinc-400">
-                  담당 매니저: {campaign.manager.user.name ?? campaign.manager.user.email}
+                  광고주: {application.advertiser.user.name ?? application.advertiser.user.email}
                 </div>
               </div>
               <Pill tone={
-                campaign.status === "ACTIVE" ? "emerald" :
-                campaign.status === "DRAFT" ? "cyan" : "neutral"
+                application.status === "PAYMENT_COMPLETED" ? "emerald" :
+                application.status === "PAYMENT_INFO_COMPLETED" ? "cyan" :
+                application.status === "COMPLETED" ? "indigo" : "neutral"
               }>
-                {campaign.status === "ACTIVE" ? "활성" :
-                 campaign.status === "DRAFT" ? "초안" : "종료"}
+                {application.status === "PAYMENT_COMPLETED" ? "결제완료" :
+                 application.status === "PAYMENT_INFO_COMPLETED" ? "결제대기" :
+                 application.status === "COMPLETED" ? "신청완료" : application.status}
               </Pill>
             </div>
 
-            {campaign.description && (
-              <div className="text-sm text-zinc-300 whitespace-pre-wrap">
-                {campaign.description}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <KeyValueRow k="광고주" v={application.advertiser.user.name ?? application.advertiser.user.email} />
+              <KeyValueRow k="매장 유형" v={application.placeType === "OPENING_SOON" ? "오픈 예정" : "운영 중"} />
+              <KeyValueRow k="요금제" v={`${application.pricingPlan.displayName} (${formatNumber(application.pricingPlan.priceKrw)}원)`} />
+              <KeyValueRow k="상호명" v={application.businessName} />
+              <KeyValueRow k="주소" v={application.address} />
+              {application.representativeMenu && <KeyValueRow k="대표 메뉴" v={application.representativeMenu} />}
+              {application.contactPhone && <KeyValueRow k="연락처" v={application.contactPhone} />}
+              <KeyValueRow k="신청일" v={formatDateTime(application.createdAt)} />
+              {application.termsAgreedAt && <KeyValueRow k="약관 동의일" v={formatDateTime(application.termsAgreedAt)} />}
+            </div>
+
+            {/* 오픈 예정 매장 추가 정보 */}
+            {application.placeType === "OPENING_SOON" && (
+              <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-100 mb-3">오픈 예정 매장 정보</h4>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {application.openingDate && <KeyValueRow k="오픈 예정일" v={formatDate(application.openingDate)} />}
+                  {application.shootingStartDate && <KeyValueRow k="촬영 시작일" v={formatDate(application.shootingStartDate)} />}
+                  {application.localMomBenefit && <KeyValueRow k="로컬맘 혜택" v={application.localMomBenefit} />}
+                </div>
               </div>
             )}
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <KeyValueRow k="광고주" v={campaign.advertiser.user.name ?? campaign.advertiser.user.email} />
-              <KeyValueRow k="장소" v={campaign.place.name} />
-              <KeyValueRow k="신청 마감" v={formatDateTime(campaign.applicationDeadline)} />
-              <KeyValueRow k="체험 기간" v={`${formatDate(campaign.startDate)} ~ ${formatDate(campaign.endDate)}`} />
-              <KeyValueRow k="목표 팀 수" v={`${formatNumber(campaign.targetTeamCount)}팀`} />
-              <KeyValueRow k="팀당 최대 인원" v={`${formatNumber(campaign.maxMembersPerTeam)}명`} />
-              <KeyValueRow k="생성일" v={formatDateTime(campaign.createdAt)} />
-              <KeyValueRow k="수정일" v={formatDateTime(campaign.updatedAt)} />
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* 팀 목록 */}
-        <Card>
-          <CardBody className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-semibold text-zinc-50">
-                참여 팀 목록 ({formatNumber(campaign._count.teams)}팀)
+            {/* 운영 중인 매장 추가 정보 */}
+            {application.placeType === "OPERATING" && (
+              <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                <h4 className="text-sm font-semibold text-emerald-100 mb-3">운영 중인 매장 정보</h4>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {application.currentRanking && <KeyValueRow k="현재 순위" v={application.currentRanking} />}
+                  {application.monthlyTeamCapacity && <KeyValueRow k="월간 팀 수용량" v={`${application.monthlyTeamCapacity}팀`} />}
+                </div>
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.02]">
-              <DividerList>
-                {campaign.teams.length === 0 ? (
-                  <EmptyState title="아직 참여한 팀이 없습니다." />
-                ) : (
-                  campaign.teams.map((team) => (
-                    <div key={team.id} className="px-6 py-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="text-sm font-semibold text-zinc-50">
-                              {team.name}
-                            </div>
-                            <Pill tone={
-                              team.status === "ACTIVE" ? "emerald" :
-                              team.status === "FORMING" ? "cyan" :
-                              team.status === "COMPLETED" ? "indigo" : "neutral"
-                            }>
-                              {team.status === "ACTIVE" ? "활성" :
-                               team.status === "FORMING" ? "구성중" :
-                               team.status === "COMPLETED" ? "완료" : "취소"}
-                            </Pill>
-                          </div>
-                          <div className="text-xs text-zinc-400">
-                            팀장: {team.leader.user.name ?? team.leader.user.email}
-                          </div>
-                          {team.description && (
-                            <div className="text-xs text-zinc-500">
-                              {team.description}
-                            </div>
-                          )}
-                          <div className="text-xs text-zinc-500">
-                            멤버 수: {formatNumber(team._count.memberships)}명 · 생성: {formatDateTime(team.createdAt)}
-                          </div>
-                        </div>
-                        <ButtonLink href={`/admin/teams/${team.id}`} variant="secondary" size="sm">
-                          팀 상세
-                        </ButtonLink>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </DividerList>
-            </div>
+            )}
           </CardBody>
         </Card>
+
+        {/* 결제 정보 */}
+        {application.payment && (
+          <Card>
+            <CardBody className="space-y-4">
+              <div className="text-sm font-semibold text-zinc-50">결제 정보</div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <KeyValueRow k="결제 ID" v={application.payment.id} />
+                <KeyValueRow k="결제 금액" v={`${formatNumber(application.payment.amountKrw)}원`} />
+                <KeyValueRow k="결제 수단" v={application.payment.provider === "TOSS" ? "토스페이먼츠" : application.payment.provider} />
+                <KeyValueRow k="결제 상태" v={
+                  <Pill tone={application.payment.status === "PAID" ? "emerald" : "cyan"}>
+                    {application.payment.status === "PAID" ? "결제완료" : application.payment.status}
+                  </Pill>
+                } />
+                <KeyValueRow k="결제일" v={formatDateTime(application.payment.createdAt)} />
+              </div>
+            </CardBody>
+          </Card>
+        )}
 
         {/* 액션 버튼들 */}
         <div className="flex flex-wrap items-center gap-2">

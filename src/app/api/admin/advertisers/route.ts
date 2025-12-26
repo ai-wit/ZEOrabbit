@@ -27,14 +27,35 @@ async function requireSuperAdmin() {
 // GET /api/admin/advertisers - 광고주 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    await requireSuperAdmin();
-
+    const user = await requireRole("ADMIN");
+    const isManager = user.adminType === "MANAGER";
     const { searchParams } = new URL(request.url);
+
+    // 매니저 권한 확인
+    if (isManager && user.adminType !== "MANAGER") {
+      return NextResponse.json(
+        { error: "매니저 권한이 필요합니다" },
+        { status: 403 }
+      );
+    }
+
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
     const offset = (page - 1) * limit;
 
+    // 매니저인 경우 담당 광고주만 조회
+    const whereCondition: any = {};
+    if (isManager) {
+      whereCondition.advertiserManagers = {
+        some: {
+          managerId: user.id,
+          isActive: true
+        }
+      };
+    }
+
     const advertisers = await prisma.advertiserProfile.findMany({
+      where: whereCondition,
       include: {
         user: {
           select: {
@@ -101,7 +122,7 @@ export async function GET(request: NextRequest) {
       campaigns: advertiser.campaigns
     }));
 
-    const total = await prisma.advertiserProfile.count();
+    const total = await prisma.advertiserProfile.count({ where: whereCondition });
 
     return NextResponse.json({
       advertisers: formattedAdvertisers,

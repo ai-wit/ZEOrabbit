@@ -343,6 +343,102 @@ async function seedAdvertiserInfo(): Promise<void> {
     });
   }
 
+  // 광고주 3 정보 업데이트 (존재하는 경우에만)
+  const advertiser3Exists = await prisma.user.findUnique({
+    where: { email: "advertiser+3@example.com" },
+    select: { id: true }
+  });
+
+  if (advertiser3Exists) {
+    await prisma.user.update({
+      where: { email: "advertiser+3@example.com" },
+      data: {
+        name: "이영희",
+        phone: "010-5555-6666"
+      }
+    });
+
+    await prisma.advertiserProfile.update({
+      where: { userId: advertiser3Exists.id },
+      data: {
+        displayName: "이영희",
+        businessNumber: "456-78-90123"
+      }
+    });
+  }
+
+  // 광고주 4 정보 업데이트 (존재하는 경우에만)
+  const advertiser4Exists = await prisma.user.findUnique({
+    where: { email: "advertiser+4@example.com" },
+    select: { id: true }
+  });
+
+  if (advertiser4Exists) {
+    await prisma.user.update({
+      where: { email: "advertiser+4@example.com" },
+      data: {
+        name: "박민수",
+        phone: "010-7777-8888"
+      }
+    });
+
+    await prisma.advertiserProfile.update({
+      where: { userId: advertiser4Exists.id },
+      data: {
+        displayName: "박민수",
+        businessNumber: "321-54-98765"
+      }
+    });
+  }
+
+  // 광고주 5 정보 업데이트 (존재하는 경우에만)
+  const advertiser5Exists = await prisma.user.findUnique({
+    where: { email: "advertiser+5@example.com" },
+    select: { id: true }
+  });
+
+  if (advertiser5Exists) {
+    await prisma.user.update({
+      where: { email: "advertiser+5@example.com" },
+      data: {
+        name: "정수진",
+        phone: "010-9999-0000"
+      }
+    });
+
+    await prisma.advertiserProfile.update({
+      where: { userId: advertiser5Exists.id },
+      data: {
+        displayName: "정수진",
+        businessNumber: "654-32-10987"
+      }
+    });
+  }
+
+  // 광고주 6 정보 업데이트 (존재하는 경우에만)
+  const advertiser6Exists = await prisma.user.findUnique({
+    where: { email: "advertiser+6@example.com" },
+    select: { id: true }
+  });
+
+  if (advertiser6Exists) {
+    await prisma.user.update({
+      where: { email: "advertiser+6@example.com" },
+      data: {
+        name: "최대현",
+        phone: "010-1111-2222"
+      }
+    });
+
+    await prisma.advertiserProfile.update({
+      where: { userId: advertiser6Exists.id },
+      data: {
+        displayName: "최대현",
+        businessNumber: "789-01-23456"
+      }
+    });
+  }
+
   console.log('광고주 정보 시드 완료.');
 }
 
@@ -460,12 +556,380 @@ async function seedExperiencePricingPlans() {
   console.log('체험단 요금제 시드 완료.');
 }
 
+async function seedExperienceApplications(): Promise<void> {
+  console.log('체험단 신청 및 결제 데이터 시드 중...');
+
+  // 광고주 프로필 ID들 조회
+  const advertiserProfiles = await prisma.advertiserProfile.findMany({
+    where: {
+      user: {
+        email: {
+          in: [
+            "advertiser+1@example.com",
+            "advertiser+2@example.com",
+            "advertiser+3@example.com",
+            "advertiser+4@example.com",
+            "advertiser+5@example.com",
+            "advertiser+6@example.com"
+          ]
+        }
+      }
+    },
+    select: {
+      id: true,
+      user: { select: { email: true } }
+    }
+  });
+
+  const applications = [
+    // 광고주 1: 홍길동 - 오픈 예정 매장 Basic 요금제 (카드 결제 완료)
+    {
+      advertiserEmail: "advertiser+1@example.com",
+      placeType: 'OPENING_SOON' as const,
+      pricingPlanName: 'Basic',
+      paymentMethod: 'CARD' as const,
+      status: 'PAYMENT_COMPLETED' as const,
+      paymentAmount: 290000,
+      businessName: '홍카페',
+      openingDate: new Date('2025-02-01'),
+      shootingStartDate: new Date('2025-01-20'),
+      address: '서울시 강남구 역삼동 123-45',
+      representativeMenu: '아메리카노, 카페라떼, 크로와상',
+      localMomBenefit: '10000',
+      contactPhone: '010-1234-5678'
+    },
+    // 광고주 1: 홍길동 - 운영 중인 매장 Tech 요금제 (카드 결제 완료)
+    {
+      advertiserEmail: "advertiser+1@example.com",
+      placeType: 'OPERATING' as const,
+      pricingPlanName: 'Tech',
+      paymentMethod: 'CARD' as const,
+      status: 'PAYMENT_COMPLETED' as const,
+      paymentAmount: 490000,
+      businessName: '홍네일아트',
+      currentRanking: '순위',
+      monthlyTeamCapacity: '15',
+      address: '서울시 서초구 서초동 456-78',
+      representativeMenu: '젤네일, 페이디큐어',
+      contactPhone: '010-1234-5678'
+    },
+    // 광고주 2: 김철수 - 오픈 예정 매장 Pro 요금제 (무통장 입금 대기)
+    {
+      advertiserEmail: "advertiser+2@example.com",
+      placeType: 'OPENING_SOON' as const,
+      pricingPlanName: 'Pro',
+      paymentMethod: 'BANK_TRANSFER' as const,
+      status: 'PAYMENT_INFO_COMPLETED' as const,
+      paymentAmount: 490000,
+      businessName: '김분식',
+      openingDate: new Date('2025-03-15'),
+      shootingStartDate: new Date('2025-03-01'),
+      address: '부산시 해운대구 센텀동 789-01',
+      representativeMenu: '떡볶이, 튀김, 김밥',
+      localMomBenefit: '15000',
+      contactPhone: '010-9876-5432'
+    },
+    // 광고주 2: 김철수 - 운영 중인 매장 Volume 요금제 (카드 결제 완료)
+    {
+      advertiserEmail: "advertiser+2@example.com",
+      placeType: 'OPERATING' as const,
+      pricingPlanName: 'Volume',
+      paymentMethod: 'CARD' as const,
+      status: 'PAYMENT_COMPLETED' as const,
+      paymentAmount: 490000,
+      businessName: '김치킨',
+      currentRanking: '유입',
+      monthlyTeamCapacity: '20',
+      address: '부산시 남포동 광복로 100-1',
+      representativeMenu: '후라이드, 양념치킨',
+      contactPhone: '010-9876-5432'
+    },
+    // 광고주 3: 이영희 - 오픈 예정 매장 VIP 요금제 (카드 결제 완료)
+    {
+      advertiserEmail: "advertiser+3@example.com",
+      placeType: 'OPENING_SOON' as const,
+      pricingPlanName: 'VIP',
+      paymentMethod: 'CARD' as const,
+      status: 'PAYMENT_COMPLETED' as const,
+      paymentAmount: 790000,
+      businessName: '이영희요가',
+      openingDate: new Date('2025-04-01'),
+      shootingStartDate: new Date('2025-03-15'),
+      address: '서울시 강남구 삼성동 456-78',
+      representativeMenu: '요가 클래스, 필라테스',
+      localMomBenefit: '20000',
+      contactPhone: '010-5555-6666'
+    },
+    // 광고주 4: 박민수 - 운영 중인 매장 Basic 요금제 (무통장 입금 대기)
+    {
+      advertiserEmail: "advertiser+4@example.com",
+      placeType: 'OPERATING' as const,
+      pricingPlanName: 'Basic',
+      paymentMethod: 'BANK_TRANSFER' as const,
+      status: 'PAYMENT_INFO_COMPLETED' as const,
+      paymentAmount: 290000,
+      businessName: '박민수분식',
+      currentRanking: '리뷰수',
+      monthlyTeamCapacity: '8',
+      address: '서울시 송파구 잠실동 789-01',
+      representativeMenu: '떡볶이, 순대, 튀김',
+      contactPhone: '010-7777-8888'
+    },
+    // 광고주 5: 정수진 - 오픈 예정 매장 Pro 요금제 (카드 결제 완료)
+    {
+      advertiserEmail: "advertiser+5@example.com",
+      placeType: 'OPENING_SOON' as const,
+      pricingPlanName: 'Pro',
+      paymentMethod: 'CARD' as const,
+      status: 'PAYMENT_COMPLETED' as const,
+      paymentAmount: 490000,
+      businessName: '정수진베이커리',
+      openingDate: new Date('2025-05-01'),
+      shootingStartDate: new Date('2025-04-15'),
+      address: '서울시 마포구 연남동 123-45',
+      representativeMenu: '크루아상, 마카롱, 커피',
+      localMomBenefit: '15000',
+      contactPhone: '010-9999-0000'
+    },
+    // 광고주 6: 최대현 - 운영 중인 매장 VIP 요금제 (카드 결제 완료)
+    {
+      advertiserEmail: "advertiser+6@example.com",
+      placeType: 'OPERATING' as const,
+      pricingPlanName: 'VIP',
+      paymentMethod: 'CARD' as const,
+      status: 'PAYMENT_COMPLETED' as const,
+      paymentAmount: 790000,
+      businessName: '최대현카페',
+      currentRanking: '순위',
+      monthlyTeamCapacity: '25',
+      address: '서울시 종로구 익선동 456-78',
+      representativeMenu: '디저트, 커피, 브런치',
+      contactPhone: '010-1111-2222'
+    }
+  ];
+
+  for (const appData of applications) {
+    // 광고주 프로필 조회
+    const advertiserProfile = advertiserProfiles.find(ap => ap.user.email === appData.advertiserEmail);
+    if (!advertiserProfile) {
+      console.warn(`광고주 프로필을 찾을 수 없음: ${appData.advertiserEmail}`);
+      continue;
+    }
+
+    // 요금제 조회
+    const pricingPlan = await prisma.experiencePricingPlan.findFirst({
+      where: {
+        placeType: appData.placeType,
+        name: appData.pricingPlanName
+      }
+    });
+
+    if (!pricingPlan) {
+      console.warn(`요금제를 찾을 수 없음: ${appData.placeType} - ${appData.pricingPlanName}`);
+      continue;
+    }
+
+    console.log(`요금제 확인: ${pricingPlan.id}`);
+
+    // 체험단 신청 생성 (트랜잭션 없이 테스트)
+    const application = await prisma.experienceApplication.create({
+      data: {
+        advertiserId: advertiserProfile.id,
+        placeType: appData.placeType,
+        pricingPlanId: pricingPlan.id,
+        status: appData.status,
+        termsAgreed: true,
+        termsAgreedAt: new Date(),
+        paymentMethod: appData.paymentMethod,
+        taxInvoiceRequested: false,
+        businessName: appData.businessName,
+        openingDate: appData.openingDate,
+        shootingStartDate: appData.shootingStartDate,
+        address: appData.address,
+        representativeMenu: appData.representativeMenu,
+        localMomBenefit: appData.localMomBenefit,
+        contactPhone: appData.contactPhone
+      }
+    });
+
+    console.log(`체험단 신청 생성됨: ${application.id}`);
+
+    // 결제 레코드 생성
+    if (appData.paymentAmount > 0) {
+      const paymentId = appData.paymentMethod === 'CARD'
+        ? `toss_exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        : `bank_exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      const payment = await prisma.payment.create({
+        data: {
+          id: paymentId,
+          advertiserId: advertiserProfile.id,
+          amountKrw: appData.paymentAmount,
+          status: appData.status === 'PAYMENT_COMPLETED' ? 'PAID' : 'CREATED',
+          provider: appData.paymentMethod === 'CARD' ? 'TOSS' : 'BANK_TRANSFER',
+          providerRef: paymentId
+        }
+      });
+
+      // 체험단 신청에 결제 ID 연결
+      await prisma.experienceApplication.update({
+        where: { id: application.id },
+        data: { paymentId: payment.id }
+      });
+
+      console.log(`결제 생성됨: ${payment.id}`);
+
+      // 결제 완료된 경우 예산 장부에 추가
+      if (appData.status === 'PAYMENT_COMPLETED') {
+        // 일시적으로 주석 처리해서 테스트
+        await prisma.budgetLedger.create({
+          data: {
+            advertiserId: advertiserProfile.id,
+            amountKrw: appData.paymentAmount,
+            reason: 'TOPUP',
+            refId: application.id,
+            createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000)
+          }
+        });
+
+        console.log(`예산 장부 생략 (테스트용)`);
+      }
+    }
+  }
+
+  console.log('체험단 신청 및 결제 데이터 시드 완료.');
+}
+
+async function seedAdditionalPayments(): Promise<void> {
+  console.log('추가 결제 데이터 시드 중...');
+
+  // 광고주 프로필 ID들 조회
+  const advertiserProfiles = await prisma.advertiserProfile.findMany({
+    where: {
+      user: {
+        email: {
+          in: [
+            "advertiser+1@example.com",
+            "advertiser+2@example.com",
+            "advertiser+3@example.com",
+            "advertiser+4@example.com",
+            "advertiser+5@example.com",
+            "advertiser+6@example.com"
+          ]
+        }
+      }
+    },
+    select: {
+      id: true,
+      user: { select: { email: true } }
+    }
+  });
+
+  const additionalPayments = [
+    // 광고주 1의 추가 충전들
+    {
+      advertiserId: advertiserProfiles.find(ap => ap.user.email === "advertiser+1@example.com")!.id,
+      amount: 50000,
+      provider: 'TOSS' as const,
+      status: 'PAID' as const,
+      createdDaysAgo: 5
+    },
+    {
+      advertiserId: advertiserProfiles.find(ap => ap.user.email === "advertiser+1@example.com")!.id,
+      amount: 100000,
+      provider: 'BANK_TRANSFER' as const,
+      status: 'PAID' as const,
+      createdDaysAgo: 12
+    },
+    {
+      advertiserId: advertiserProfiles.find(ap => ap.user.email === "advertiser+1@example.com")!.id,
+      amount: 200000,
+      provider: 'TOSS' as const,
+      status: 'PAID' as const,
+      createdDaysAgo: 20
+    },
+
+    // 광고주 2의 추가 충전들
+    {
+      advertiserId: advertiserProfiles.find(ap => ap.user.email === "advertiser+2@example.com")!.id,
+      amount: 300000,
+      provider: 'TOSS' as const,
+      status: 'PAID' as const,
+      createdDaysAgo: 3
+    },
+    {
+      advertiserId: advertiserProfiles.find(ap => ap.user.email === "advertiser+2@example.com")!.id,
+      amount: 150000,
+      provider: 'BANK_TRANSFER' as const,
+      status: 'PAID' as const,
+      createdDaysAgo: 15
+    }
+  ];
+
+  for (const paymentData of additionalPayments) {
+    const createdAt = new Date(Date.now() - paymentData.createdDaysAgo * 24 * 60 * 60 * 1000);
+
+    const paymentId = paymentData.provider === 'TOSS'
+      ? `toss_topup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      : `bank_topup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    await prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.create({
+        data: {
+          id: paymentId,
+          advertiserId: paymentData.advertiserId,
+          amountKrw: paymentData.amount,
+          status: paymentData.status,
+          provider: paymentData.provider,
+          providerRef: paymentId,
+          createdAt: createdAt
+        }
+      });
+
+      // 예산 장부에 추가
+      await tx.budgetLedger.create({
+        data: {
+          advertiserId: paymentData.advertiserId,
+          amountKrw: paymentData.amount,
+          reason: 'TOPUP',
+          refId: payment.id,
+          createdAt: createdAt
+        }
+      });
+
+      // 감사 로그 추가
+      await tx.auditLog.create({
+        data: {
+          actorUserId: null,
+          action: 'PAYMENT_TOPUP_COMPLETED',
+          targetType: 'Payment',
+          targetId: payment.id,
+          payloadJson: {
+            amount: paymentData.amount,
+            paymentMethod: paymentData.provider === 'TOSS' ? 'CARD' : 'BANK_TRANSFER'
+          },
+          createdAt: createdAt
+        }
+      });
+    });
+  }
+
+  console.log('추가 결제 데이터 시드 완료.');
+}
+
 async function run(): Promise<void> {
   await ensurePolicies();
 
   // 다양한 역할 타입을 테스트하기 위한 사용자들
   const admins = ["admin+super@example.com", "admin+manager@example.com"];
-  const advertisers = ["advertiser+1@example.com", "advertiser+2@example.com"];
+  const advertisers = [
+    "advertiser+1@example.com",
+    "advertiser+2@example.com",
+    "advertiser+3@example.com",
+    "advertiser+4@example.com",
+    "advertiser+5@example.com",
+    "advertiser+6@example.com"
+  ];
   const members = [
     "member+normal@example.com",
     "member+team-leader@example.com",
@@ -657,10 +1121,24 @@ async function run(): Promise<void> {
   });
 
   // 체험단 요금제 시드
+  console.log('체험단 요금제 시드 시작...');
   await seedExperiencePricingPlans();
+  console.log('체험단 요금제 시드 완료');
 
   // 광고주 정보 시드
+  console.log('광고주 정보 시드 시작...');
   await seedAdvertiserInfo();
+  console.log('광고주 정보 시드 완료');
+
+  // 체험단 신청 및 결제 데이터 시드
+  console.log('체험단 신청 시드 시작...');
+  await seedExperienceApplications();
+  console.log('체험단 신청 시드 완료');
+
+  // 추가 결제 데이터 시드
+  console.log('추가 결제 데이터 시드 시작...');
+  await seedAdditionalPayments();
+  console.log('추가 결제 데이터 시드 완료');
 
   await prisma.auditLog.create({
     data: { actorUserId: null, action: "CLI_SEED_DONE", payloadJson: { at: new Date().toISOString() } }

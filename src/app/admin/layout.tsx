@@ -1,4 +1,6 @@
 import { requireRole } from "@/server/auth/require-user";
+import { getCurrentUser } from "@/server/auth/current-user";
+import { prisma } from "@/server/prisma";
 import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
@@ -11,6 +13,26 @@ export default async function AdminLayout({
     await requireRole("ADMIN");
   } catch {
     redirect("/login");
+  }
+
+  // 현재 사용자 정보와 담당 광고주 목록 조회
+  const user = await getCurrentUser();
+  let managedAdvertisers = [];
+
+  if (user?.adminType === "MANAGER") {
+    managedAdvertisers = await prisma.advertiserManager.findMany({
+      where: {
+        managerId: user.id,
+        isActive: true
+      },
+      include: {
+        advertiser: {
+          include: {
+            user: { select: { name: true } }
+          }
+        }
+      }
+    });
   }
 
   return <>{children}</>;
