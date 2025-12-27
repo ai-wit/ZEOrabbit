@@ -21,14 +21,19 @@ export async function GET(
 
     const application = await prisma.experienceApplication.findUnique({
       where: { id: params.id },
-      include: {
-        pricingPlan: {
-          select: { name: true, displayName: true, priceKrw: true, description: true }
-        },
+      select: {
+        id: true,
+        businessName: true,
+        placeType: true,
+        address: true,
+        advertiserId: true,
         advertiser: {
           include: {
             user: { select: { name: true, email: true } }
           }
+        },
+        pricingPlan: {
+          select: { name: true, displayName: true, priceKrw: true, description: true }
         },
         payment: {
           select: { id: true, status: true, amountKrw: true, provider: true, createdAt: true }

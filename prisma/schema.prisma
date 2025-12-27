@@ -65,6 +65,7 @@ enum PlaceType {
 
 
 enum TeamStatus {
+  PENDING_LEADER_APPROVAL
   FORMING
   ACTIVE
   COMPLETED

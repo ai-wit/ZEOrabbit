@@ -2,6 +2,7 @@ import { requireRole } from "@/server/auth/require-user";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { prisma } from "@/server/prisma";
 import { redirect } from "next/navigation";
+import { AdminProvider } from "./AdminProvider";
 
 export default async function AdminLayout({
   children,
@@ -35,5 +36,14 @@ export default async function AdminLayout({
     });
   }
 
-  return <>{children}</>;
+  const adminData = {
+    user,
+    managedAdvertisers: managedAdvertisers.map(am => am.advertiser)
+  };
+
+  return (
+    <AdminProvider adminData={adminData}>
+      {children}
+    </AdminProvider>
+  );
 }

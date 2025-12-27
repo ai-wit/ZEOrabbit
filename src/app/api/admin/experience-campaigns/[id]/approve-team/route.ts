@@ -3,8 +3,8 @@ import { z } from "zod";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 
-const approveTeamLeaderSchema = z.object({
-  teamLeaderId: z.string(),
+const approveTeamSchema = z.object({
+  teamId: z.string(),
   teamName: z.string().min(1).max(50),
   teamDescription: z.string().optional(),
 });
@@ -18,7 +18,7 @@ async function requireManager() {
   return user;
 }
 
-// POST /api/admin/experience-campaigns/[id]/approve-team-leader - 팀장 승인 및 팀 생성
+// POST /api/admin/experience-campaigns/[id]/approve-team - 팀 신청 승인
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -28,7 +28,7 @@ export async function POST(
     const campaignId = params.id;
 
     const body = await request.json();
-    const { teamLeaderId, teamName, teamDescription } = approveTeamLeaderSchema.parse(body);
+    const { teamId, teamName, teamDescription } = approveTeamSchema.parse(body);
 
     // 체험단 공고 존재 및 권한 확인
     const campaign = await prisma.experienceCampaign.findFirst({
@@ -54,43 +54,29 @@ export async function POST(
       );
     }
 
-    // 팀장 권한 확인 (TEAM_LEADER 타입인지)
-    const teamLeader = await prisma.user.findUnique({
-      where: { id: teamLeaderId },
-      select: { role: true, memberType: true, name: true }
-    });
-
-    if (!teamLeader || teamLeader.role !== "MEMBER" || teamLeader.memberType !== "TEAM_LEADER") {
-      return NextResponse.json(
-        { error: "유효하지 않은 팀장입니다" },
-        { status: 400 }
-      );
-    }
-
-    // 이미 승인된 팀이 있는지 확인
-    const existingApprovedTeam = await prisma.team.findFirst({
+    // 팀 존재 및 신청 상태 확인
+    const team = await prisma.team.findFirst({
       where: {
+        id: teamId,
         experienceCampaignId: campaignId,
-        leaderId: teamLeaderId,
-        status: { in: ["FORMING", "ACTIVE"] }
-      }
-    });
-
-    if (existingApprovedTeam) {
-      return NextResponse.json(
-        { error: "이미 승인된 팀이 있습니다" },
-        { status: 409 }
-      );
-    }
-
-    // 이미 신청 중인 팀이 있는지 확인
-    const existingPendingTeam = await prisma.team.findFirst({
-      where: {
-        experienceCampaignId: campaignId,
-        leaderId: teamLeaderId,
         status: "PENDING_LEADER_APPROVAL"
+      },
+      include: {
+        leader: { select: { name: true } },
+        memberships: {
+          include: {
+            member: { select: { name: true } }
+          }
+        }
       }
     });
+
+    if (!team) {
+      return NextResponse.json(
+        { error: "존재하지 않거나 승인할 수 없는 팀 신청입니다" },
+        { status: 404 }
+      );
+    }
 
     // 목표 팀 수 확인
     const currentTeamCount = await prisma.team.count({
@@ -107,64 +93,53 @@ export async function POST(
       );
     }
 
-    // 트랜잭션으로 팀 생성 및 멤버십 추가
+    // 트랜잭션으로 팀 승인
     const result = await prisma.$transaction(async (tx) => {
-      let team;
-
-      if (existingPendingTeam) {
-        // 기존 신청 팀 승인
-        team = await tx.team.update({
-          where: { id: existingPendingTeam.id },
-          data: {
-            name: teamName,
-            description: teamDescription,
-            status: "FORMING",
-          }
-        });
-      } else {
-        // 새로운 팀 생성
-        team = await tx.team.create({
-          data: {
-            experienceCampaignId: campaignId,
-            leaderId: teamLeaderId,
-            name: teamName,
-            description: teamDescription,
-            status: "FORMING",
-          }
-        });
-      }
-
-      // 팀장 멤버십이 없으면 생성 (기존 신청 팀의 경우 멤버십이 없을 수 있음)
-      const existingMembership = await tx.teamMembership.findFirst({
-        where: {
-          teamId: team.id,
-          memberId: teamLeaderId,
-          role: "LEADER"
+      // 팀 상태 업데이트
+      const updatedTeam = await tx.team.update({
+        where: { id: teamId },
+        data: {
+          name: teamName,
+          description: teamDescription,
+          status: "FORMING",
         }
       });
 
-      if (!existingMembership) {
-        await tx.teamMembership.create({
-          data: {
-            teamId: team.id,
-            memberId: teamLeaderId,
-            role: "LEADER",
-            status: "APPROVED",
-            decidedAt: new Date(),
-            decidedBy: user.id,
-          }
-        });
-      }
+      // 팀장 멤버십 승인 처리
+      await tx.teamMembership.updateMany({
+        where: {
+          teamId: teamId,
+          role: "LEADER"
+        },
+        data: {
+          status: "APPROVED",
+          decidedAt: new Date(),
+          decidedBy: user.id
+        }
+      });
 
-      return team;
+      // 기존 팀원 멤버십도 승인 처리 (팀장 초대가 아닌 일반 신청자들)
+      await tx.teamMembership.updateMany({
+        where: {
+          teamId: teamId,
+          role: "MEMBER",
+          status: "PENDING"
+        },
+        data: {
+          status: "APPROVED",
+          decidedAt: new Date(),
+          decidedBy: user.id
+        }
+      });
+
+      return updatedTeam;
     });
 
-    // 생성된 팀 정보 조회
+    // 업데이트된 팀 정보 조회
     const teamWithDetails = await prisma.team.findUnique({
       where: { id: result.id },
       include: {
         leader: { select: { name: true } },
-        experienceCampaign: { select: { title: true } },
         memberships: {
           include: {
             member: { select: { name: true } }
@@ -189,7 +164,7 @@ export async function POST(
       );
     }
 
-    console.error("팀장 승인 실패:", error);
+    console.error("팀 신청 승인 실패:", error);
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다" },
       { status: 500 }

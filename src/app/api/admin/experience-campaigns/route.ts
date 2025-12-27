@@ -5,7 +5,7 @@ import { prisma } from "@/server/prisma";
 
 const createCampaignSchema = z.object({
   applicationId: z.string(), // 체험단 신청서 ID
-  placeId: z.string(), // 장소 ID
+  address: z.string(), // 장소 주소 (체험단 신청 시 작성한 주소)
   title: z.string().min(1).max(100),
   missionGuide: z.string().min(1), // 미션 가이드 (촬영 포인트)
   benefits: z.string().min(1), // 제공 내역
@@ -83,19 +83,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 선택된 장소 검증
-    const place = await prisma.place.findFirst({
+    // 주소로 장소 찾기 또는 생성
+    let place = await prisma.place.findFirst({
       where: {
-        id: data.placeId,
+        name: data.address,
         advertiserId: application.advertiserId
       }
     });
 
+    // 장소가 없으면 새로 생성
     if (!place) {
-      return NextResponse.json(
-        { error: "존재하지 않거나 접근할 수 없는 장소입니다" },
-        { status: 400 }
-      );
+      place = await prisma.place.create({
+        data: {
+          advertiserId: application.advertiserId,
+          name: data.address
+        }
+      });
     }
 
     // 공고 생성

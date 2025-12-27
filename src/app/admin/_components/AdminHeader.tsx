@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useContext } from "react";
 import { PageHeader } from "@/app/_ui/shell";
 import { Button, ButtonLink } from "@/app/_ui/primitives";
+import { AdminContext } from "../AdminProvider";
 
 interface AdminHeaderProps {
   title: string;
@@ -10,26 +11,25 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ title, description }: AdminHeaderProps) {
-  const [user, setUser] = useState<any>(null);
-  const [managedAdvertisers, setManagedAdvertisers] = useState<any[]>([]);
+  const adminData = useContext(AdminContext);
 
-  useEffect(() => {
-    // 사용자 정보와 담당 광고주 정보 가져오기
-    fetch('/api/me')
-      .then(res => res.json())
-      .then(data => {
-        setUser(data.user);
-        if (data.user?.adminType === "MANAGER") {
-          // 매니저인 경우 담당 광고주 목록 조회
-          fetch('/api/admin/managers/assigned-advertisers')
-            .then(res => res.json())
-            .then(data => setManagedAdvertisers(data.advertisers || []))
-            .catch(err => console.error('담당 광고주 조회 실패:', err));
+  if (!adminData) {
+    // 폴백: 기본 메뉴 표시 (로딩 중)
+    return (
+      <PageHeader
+        eyebrow="ADMIN"
+        title={title}
+        description={description}
+        right={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-sm text-zinc-400">로딩 중...</div>
+          </div>
         }
-      })
-      .catch(err => console.error('사용자 정보 조회 실패:', err));
-  }, []);
+      />
+    );
+  }
 
+  const { user } = adminData;
   const isManager = user?.adminType === "MANAGER";
 
   return (

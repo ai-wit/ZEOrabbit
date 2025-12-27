@@ -87,6 +87,85 @@ export async function GET(
   }
 }
 
+// DELETE /api/member/teams/[teamId]/memberships/[membershipId] - 팀원 추방
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { teamId: string } }
+) {
+  try {
+    const user = await requireTeamLeader(params.teamId);
+
+    const { searchParams } = new URL(request.url);
+    const membershipId = searchParams.get('membershipId');
+
+    if (!membershipId) {
+      return NextResponse.json(
+        { error: "멤버십 ID가 필요합니다" },
+        { status: 400 }
+      );
+    }
+
+    // 멤버십 존재 및 팀 소속 확인
+    const membership = await prisma.teamMembership.findFirst({
+      where: {
+        id: membershipId,
+        teamId: params.teamId
+      },
+      include: {
+        member: { select: { name: true } },
+        team: { select: { status: true, name: true } }
+      }
+    });
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: "존재하지 않는 멤버십입니다" },
+        { status: 404 }
+      );
+    }
+
+    if (membership.status !== "APPROVED") {
+      return NextResponse.json(
+        { error: "승인된 팀원만 추방할 수 있습니다" },
+        { status: 400 }
+      );
+    }
+
+    if (membership.team.status !== "FORMING") {
+      return NextResponse.json(
+        { error: "팀 구성 중인 상태에서만 추방할 수 있습니다" },
+        { status: 400 }
+      );
+    }
+
+    // 멤버십 삭제
+    await prisma.teamMembership.delete({
+      where: { id: membershipId }
+    });
+
+    return NextResponse.json({
+      message: `${membership.member.name}님이 팀에서 추방되었습니다`,
+      membership: {
+        id: membership.id,
+        memberName: membership.member.name
+      }
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("권한")) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 403 }
+      );
+    }
+
+    console.error("팀원 추방 실패:", error);
+    return NextResponse.json(
+      { error: "서버 오류가 발생했습니다" },
+      { status: 500 }
+    );
+  }
+}
+
 // POST /api/member/teams/[teamId]/memberships/decide - 멤버십 승인/거절
 export async function POST(
   request: NextRequest,

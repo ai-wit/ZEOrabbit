@@ -1,8 +1,44 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Input, Label } from "@/app/_ui/primitives";
 
+const TEST_ACCOUNTS = {
+  admin: [
+    { email: "admin+super@example.com", label: "슈퍼 관리자" },
+    { email: "admin+manager@example.com", label: "매니저" },
+  ],
+  advertiser: [
+    { email: "advertiser+1@example.com", label: "광고주 1" },
+    { email: "advertiser+2@example.com", label: "광고주 2" },
+  ],
+  member: [
+    { email: "member+normal@example.com", label: "일반 멤버" },
+    { email: "member+team-leader@example.com", label: "팀 리더" },
+    { email: "member+pro-leader@example.com", label: "프로 리더" },
+    { email: "member+normal2@example.com", label: "일반 멤버 2" },
+    { email: "member+normal3@example.com", label: "일반 멤버 3" },
+    { email: "member+normal4@example.com", label: "일반 멤버 4" },
+  ],
+};
+
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleTestLogin = (testEmail: string) => {
+    setEmail(testEmail);
+    setPassword("password123!");
+    // 다음 렌더링에서 form이 submit되도록
+    setTimeout(() => {
+      const form = document.querySelector('form[action="/api/auth/login"]') as HTMLFormElement;
+      if (form) {
+        form.requestSubmit();
+      }
+    }, 0);
+  };
   return (
     <PageShell
       size="sm"
@@ -20,7 +56,15 @@ export default function LoginPage() {
           <form action="/api/auth/login" method="post" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
-              <Input id="email" name="email" type="email" required placeholder="you@example.com" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
 
             <div className="space-y-2">
@@ -32,6 +76,8 @@ export default function LoginPage() {
                 required
                 minLength={8}
                 placeholder="********"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
 
@@ -50,35 +96,63 @@ export default function LoginPage() {
       </Card>
 
       <Card>
-        <CardBody className="space-y-3">
+        <CardBody className="space-y-4">
           <div className="text-sm font-medium text-zinc-200">테스트 계정</div>
           <div className="text-xs text-zinc-400">비밀번호: password123!</div>
 
-          <div className="space-y-2">
-            <div className="text-xs font-medium text-zinc-200">관리자</div>
-            <div className="grid grid-cols-1 gap-1 text-xs">
-              <div className="text-zinc-300">admin+super@example.com</div>
-              <div className="text-zinc-300">admin+manager@example.com</div>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-zinc-200">관리자</div>
+              <div className="grid grid-cols-1 gap-2">
+                {TEST_ACCOUNTS.admin.map((account) => (
+                  <Button
+                    key={account.email}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleTestLogin(account.email)}
+                  >
+                    {account.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <div className="text-xs font-medium text-zinc-200">광고주</div>
-            <div className="grid grid-cols-1 gap-1 text-xs">
-              <div className="text-zinc-300">advertiser+1@example.com</div>
-              <div className="text-zinc-300">advertiser+2@example.com</div>
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-zinc-200">광고주</div>
+              <div className="grid grid-cols-1 gap-2">
+                {TEST_ACCOUNTS.advertiser.map((account) => (
+                  <Button
+                    key={account.email}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleTestLogin(account.email)}
+                  >
+                    {account.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <div className="text-xs font-medium text-zinc-200">멤버</div>
-            <div className="grid grid-cols-1 gap-1 text-xs">
-              <div className="text-zinc-300">member+normal@example.com</div>
-              <div className="text-zinc-300">member+team-leader@example.com</div>
-              <div className="text-zinc-300">member+pro-leader@example.com</div>
-              <div className="text-zinc-300">member+normal2@example.com</div>
-              <div className="text-zinc-300">member+normal3@example.com</div>
-              <div className="text-zinc-300">member+normal4@example.com</div>
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-zinc-200">멤버</div>
+              <div className="grid grid-cols-2 gap-2">
+                {TEST_ACCOUNTS.member.map((account) => (
+                  <Button
+                    key={account.email}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleTestLogin(account.email)}
+                  >
+                    {account.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </CardBody>

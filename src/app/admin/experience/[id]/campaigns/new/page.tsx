@@ -18,6 +18,7 @@ interface ExperienceApplication {
   id: string;
   businessName: string;
   placeType: string;
+  address: string;
   advertiser: {
     user: { name: string | null };
   };
@@ -26,10 +27,6 @@ interface ExperienceApplication {
   };
 }
 
-interface Place {
-  id: string;
-  name: string;
-}
 
 interface User {
   id: string;
@@ -45,7 +42,6 @@ export default function NewCampaignPage(props: {
   const [submitting, setSubmitting] = useState(false);
   const [application, setApplication] = useState<ExperienceApplication | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [places, setPlaces] = useState<Place[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -85,28 +81,12 @@ export default function NewCampaignPage(props: {
       const appData = await appResponse.json();
       setApplication(appData.application);
 
-      // 광고주의 장소 목록 가져오기
-      const placesResponse = await fetch('/api/admin/advertiser-places', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ advertiserId: appData.application.advertiserId })
-      });
-
-      if (placesResponse.ok) {
-        const placesData = await placesResponse.json();
-        setPlaces(placesData.places || []);
-
-        // 첫 번째 장소를 기본값으로 선택
-        if (placesData.places && placesData.places.length > 0) {
-          setFormData(prev => ({
-            ...prev,
-            placeId: placesData.places[0].id
-          }));
-        }
-      } else {
-        const placesError = await placesResponse.json().catch(() => ({ error: '장소 정보를 불러올 수 없습니다.' }));
-        console.warn('장소 정보 로드 실패:', placesError.error);
-        // 장소가 없어도 폼은 계속 진행할 수 있게 함
+      // 체험단 신청 시 작성한 주소를 placeId로 사용
+      if (appData.application.address) {
+        setFormData(prev => ({
+          ...prev,
+          placeId: appData.application.address
+        }));
       }
 
       // 기본값 설정
@@ -128,9 +108,59 @@ export default function NewCampaignPage(props: {
 
     if (!application || !user) return;
 
-    // 장소 선택 검증
-    if (!formData.placeId || places.length === 0) {
-      setError('장소를 선택해주세요.');
+    // 클라이언트 사이드 검증
+    const errors: string[] = [];
+
+    // 주소 검증
+    if (!formData.placeId || !application.address) {
+      errors.push('주소 정보가 없습니다.');
+    }
+
+    // 필수 필드 검증
+    if (!formData.title.trim()) {
+      errors.push('공고 제목을 입력해주세요.');
+    }
+
+    if (!formData.missionGuide.trim()) {
+      errors.push('미션 가이드를 입력해주세요.');
+    }
+
+    if (!formData.benefits.trim()) {
+      errors.push('제공 내역을 입력해주세요.');
+    }
+
+    // 날짜 검증
+    if (!formData.applicationDeadline) {
+      errors.push('신청 마감일을 선택해주세요.');
+    }
+
+    if (!formData.startDate) {
+      errors.push('체험 시작일을 선택해주세요.');
+    }
+
+    if (!formData.endDate) {
+      errors.push('체험 종료일을 선택해주세요.');
+    }
+
+    // 날짜 유효성 검증
+    if (formData.applicationDeadline && formData.startDate) {
+      const deadline = new Date(formData.applicationDeadline);
+      const start = new Date(formData.startDate);
+      if (deadline >= start) {
+        errors.push('신청 마감일은 체험 시작일보다 빨라야 합니다.');
+      }
+    }
+
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+      if (start >= end) {
+        errors.push('체험 종료일은 시작일보다 늦어야 합니다.');
+      }
+    }
+
+    if (errors.length > 0) {
+      setError(errors.join(' '));
       return;
     }
 
@@ -143,7 +173,7 @@ export default function NewCampaignPage(props: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           applicationId: application.id,
-          placeId: formData.placeId,
+          address: formData.placeId, // address로 전송
           title: formData.title,
           missionGuide: formData.missionGuide,
           benefits: formData.benefits,
@@ -274,32 +304,17 @@ export default function NewCampaignPage(props: {
                 공고 정보
               </div>
 
-              {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <div className="text-sm text-red-400">{error}</div>
-                </div>
-              )}
-
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-zinc-200">장소 선택</label>
-                  {places.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl">
-                      등록된 장소가 없습니다. 광고주가 장소를 먼저 등록해야 합니다.
+                  <label className="text-sm font-semibold text-zinc-200">장소 주소</label>
+                  {application.address ? (
+                    <div className="px-3 py-2 text-sm text-zinc-200 bg-zinc-800/50 border border-zinc-700/50 rounded-xl">
+                      {application.address}
                     </div>
                   ) : (
-                    <Select
-                      value={formData.placeId}
-                      onChange={(e) => handleInputChange('placeId', e.target.value)}
-                      required
-                    >
-                      <option value="">장소를 선택하세요</option>
-                      {places.map((place) => (
-                        <option key={place.id} value={place.id}>
-                          {place.name}
-                        </option>
-                      ))}
-                    </Select>
+                    <div className="px-3 py-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl">
+                      등록된 주소가 없습니다.
+                    </div>
                   )}
                 </div>
 
@@ -376,20 +391,28 @@ export default function NewCampaignPage(props: {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                <Button
-                  type="submit"
-                  disabled={submitting || places.length === 0}
-                  className="flex-1"
-                >
-                  {submitting ? '등록 중...' : places.length === 0 ? '장소 등록 필요' : '공고 등록'}
-                </Button>
-                <ButtonLink
-                  href={`/admin/experience/${application.id}`}
-                  variant="secondary"
-                >
-                  취소
-                </ButtonLink>
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                {error && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <div className="text-sm text-red-400">{error}</div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="submit"
+                    disabled={submitting || !application.address}
+                    className="flex-1"
+                  >
+                    {submitting ? '등록 중...' : !application.address ? '주소 정보 필요' : '공고 등록'}
+                  </Button>
+                  <ButtonLink
+                    href={`/admin/experience/${application.id}`}
+                    variant="secondary"
+                  >
+                    취소
+                  </ButtonLink>
+                </div>
               </div>
             </CardBody>
           </Card>

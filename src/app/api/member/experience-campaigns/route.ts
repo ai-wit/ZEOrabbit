@@ -32,24 +32,57 @@ export async function GET(request: NextRequest) {
         status: status as any,
         applicationDeadline: { gte: now }
       },
-      include: {
-        advertiser: { include: { user: { select: { name: true } } } },
-        place: { select: { name: true, externalProvider: true } },
-        manager: { select: { name: true } },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        missionGuide: true,
+        benefits: true,
+        targetTeamCount: true,
+        maxMembersPerTeam: true,
+        applicationDeadline: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        advertiser: {
+          select: {
+            user: {
+              select: {
+                name: true
+              }
+            }
+          }
+        },
+        place: {
+          select: {
+            name: true,
+            externalProvider: true
+          }
+        },
+        manager: {
+          select: {
+            name: true
+          }
+        },
         teams: {
-          where: { status: { in: ["FORMING", "ACTIVE"] } },
+          where: { status: { in: ["FORMING", "ACTIVE"] } }, // PENDING_LEADER_APPROVAL 제외
           select: {
             id: true,
+            name: true,
+            description: true,
             status: true,
             leaderId: true,
+            memberships: {
+              select: { id: true }
+            },
             _count: { select: { memberships: true } }
           }
         },
         _count: {
           select: {
-            teams: {
-              where: { status: { in: ["FORMING", "ACTIVE"] } }
-            }
+            teams: true // 모든 상태의 팀을 카운트
           }
         }
       },
@@ -59,6 +92,7 @@ export async function GET(request: NextRequest) {
     });
 
     // 각 공고에 대해 사용자의 참여 상태 추가
+    console.log('사용자 정보:', { id: user.id, memberType: user.memberType, role: user.role });
     const campaignsWithUserStatus = await Promise.all(
       campaigns.map(async (campaign) => {
         // 사용자가 이미 팀장으로 참여했는지 확인
@@ -79,20 +113,42 @@ export async function GET(request: NextRequest) {
           }
         });
 
-        let userStatus: "available" | "applied_as_leader" | "member" | "leader" = "available";
+        let userStatus: "available" | "applied_as_leader" | "leader_application_pending" | "member" | "leader" = "available";
 
         if (userTeamAsLeader) {
           userStatus = "leader";
         } else if (userMembership) {
           userStatus = userMembership.status === "PENDING" ? "applied_as_leader" : "member";
+        } else {
+          // 사용자가 팀장으로 신청했는지 확인 (PENDING_LEADER_APPROVAL 상태)
+          const userPendingTeamAsLeader = await prisma.team.findFirst({
+            where: {
+              experienceCampaignId: campaign.id,
+              leaderId: user.id,
+              status: "PENDING_LEADER_APPROVAL"
+            }
+          });
+
+          if (userPendingTeamAsLeader) {
+            userStatus = "leader_application_pending";
+          }
         }
+
+        const canApplyAsLeader = user.memberType === "TEAM_LEADER" &&
+                           userStatus === "available" &&
+                           campaign._count.teams < campaign.targetTeamCount;
+        console.log(`캠페인 ${campaign.id} canApplyAsLeader 계산:`, {
+          memberType: user.memberType,
+          userStatus,
+          teamCount: campaign._count.teams,
+          targetTeamCount: campaign.targetTeamCount,
+          result: canApplyAsLeader
+        });
 
         return {
           ...campaign,
           userStatus,
-          canApplyAsLeader: user.memberType === "TEAM_LEADER" &&
-                           userStatus === "available" &&
-                           campaign._count.teams < campaign.targetTeamCount
+          canApplyAsLeader
         };
       })
     );
@@ -204,7 +260,7 @@ export async function POST(request: NextRequest) {
         leaderId: user.id,
         name: teamName,
         description: teamDescription,
-        status: "FORMING", // 매니저 승인 전 상태
+        status: "PENDING_LEADER_APPROVAL", // 매니저 승인 대기 상태
       },
       include: {
         experienceCampaign: { select: { title: true } },

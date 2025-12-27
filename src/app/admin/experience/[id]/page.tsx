@@ -48,6 +48,10 @@ export default async function ExperienceApplicationDetailPage(props: {
       },
       payment: {
         select: { id: true, status: true, amountKrw: true, provider: true, createdAt: true }
+      },
+      campaigns: {
+        select: { id: true, status: true },
+        take: 1 // 공고 존재 여부만 확인
       }
     }
   });
@@ -55,6 +59,9 @@ export default async function ExperienceApplicationDetailPage(props: {
   if (!application) {
     notFound();
   }
+
+  // 이미 공고가 등록되어 있는지 확인
+  const hasCampaign = application.campaigns.length > 0;
 
   return (
     <PageShell
@@ -145,10 +152,16 @@ export default async function ExperienceApplicationDetailPage(props: {
         )}
 
         {/* 액션 버튼들 */}
-        <div className="flex flex-wrap items-center gap-2">
-          <ButtonLink href={`/admin/experience/${application.id}/campaigns/new`} variant="primary" size="sm">
-            공고 등록
-          </ButtonLink>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {hasCampaign ? (
+            <ButtonLink href="/admin/experience?tab=campaigns" variant="primary" size="sm">
+              공고 확인
+            </ButtonLink>
+          ) : (
+            <ButtonLink href={`/admin/experience/${application.id}/campaigns/new`} variant="primary" size="sm">
+              공고 등록
+            </ButtonLink>
+          )}
           <ButtonLink href="/admin/experience" variant="secondary" size="sm">
             목록으로 돌아가기
           </ButtonLink>

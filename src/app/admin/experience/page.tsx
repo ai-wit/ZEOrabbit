@@ -491,6 +491,9 @@ export default function ExperienceApplicationsPage() {
                             <ButtonLink href={`/admin/experience-campaigns/${campaign.id}`} variant="secondary" size="sm">
                               상세
                             </ButtonLink>
+                            <ButtonLink href={`/admin/experience-campaigns/${campaign.id}?tab=team-applications`} variant="primary" size="sm">
+                              팀 관리
+                            </ButtonLink>
                           </div>
                         </div>
                       </div>
