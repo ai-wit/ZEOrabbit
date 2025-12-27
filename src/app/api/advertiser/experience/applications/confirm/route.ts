@@ -14,13 +14,16 @@ const Schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('체험단 결제 확인 API 호출됨');
     const user = await requireRole('ADVERTISER');
     const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
     const json = await req.json();
+    console.log('결제 확인 요청 데이터:', json);
     const parsed = Schema.safeParse(json);
 
     if (!parsed.success) {
+      console.log('요청 데이터 검증 실패:', parsed.error.format());
       return NextResponse.json(
         { error: 'Invalid request data', details: parsed.error.format() },
         { status: 400 }
@@ -28,6 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { applicationId, paymentKey, orderId, amount } = parsed.data;
+    console.log('추출된 데이터:', { applicationId, paymentKey, orderId, amount });
 
     // ExperienceApplication 확인
     const application = await prisma.experienceApplication.findUnique({
@@ -35,11 +39,13 @@ export async function POST(req: NextRequest) {
       select: {
         id: true,
         advertiserId: true,
+        placeType: true,
         paymentId: true,
         status: true,
         paymentMethod: true,
         pricingPlan: {
           select: {
+            id: true,
             priceKrw: true,
             displayName: true
           }
@@ -90,10 +96,7 @@ export async function POST(req: NextRequest) {
         select: {
           id: true,
           status: true,
-          amountKrw: true,
-          experienceApplication: {
-            select: { id: true, placeType: true }
-          }
+          amountKrw: true
         }
       });
 
@@ -198,7 +201,7 @@ export async function POST(req: NextRequest) {
         success: true,
         application: {
           id: applicationId,
-          placeType: payment.experienceApplication.placeType,
+          placeType: application.placeType,
           status: 'PAYMENT_COMPLETED',
           pricingPlan: application.pricingPlan
         },

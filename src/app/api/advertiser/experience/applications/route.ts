@@ -25,11 +25,8 @@ export async function POST(req: NextRequest) {
   try {
     console.log('체험단 신청 API 호출됨');
 
-    // 임시로 인증 생략 (테스트용)
-    // const user = await requireRole('ADVERTISER');
-    // const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
-    const testUserId = 'cmjme6gc5000ful0gptl77bpe'; // 실제 advertiser+1@example.com의 userId
-    const advertiserId = await getAdvertiserProfileIdByUserId(testUserId);
+    const user = await requireRole('ADVERTISER');
+    const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
     const json = await req.json();
     const parsed = Schema.safeParse(json);

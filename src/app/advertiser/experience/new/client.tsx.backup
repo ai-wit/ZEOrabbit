@@ -45,6 +45,14 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
 
   const [currentStep, setCurrentStep] = useState(1);
 
+  // URL 파라미터에서 step 값 읽기
+  useEffect(() => {
+    const stepParam = searchParams.get('step');
+    if (stepParam && !isNaN(Number(stepParam))) {
+      setCurrentStep(Number(stepParam));
+    }
+  }, [searchParams]);
+
   // URL 파라미터에서 정보 읽기
   useEffect(() => {
     const paymentId = searchParams.get('paymentId');
@@ -52,9 +60,11 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
     const paymentStatus = searchParams.get('paymentStatus');
     const placeType = searchParams.get('placeType');
     const stepParam = searchParams.get('step');
+    const pricingPlanId = searchParams.get('pricingPlanId');
 
     console.log('=== URL params processing ===');
-    console.log('Raw URL params:', { paymentId, paymentAmount, paymentStatus, placeType, stepParam });
+    console.log('Raw URL params:', { paymentId, paymentAmount, paymentStatus, placeType, stepParam, pricingPlanId });
+    console.log('Current state:', { selectedPlaceType, selectedPlan, currentStep });
 
     if (paymentId && paymentAmount && paymentStatus) {
       setPaymentInfo({
@@ -64,17 +74,56 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
       });
     }
 
+    // placeType이 유효한 값인지 확인
     if (placeType && (placeType === 'OPENING_SOON' || placeType === 'OPERATING')) {
       console.log('Setting selectedPlaceType:', placeType);
       setSelectedPlaceType(placeType as PlaceType);
+    } else if (placeType) {
+      console.log('Invalid placeType:', placeType);
+    } else {
+      // URL에 placeType이 없지만 step이 5라면 문제가 있음
+      if (stepParam === '5') {
+        console.log('WARNING: step=5 but no placeType in URL!');
+      }
     }
-
 
     if (stepParam && !isNaN(Number(stepParam))) {
       console.log('Setting currentStep:', stepParam);
       setCurrentStep(Number(stepParam));
     }
   }, [searchParams]);
+
+  // selectedPlaceType이 변경될 때 pricingPlans 로드 및 selectedPlan 복원
+  useEffect(() => {
+    if (!selectedPlaceType) return;
+
+    const loadPricingPlans = async () => {
+      try {
+        const response = await fetch(`/api/advertiser/experience/pricing-plans?placeType=${selectedPlaceType}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Loaded pricing plans for', selectedPlaceType, ':', data.length, 'plans');
+          setPricingPlans(data);
+
+          // pricingPlans가 로드된 후 URL에서 pricingPlanId 확인 및 selectedPlan 설정
+          const pricingPlanId = searchParams.get('pricingPlanId');
+          if (pricingPlanId && data.length > 0) {
+            const plan = data.find((p: PricingPlan) => p.id === pricingPlanId);
+            if (plan) {
+              console.log('Setting selectedPlan from URL:', plan);
+              setSelectedPlan(plan);
+            } else {
+              console.log('Pricing plan not found for ID:', pricingPlanId, 'available plans:', data.map(p => p.id));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load pricing plans:', error);
+      }
+    };
+
+    loadPricingPlans();
+  }, [selectedPlaceType, searchParams]);
   const [selectedPlaceType, setSelectedPlaceType] = useState<PlaceType | null>(null);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
@@ -100,49 +149,19 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
     contactPhone: '',
   });
 
-  // selectedPlaceType이 변경될 때 pricingPlans 로드
-  useEffect(() => {
-    console.log('useEffect triggered for selectedPlaceType:', selectedPlaceType);
-    if (!selectedPlaceType) {
-      console.log('selectedPlaceType is null, skipping pricing plans load');
-      return;
-    }
-
-    const loadPricingPlans = async () => {
-      console.log('Loading pricing plans for placeType:', selectedPlaceType);
-      try {
-        const response = await fetch(`/api/advertiser/experience/pricing-plans?placeType=${selectedPlaceType}`);
-        if (response.ok) {
-          const plans = await response.json();
-          console.log('Loaded pricing plans for', selectedPlaceType, ':', plans.length, 'plans');
-          setPricingPlans(plans);
-        } else {
-          console.error('Pricing plans API failed:', response.status);
-        }
-      } catch (error) {
-        console.error('요금제 로드 실패:', error);
-      }
-    };
-
-    loadPricingPlans();
-  }, [selectedPlaceType]);
-
-  // pricingPlans가 로드된 후 URL에서 selectedPlan 복원
-  useEffect(() => {
-    const pricingPlanId = searchParams.get('pricingPlanId');
-    if (pricingPlanId && pricingPlans.length > 0 && !selectedPlan) {
-      const plan = pricingPlans.find((p: PricingPlan) => p.id === pricingPlanId);
-      if (plan) {
-        console.log('Setting selectedPlan from URL:', plan);
-        setSelectedPlan(plan);
-      }
-    }
-  }, [searchParams, pricingPlans, selectedPlan]);
-
   // 매장 유형 선택 시 요금제 로드
   const handlePlaceTypeSelect = async (placeType: PlaceType) => {
     setSelectedPlaceType(placeType);
-    // pricingPlans는 useEffect에서 자동으로 로드됨
+
+    try {
+      const response = await fetch(`/api/advertiser/experience/pricing-plans?placeType=${placeType}`);
+      if (response.ok) {
+        const plans = await response.json();
+        setPricingPlans(plans);
+      }
+    } catch (error) {
+      console.error('요금제 로드 실패:', error);
+    }
   };
 
   const handleTermsAgree = () => {
@@ -156,25 +175,20 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
     console.log('=== handlePayment called ===');
     console.log('selectedPlan:', selectedPlan);
     console.log('selectedPlaceType:', selectedPlaceType);
+    console.log('currentStep:', currentStep);
+    console.log('pricingPlans length:', pricingPlans.length);
 
     if (!selectedPlaceType) {
+      console.log('Validation failed: selectedPlaceType is null');
       alert('매장 유형을 먼저 선택해주세요.');
       setCurrentStep(1);
       return;
     }
     if (!selectedPlan) {
+      console.log('Validation failed: selectedPlan is null');
       alert('요금제를 먼저 선택해주세요.');
       setCurrentStep(2);
       return;
-    }
-
-    // 결제 진행 전에 URL 파라미터에 현재 상태 저장
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('placeType', selectedPlaceType);
-      url.searchParams.set('pricingPlanId', selectedPlan.id);
-      url.searchParams.set('step', '4'); // 결제 진행 중
-      window.history.replaceState({}, '', url.toString());
     }
 
     setIsPaymentProcessing(true);
@@ -656,31 +670,21 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
       )}
 
       {/* Step 5: 추가 정보 입력 */}
-      {currentStep === 5 && (
+      {currentStep === 5 && false && (
         <Card className="p-8">
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-zinc-50">추가 정보 입력</h2>
             <div className="text-sm text-zinc-400">
-              선택된 매장 유형: {selectedPlaceType || '없음'}
+              선택된 매장 유형: {selectedPlaceType || '로딩 중...'}
             </div>
 
-            {!selectedPlaceType && (
-              <div className="bg-red-400/10 border border-red-400/20 p-4 rounded-lg">
-                <p className="text-red-100">매장 유형을 먼저 선택해주세요.</p>
-                <button
-                  onClick={() => setCurrentStep(1)}
-                  className="mt-2 text-sm text-red-300 underline hover:text-red-200"
-                >
-                  매장 유형 선택하기
-                </button>
-              </div>
-            )}
-
-            {selectedPlaceType && selectedPlaceType === 'OPENING_SOON' && (
-              <div className="space-y-6">
-                <div className="bg-cyan-400/10 border border-cyan-400/20 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-cyan-100 mb-4">오픈 예정 매장 정보</h3>
-                  <div className="grid grid-cols-1 gap-4">
+            {selectedPlaceType ? (
+              <>
+                {selectedPlaceType === 'OPENING_SOON' && (
+                  <div className="space-y-6">
+                    <div className="bg-cyan-400/10 border border-cyan-400/20 p-4 rounded-lg">
+                      <h3 className="text-lg font-semibold text-cyan-100 mb-4">오픈 예정 매장 정보</h3>
+                      <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-zinc-400 mb-2">상호명 (가칭)</label>
                       <input
@@ -845,6 +849,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                 </div>
               </div>
             )}
+            </>
 
             <div className="flex justify-between pt-6">
               <Button variant="secondary" onClick={() => setCurrentStep(4)}>
@@ -852,30 +857,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
               </Button>
               <Button
                 disabled={!additionalInfo.businessName || !additionalInfo.contactPhone}
-                onClick={async () => {
-                  try {
-                    // 추가 정보 저장 API 호출
-                    const response = await fetch('/api/advertiser/experience/applications/complete', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        applicationId,
-                        additionalInfo
-                      })
-                    });
-
-                    if (response.ok) {
-                      setCurrentStep(6);
-                    } else {
-                      alert('추가 정보 저장에 실패했습니다.');
-                    }
-                  } catch (error) {
-                    console.error('Complete application error:', error);
-                    alert('추가 정보 저장 중 오류가 발생했습니다.');
-                  }
-                }}
+                onClick={() => setCurrentStep(6)}
               >
                 신청 완료
               </Button>

@@ -63,12 +63,14 @@ export default function TossPaymentSuccessPage() {
           if (response.ok && data.success) {
             // 체험단 결제 성공 시 결제 정보를 포함해서 체험단 신청 페이지로 리다이렉트
             const params = new URLSearchParams({
-              step: '4',
+              step: '5',
               paymentId: data.payment.id,
               paymentAmount: data.payment.amount.toString(),
               paymentStatus: data.payment.status,
               applicationId: data.application.id,
-              placeType: data.application.placeType
+              placeType: data.application.placeType,
+              pricingPlanId: data.application.pricingPlan?.id || '',
+              pricingPlanName: data.application.pricingPlan?.displayName || ''
             });
             window.location.href = `/advertiser/experience/new?${params.toString()}`;
             return;
