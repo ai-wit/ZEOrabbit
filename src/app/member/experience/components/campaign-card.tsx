@@ -13,6 +13,8 @@ function getStatusBadge(status: string) {
       return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-emerald-400/20 text-emerald-400 border border-emerald-400/30">참여 가능</span>;
     case 'applied_as_leader':
       return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">팀장 신청 중</span>;
+    case 'applied_as_member':
+      return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">팀원 신청 중</span>;
     case 'member':
       return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-400/20 text-blue-400 border border-blue-400/30">팀원</span>;
     case 'leader':

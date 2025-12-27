@@ -18,6 +18,7 @@ export function TeamSelectionModal({
   const handleApply = async (teamId: string) => {
     const result = await onApplyToTeam(teamId);
     if (result.success) {
+      alert('팀 참여 신청이 완료되었습니다. 팀장 승인을 기다려주세요.');
       onClose();
     } else {
       alert(result.error);

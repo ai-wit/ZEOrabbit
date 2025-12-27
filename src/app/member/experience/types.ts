@@ -1,6 +1,6 @@
 // 체험단 관련 타입 정의
 
-export type UserStatus = 'available' | 'applied_as_leader' | 'leader_application_pending' | 'member' | 'leader';
+export type UserStatus = 'available' | 'applied_as_leader' | 'applied_as_member' | 'leader_application_pending' | 'member' | 'leader';
 export type TeamStatus = 'PENDING_LEADER_APPROVAL' | 'FORMING' | 'ACTIVE' | 'COMPLETED';
 
 export interface ExperienceCampaign {

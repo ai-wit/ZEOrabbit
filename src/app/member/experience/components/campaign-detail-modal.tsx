@@ -6,6 +6,7 @@ interface CampaignDetailModalProps {
   onClose: () => void;
   onApplyAsLeader: (campaign: ExperienceCampaign) => void;
   onApplyAsMember: (campaign: ExperienceCampaign) => void;
+  onApplyToTeam: (teamId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 function getStatusBadge(status: string) {
@@ -13,6 +14,8 @@ function getStatusBadge(status: string) {
     case 'available':
       return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-emerald-400/20 text-emerald-400 border border-emerald-400/30">참여 가능</span>;
     case 'applied_as_leader':
+      return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">팀장 신청 중</span>;
+    case 'applied_as_member':
       return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">팀원 신청 중</span>;
     case 'leader_application_pending':
       return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-400/20 text-orange-400 border border-orange-400/30">팀장 신청 중</span>;
@@ -30,7 +33,8 @@ export function CampaignDetailModal({
   campaign,
   onClose,
   onApplyAsLeader,
-  onApplyAsMember
+  onApplyAsMember,
+  onApplyToTeam
 }: CampaignDetailModalProps) {
   if (!isOpen || !campaign) return null;
 
@@ -158,9 +162,14 @@ export function CampaignDetailModal({
                       {campaign.userStatus === 'available' && (
                         <div className="flex justify-end pt-3 border-t border-zinc-600">
                           <button
-                            onClick={() => {
-                              onApplyAsMember(campaign);
-                              onClose();
+                            onClick={async () => {
+                              const result = await onApplyToTeam(team.id);
+                              if (result.success) {
+                                alert('팀 참여 신청이 완료되었습니다. 팀장 승인을 기다려주세요.');
+                                onClose();
+                              } else {
+                                alert(result.error);
+                              }
                             }}
                             className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
                           >

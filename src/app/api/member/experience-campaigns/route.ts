@@ -113,12 +113,12 @@ export async function GET(request: NextRequest) {
           }
         });
 
-        let userStatus: "available" | "applied_as_leader" | "leader_application_pending" | "member" | "leader" = "available";
+        let userStatus: "available" | "applied_as_leader" | "applied_as_member" | "leader_application_pending" | "member" | "leader" = "available";
 
         if (userTeamAsLeader) {
           userStatus = "leader";
         } else if (userMembership) {
-          userStatus = userMembership.status === "PENDING" ? "applied_as_leader" : "member";
+          userStatus = userMembership.status === "PENDING" ? "applied_as_member" : "member";
         } else {
           // 사용자가 팀장으로 신청했는지 확인 (PENDING_LEADER_APPROVAL 상태)
           const userPendingTeamAsLeader = await prisma.team.findFirst({

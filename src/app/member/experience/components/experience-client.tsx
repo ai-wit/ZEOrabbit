@@ -157,6 +157,7 @@ function CampaignsTab() {
         onClose={closeCampaignDetailModal}
         onApplyAsLeader={handleApplyAsLeader}
         onApplyAsMember={handleApplyAsMember}
+        onApplyToTeam={handleApplyToTeam}
       />
     </>
   );
