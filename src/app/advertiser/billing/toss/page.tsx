@@ -81,10 +81,12 @@ export default function TossPaymentPage() {
 
         // Initialize and request payment
         const tossPayments = window.TossPayments(clientKey);
+        const payment = tossPayments.payment({ customerKey: 'anonymous' });
         const paymentAmount = parseInt(amount);
 
-        await tossPayments.requestPayment('카드', {
-          amount: paymentAmount,
+        await payment.requestPayment({
+          method: 'CARD',
+          amount: { currency: 'KRW', value: paymentAmount },
           orderId,
           orderName,
           successUrl: `${window.location.origin}/advertiser/billing/toss/success?orderId=${orderId}`,

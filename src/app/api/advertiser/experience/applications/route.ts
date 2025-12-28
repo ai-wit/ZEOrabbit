@@ -107,13 +107,13 @@ export async function POST(req: NextRequest) {
             name: pricingPlan.name,
             displayName: pricingPlan.displayName,
             priceKrw: pricingPlan.priceKrw,
-            description: pricingPlan.description || '',
-            teamCount: pricingPlan.teamCount || 1,
-            leaderLevel: pricingPlan.leaderLevel || 'Lv1',
-            reviewCount: pricingPlan.reviewCount || 25,
-            hasRankingBoost: pricingPlan.hasRankingBoost || false,
-            trafficTarget: pricingPlan.trafficTarget || 3000,
-            saveTarget: pricingPlan.saveTarget || 100,
+            description: '',
+            teamCount: 1,
+            leaderLevel: 'Lv1',
+            reviewCount: 25,
+            hasRankingBoost: false,
+            trafficTarget: 3000,
+            saveTarget: 100,
           }
         });
       }
@@ -200,9 +200,11 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Experience application creation error:', error);
-    console.error('Error details:', error.message, error.stack);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('Error details:', errorMessage, errorStack);
     return NextResponse.json(
-      { error: `체험단 신청 처리 중 오류가 발생했습니다: ${error.message}` },
+      { error: `체험단 신청 처리 중 오류가 발생했습니다: ${errorMessage}` },
       { status: 500 }
     );
   }

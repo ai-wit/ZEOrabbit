@@ -18,7 +18,7 @@ export default async function AdminLayout({
 
   // 현재 사용자 정보와 담당 광고주 목록 조회
   const user = await getCurrentUser();
-  let managedAdvertisers = [];
+  let managedAdvertisers: any[] = [];
 
   if (user?.adminType === "MANAGER") {
     managedAdvertisers = await prisma.advertiserManager.findMany({

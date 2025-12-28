@@ -538,7 +538,7 @@ export default function CampaignDetailPage(props: {
             <Pill tone={
               campaign.status === "ACTIVE" ? "emerald" :
               campaign.status === "DRAFT" ? "neutral" :
-              campaign.status === "PAUSED" ? "yellow" : "gray"
+              campaign.status === "PAUSED" ? "red" : "neutral"
             }>
               {campaign.status === "ACTIVE" ? "진행중" :
                campaign.status === "DRAFT" ? "초안" :
@@ -674,17 +674,15 @@ export default function CampaignDetailPage(props: {
                   </div>
 
                   <Select
-                    label="상태"
                     value={editFormData.status}
-                    onChange={(value) => handleInputChange('status', value)}
-                    options={[
-                      { value: 'DRAFT', label: '초안' },
-                      { value: 'ACTIVE', label: '진행중' },
-                      { value: 'PAUSED', label: '일시중지' },
-                      { value: 'CLOSED', label: '마감' }
-                    ]}
+                    onChange={(e) => handleInputChange('status', e.target.value)}
                     required
-                  />
+                  >
+                    <option value="DRAFT">초안</option>
+                    <option value="ACTIVE">진행중</option>
+                    <option value="PAUSED">일시중지</option>
+                    <option value="ENDED">마감</option>
+                  </Select>
 
                   <div className="pt-4 border-t border-white/10 space-y-3">
                     {error && (
@@ -779,11 +777,11 @@ export default function CampaignDetailPage(props: {
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <div className="text-sm font-semibold text-zinc-50">
-                              {team.name || `팀 #${team.id.slice(-6)}`}
+                              {`팀 #${team.id.slice(-6)}`}
                             </div>
                             <Pill tone={
                               team.status === "ACTIVE" ? "emerald" :
-                              team.status === "FORMING" ? "blue" :
+                              team.status === "FORMING" ? "cyan" :
                               team.status === "COMPLETED" ? "indigo" :
                               team.status === "CANCELLED" ? "red" : "neutral"
                             }>
@@ -841,8 +839,8 @@ export default function CampaignDetailPage(props: {
                                 {application.teamName}
                               </div>
                               <Pill tone={
-                                application.status === "PENDING_LEADER_APPROVAL" ? "amber" :
-                                application.status === "FORMING" ? "blue" :
+                                application.status === "PENDING_LEADER_APPROVAL" ? "cyan" :
+                                application.status === "FORMING" ? "neutral" :
                                 application.status === "ACTIVE" ? "emerald" :
                                 application.status === "COMPLETED" ? "indigo" :
                                 application.status === "CANCELLED" ? "red" : "neutral"

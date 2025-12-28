@@ -52,9 +52,11 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
     const paymentStatus = searchParams.get('paymentStatus');
     const placeType = searchParams.get('placeType');
     const stepParam = searchParams.get('step');
+    const paymentCompleted = searchParams.get('paymentCompleted');
+    const applicationIdParam = searchParams.get('applicationId');
 
     console.log('=== URL params processing ===');
-    console.log('Raw URL params:', { paymentId, paymentAmount, paymentStatus, placeType, stepParam });
+    console.log('Raw URL params:', { paymentId, paymentAmount, paymentStatus, placeType, stepParam, paymentCompleted, applicationIdParam });
 
     if (paymentId && paymentAmount && paymentStatus) {
       setPaymentInfo({
@@ -69,8 +71,16 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
       setSelectedPlaceType(placeType as PlaceType);
     }
 
+    if (applicationIdParam) {
+      setApplicationId(applicationIdParam);
+    }
 
-    if (stepParam && !isNaN(Number(stepParam))) {
+    // 결제 완료 상태일 때는 무조건 Step 4(결제 완료 화면)를 유지
+    // 사용자가 "추가 정보 입력하기" 버튼을 클릭할 때만 Step 5로 이동
+    if (paymentCompleted === 'true') {
+      console.log('Payment completed, setting step to 4');
+      setCurrentStep(4);
+    } else if (stepParam && !isNaN(Number(stepParam))) {
       console.log('Setting currentStep:', stepParam);
       setCurrentStep(Number(stepParam));
     }
@@ -432,7 +442,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                             <p className="text-xs text-zinc-500">리뷰 수: {plan.reviewCount}건</p>
                           )}
                           {plan.hasRankingBoost && (
-                            <Pill tone="cyan" className="text-xs">순위 부스팅 포함</Pill>
+                            <Pill tone="cyan">순위 부스팅 포함</Pill>
                           )}
                           {(plan.trafficTarget || plan.saveTarget) && (
                             <p className="text-xs text-zinc-500">
@@ -633,18 +643,18 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
               <Button variant="secondary" onClick={() => router.push('/advertiser/experience')}>
                 체험단 목록 보기
               </Button>
-              <Button               onClick={() => {
+              <Button onClick={() => {
                 if (!selectedPlaceType) {
                   alert('매장 유형을 먼저 선택해주세요.');
                   setCurrentStep(1);
                   return;
                 }
                 setCurrentStep(5);
-                // URL 파라미터 업데이트
+                // URL 파라미터 업데이트 - 결제 완료 상태 제거하고 일반적인 단계 전환으로 처리
                 if (typeof window !== 'undefined') {
                   const url = new URL(window.location.href);
+                  url.searchParams.delete('paymentCompleted'); // 결제 완료 상태 제거
                   url.searchParams.set('step', '5');
-                  url.searchParams.set('placeType', selectedPlaceType);
                   window.history.replaceState({}, '', url.toString());
                 }
               }}>

@@ -61,6 +61,14 @@ export interface TeamMembership {
   id: string;
   userId: string;
   role: 'leader' | 'member';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+  appliedAt: string;
+  decidedAt?: string;
+  failureReason?: string;
+  member: {
+    name: string;
+    email: string;
+  };
 }
 
 export interface TeamApplicationForm {

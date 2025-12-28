@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
         applicationDeadline: new Date(data.applicationDeadline),
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
+        status: "ACTIVE", // 기본 상태를 ACTIVE로 설정하여 팀장이 바로 볼 수 있도록 함
       },
       include: {
         advertiser: { include: { user: { select: { name: true } } } },

@@ -38,9 +38,6 @@ export default async function AdvertiserExperienceCampaignsPage() {
     include: {
       pricingPlan: {
         select: { displayName: true }
-      },
-      place: {
-        select: { name: true }
       }
     },
     orderBy: { completedAt: "desc" }
@@ -81,7 +78,7 @@ export default async function AdvertiserExperienceCampaignsPage() {
                         <Pill tone={campaign.status === "ACTIVE" ? "emerald" : "neutral"}>
                           {campaign.status}
                         </Pill>
-                        <Pill tone="blue">캠페인</Pill>
+                        <Pill tone="cyan">캠페인</Pill>
                       </div>
                       <div className="text-xs text-zinc-400">
                         {campaign.place.name} · 신청팀 {formatNumber(campaign._count.teams)}팀
@@ -107,11 +104,11 @@ export default async function AdvertiserExperienceCampaignsPage() {
                         <div className="text-sm font-semibold text-zinc-50">
                           {application.pricingPlan?.displayName} 체험단 신청
                         </div>
-                        <Pill tone="yellow">신청완료</Pill>
+                        <Pill tone="cyan">신청완료</Pill>
                         <Pill tone="neutral">관리자 승인대기</Pill>
                       </div>
                       <div className="text-xs text-zinc-400">
-                        {application.place?.name || '장소 정보 없음'}
+                        {application.businessName || '장소 정보 없음'}
                       </div>
                       <div className="text-xs text-zinc-500">
                         {application.completedAt ? new Date(application.completedAt).toLocaleDateString("ko-KR") : '완료일 정보 없음'}

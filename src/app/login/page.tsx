@@ -108,7 +108,7 @@ export default function LoginPage() {
                   <Button
                     key={account.email}
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     className="w-full"
                     onClick={() => handleTestLogin(account.email)}
@@ -126,7 +126,7 @@ export default function LoginPage() {
                   <Button
                     key={account.email}
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     className="w-full"
                     onClick={() => handleTestLogin(account.email)}
@@ -144,7 +144,7 @@ export default function LoginPage() {
                   <Button
                     key={account.email}
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     className="w-full"
                     onClick={() => handleTestLogin(account.email)}

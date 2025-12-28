@@ -229,8 +229,8 @@ export async function DELETE(
     }
 
     // 팀이 있는 경우 삭제 불가
-    const teamCount = await prisma.experienceTeam.count({
-      where: { campaignId: params.id }
+    const teamCount = await prisma.team.count({
+      where: { experienceCampaignId: params.id }
     });
 
     if (teamCount > 0) {

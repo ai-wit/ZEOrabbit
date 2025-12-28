@@ -459,7 +459,7 @@ export default function ExperienceApplicationsPage() {
                               <Pill tone={
                                 campaign.status === "ACTIVE" ? "emerald" :
                                 campaign.status === "DRAFT" ? "neutral" :
-                                campaign.status === "PAUSED" ? "yellow" : "gray"
+                                campaign.status === "PAUSED" ? "red" : "neutral"
                               }>
                                 {campaign.status === "ACTIVE" ? "진행중" :
                                  campaign.status === "DRAFT" ? "초안" :

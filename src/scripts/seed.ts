@@ -1168,7 +1168,11 @@ async function seedExperienceWorkflow(): Promise<void> {
   const completedApplications = await prisma.experienceApplication.findMany({
     where: { status: "COMPLETED" },
     include: {
-      advertiser: true,
+      advertiser: {
+        include: {
+          places: true
+        }
+      },
       pricingPlan: true
     },
     take: 2 // 2개만 테스트용으로 사용
@@ -1181,7 +1185,7 @@ async function seedExperienceWorkflow(): Promise<void> {
         applicationId: application.id,
         managerId: managerUser.id,
         advertiserId: application.advertiserId,
-        placeId: application.advertiser.places[0]?.id || (await prisma.place.findFirst({ select: { id: true } }))?.id,
+        placeId: application.advertiser.places[0]?.id || (await prisma.place.findFirst({ select: { id: true } }))!.id,
         title: `${application.businessName} 체험단`,
         description: `${application.businessName}의 체험단 공고입니다.`,
         targetTeamCount: application.pricingPlan.teamCount || 1,

@@ -73,7 +73,7 @@ export function TeamManagementModal({
       return;
     }
 
-    const reason = action === 'reject' ? prompt('거절 사유를 입력하세요:') : undefined;
+    const reason = action === 'reject' ? prompt('거절 사유를 입력하세요:') || undefined : undefined;
     if (action === 'reject' && !reason) {
       return; // 거절 시 사유 필수
     }

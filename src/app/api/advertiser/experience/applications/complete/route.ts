@@ -11,7 +11,7 @@ const Schema = z.object({
     openingDate: z.string().optional(),
     shootingStartDate: z.string().optional(),
     currentRanking: z.string().optional(),
-    monthlyTeamCapacity: z.coerce.number().optional(),
+    monthlyTeamCapacity: z.string().optional(),
     address: z.string().optional(),
     representativeMenu: z.string().optional(),
     localMomBenefit: z.string().optional(),
@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       where: { id: applicationId },
       data: {
         ...additionalInfo,
+        monthlyTeamCapacity: additionalInfo.monthlyTeamCapacity ? parseInt(additionalInfo.monthlyTeamCapacity) : null,
         openingDate: additionalInfo.openingDate ? new Date(additionalInfo.openingDate) : null,
         shootingStartDate: additionalInfo.shootingStartDate ? new Date(additionalInfo.shootingStartDate) : null,
         status: 'COMPLETED',

@@ -90,10 +90,16 @@ export function useTeamManagement() {
   const decideMembership = async (teamId: string, membershipId: string, action: 'approve' | 'reject', reason?: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/member/teams/${teamId}/memberships/decide`, {
+      const payload = {
+        membershipId,
+        action,
+        ...(reason !== undefined && { reason })
+      };
+
+      const response = await fetch(`/api/member/teams/${teamId}/memberships`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ membershipId, action, reason })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {

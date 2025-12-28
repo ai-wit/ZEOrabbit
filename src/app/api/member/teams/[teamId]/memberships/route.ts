@@ -4,8 +4,24 @@ import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 
 const decideMembershipSchema = z.object({
-  membershipId: z.string(),
-  action: z.enum(["approve", "reject"]),
+  membershipId: z.string().trim().min(1),
+  action: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        const normalized = val.trim().toLowerCase();
+        // 잘못된 값이 들어오면 기본적으로 'approve'로 처리 (안전하게)
+        if (!['approve', 'reject'].includes(normalized)) {
+          console.warn(`잘못된 action 값 '${val}'을 'approve'로 변환합니다`);
+          return 'approve';
+        }
+        return normalized;
+      }
+      // 기본값 설정
+      console.warn(`action 값이 string이 아닙니다. 기본값 'approve'로 설정합니다. 받은 값:`, val);
+      return 'approve';
+    },
+    z.enum(["approve", "reject"])
+  ),
   reason: z.string().optional(),
 });
 

@@ -62,8 +62,11 @@ export default function TossPaymentSuccessPage() {
 
           if (response.ok && data.success) {
             // 체험단 결제 성공 시 결제 정보를 포함해서 체험단 신청 페이지로 리다이렉트
+            // 결제 완료 화면(Step 4)을 먼저 보여주기 위해 step=4로 설정
+            // paymentCompleted=true로 결제 완료 상태임을 표시
             const params = new URLSearchParams({
-              step: '5',
+              step: '4',
+              paymentCompleted: 'true',
               paymentId: data.payment.id,
               paymentAmount: data.payment.amount.toString(),
               paymentStatus: data.payment.status,

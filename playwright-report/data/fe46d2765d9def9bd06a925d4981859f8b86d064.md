@@ -1,0 +1,72 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: ADVERTISER
+        - generic [ref=e9]:
+          - heading "새 체험단 신청" [level=1] [ref=e10]
+          - paragraph [ref=e11]: 체험단 서비스를 신청하고 매장을 홍보해보세요.
+      - generic [ref=e13]:
+        - link "홈" [ref=e14] [cursor=pointer]:
+          - /url: /
+        - link "광고주 홈" [ref=e15] [cursor=pointer]:
+          - /url: /advertiser
+        - link "플레이스" [ref=e16] [cursor=pointer]:
+          - /url: /advertiser/places
+        - link "캠페인" [ref=e17] [cursor=pointer]:
+          - /url: /advertiser/campaigns
+        - link "체험단" [ref=e18] [cursor=pointer]:
+          - /url: /advertiser/experience
+        - link "리포트" [ref=e19] [cursor=pointer]:
+          - /url: /advertiser/reports
+        - link "결제/충전" [ref=e20] [cursor=pointer]:
+          - /url: /advertiser/billing
+        - button "로그아웃" [ref=e22] [cursor=pointer]
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e27]: "1"
+        - generic [ref=e30]: "2"
+        - generic [ref=e33]: "3"
+        - generic [ref=e36]: "4"
+        - generic [ref=e39]: "5"
+        - generic [ref=e42]: "6"
+      - generic [ref=e44]:
+        - heading "추가 정보 입력" [level=2] [ref=e45]
+        - generic [ref=e46]: "선택된 매장 유형: OPENING_SOON"
+        - generic [ref=e48]:
+          - heading "오픈 예정 매장 정보" [level=3] [ref=e49]
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - generic [ref=e52]: 상호명 (가칭)
+              - 'textbox "예: 토끼네 분식" [ref=e53]': 테스트 매장
+            - generic [ref=e54]:
+              - generic [ref=e55]: 오픈 예정일
+              - textbox [ref=e56]: 2025-12-25
+            - generic [ref=e57]:
+              - generic [ref=e58]: 체험단 촬영 가능 시작일
+              - textbox [ref=e59]
+            - generic [ref=e60]:
+              - generic [ref=e61]: 매장 위치 (주소)
+              - 'textbox "예: 서울시 강남구 역삼동 123-45" [ref=e62]': 서울시 강남구 역삼동 123-45
+            - generic [ref=e63]:
+              - generic [ref=e64]: 촬영용 대표 메뉴
+              - 'textbox "예: 김밥, 떡볶이, 튀김" [ref=e65]': 김밥, 떡볶이, 튀김
+            - generic [ref=e66]:
+              - generic [ref=e67]: 로컬맘 제공 혜택
+              - combobox [ref=e68]:
+                - option "선택하세요"
+                - option "5만원"
+                - option "10만원" [selected]
+                - option "15만원"
+                - option "20만원"
+            - generic [ref=e69]:
+              - generic [ref=e70]: 담당자 휴대폰 번호
+              - 'textbox "예: 010-1234-5678" [ref=e71]': 010-1234-5678
+        - generic [ref=e72]:
+          - button "이전 단계" [ref=e73] [cursor=pointer]
+          - button "신청 완료" [active] [ref=e74] [cursor=pointer]
+  - alert [ref=e75]
+```

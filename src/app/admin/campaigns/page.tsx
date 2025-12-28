@@ -295,10 +295,10 @@ export default function CampaignsPage() {
                             목표 팀 수: {formatNumber(campaign.targetTeamCount)}팀 · 팀당 최대 인원: {formatNumber(campaign.maxMembersPerTeam)}명
                           </div>
                           <div className="text-xs text-zinc-500">
-                            신청 마감: {formatDateTime(campaign.applicationDeadline)} · 체험 기간: {formatDate(campaign.startDate)} ~ {formatDate(campaign.endDate)}
+                            신청 마감: {formatDateTime(new Date(campaign.applicationDeadline))} · 체험 기간: {formatDate(new Date(campaign.startDate))} ~ {formatDate(new Date(campaign.endDate))}
                           </div>
                           <div className="text-xs text-zinc-500">
-                            참여 팀: {formatNumber(campaign._count.teams)}팀 · 생성: {formatDateTime(campaign.createdAt)}
+                            참여 팀: {formatNumber(campaign._count.teams)}팀 · 생성: {formatDateTime(new Date(campaign.createdAt))}
                           </div>
                         </div>
                         <div className="flex gap-2">

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>체험단 신청 테스트 가이드</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .step {
+            background: #f5f5f5;
+            border-left: 4px solid #007acc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #007acc;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 5px 0;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005aa3;
+        }
+    </style>
+</head>
+<body>
+    <h1>체험단 신청 테스트 가이드</h1>
+
+    <div class="warning">
+        <strong>⚠️ 준비사항:</strong><br>
+        1. Next.js 개발 서버가 실행 중이어야 합니다: <code>npm run dev</code><br>
+        2. 데이터베이스가 실행 중이어야 합니다<br>
+        3. 테스트 계정이 설정되어 있어야 합니다
+    </div>
+
+    <h2>테스트 절차</h2>
+
+    <div class="step">
+        <h3>Step 1: 로그인</h3>
+        <ol>
+            <li><a href="http://localhost:3000/login" target="_blank">로그인 페이지</a>로 이동</li>
+            <li>테스트 계정 중 "광고주 1" 버튼 클릭</li>
+            <li>또는 수동으로 입력:
+                <div class="code">
+                이메일: advertiser+1@example.com<br>
+                비밀번호: password123!
+                </div>
+            </li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>Step 2: 체험단 신청 페이지 이동</h3>
+        <ol>
+            <li>광고주 대시보드에서 체험단 메뉴 클릭</li>
+            <li>"새 체험단 신청" 버튼 클릭</li>
+            <li>또는 직접 URL 이동: <a href="http://localhost:3000/advertiser/experience/new" target="_blank">체험단 신청 페이지</a></li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>Step 3: 기본 정보 입력</h3>
+        <ol>
+            <li>광고주 정보 확인 (자동으로 채워짐)</li>
+            <li><strong>체험단 약관 동의</strong> 체크박스 선택</li>
+            <li><strong>매장 유형 선택</strong>:
+                <ul>
+                    <li>오픈 예정: "오픈 예정" 카드 클릭</li>
+                    <li>운영 중: "매장 운영 중" 카드 클릭</li>
+                </ul>
+            </li>
+            <li>"다음 단계" 버튼 클릭</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>Step 4: 요금제 선택</h3>
+        <ol>
+            <li>매장 유형에 따라 다른 요금제가 표시됨</li>
+            <li>원하는 요금제 클릭하여 선택</li>
+            <li>"다음 단계" 버튼 클릭</li>
+        </ol>
+        <div class="code">
+        오픈 예정 매장 요금제: Basic 29만원, Pro 49만원, VIP 79만원<br>
+        운영 중 매장 요금제: ① 29만원, ② 49만원 A, ③ 49만원 B, ④ 79만원
+        </div>
+    </div>
+
+    <div class="step">
+        <h3>Step 5: 결제 정보 입력</h3>
+        <ol>
+            <li>선택된 요금제 정보 확인</li>
+            <li><strong>결제 수단 선택</strong>:
+                <ul>
+                    <li>카드 결제 (토스페이먼츠로 이동)</li>
+                    <li><strong>무통장 입금 (테스트용 권장)</strong></li>
+                </ul>
+            </li>
+            <li>세금계산서 발행 체크박스 (선택사항)</li>
+            <li>"결제하기" 버튼 클릭</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>Step 6: 결제 완료</h3>
+        <ol>
+            <li>결제 완료 메시지 확인</li>
+            <li>결제 정보 확인</li>
+            <li>"추가 정보 입력하기" 버튼 클릭</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>Step 7: 추가 정보 입력</h3>
+        <ol>
+            <li>매장 유형에 따라 다른 양식 표시</li>
+            <li><strong>오픈 예정 매장</strong>:
+                <ul>
+                    <li>상호명 (가칭)</li>
+                    <li>오픈 예정일</li>
+                    <li>체험단 촬영 가능 시작일</li>
+                    <li>매장 위치 (주소)</li>
+                    <li>촬영용 대표 메뉴</li>
+                    <li>로컬맘 제공 혜택 (5만/10만 등)</li>
+                    <li>담당자 휴대폰 번호</li>
+                </ul>
+            </li>
+            <li><strong>운영 중 매장</strong>:
+                <ul>
+                    <li>상호명 (네이버 검색 연동 권장)</li>
+                    <li>현재 네이버 플레이스 순위 고민</li>
+                    <li>월 방문 가능 팀 수</li>
+                    <li>매장 위치</li>
+                    <li>대표 메뉴</li>
+                    <li>로컬맘 제공 혜택</li>
+                    <li>담당자 휴대폰 번호</li>
+                </ul>
+            </li>
+            <li>"신청 완료" 버튼 클릭</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>Step 8: 신청 완료 확인</h3>
+        <ol>
+            <li>"접수가 완료되었습니다!" 메시지 확인</li>
+            <li>담당 매니저 배정 안내 확인</li>
+            <li>입력한 연락처 확인</li>
+            <li>신청 요약 정보 확인</li>
+        </ol>
+    </div>
+
+    <div class="success">
+        <strong>✅ 테스트 완료!</strong><br>
+        전체 프로세스가 정상적으로 동작하는지 확인하세요.
+    </div>
+
+    <h2>빠른 테스트용 버튼</h2>
+    <button onclick="window.open('http://localhost:3000/login', '_blank')">로그인 페이지 열기</button>
+    <button onclick="window.open('http://localhost:3000/advertiser/experience/new', '_blank')">체험단 신청 페이지 열기</button>
+
+    <h2>문제 해결</h2>
+    <ul>
+        <li><strong>페이지가 로드되지 않음:</strong> Next.js 서버가 실행 중인지 확인 (<code>npm run dev</code>)</li>
+        <li><strong>로그인 실패:</strong> 데이터베이스가 실행 중인지 확인</li>
+        <li><strong>요금제가 표시되지 않음:</strong> 매장 유형을 먼저 선택했는지 확인</li>
+        <li><strong>결제 실패:</strong> 토스페이먼츠 설정이 올바른지 확인</li>
+        <li><strong>추가 정보가 저장되지 않음:</strong> 필수 필드를 모두 입력했는지 확인</li>
+    </ul>
+
+    <script>
+        // 페이지 로드 시 서버 상태 확인
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch('http://localhost:3000/api/health', { method: 'HEAD' });
+                if (response.ok) {
+                    console.log('✅ 서버가 정상적으로 실행 중입니다.');
+                }
+            } catch (error) {
+                alert('⚠️ 서버가 실행되지 않고 있습니다. 먼저 npm run dev를 실행하세요.');
+            }
+        });
+    </script>
+</body>
+</html>
