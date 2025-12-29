@@ -20,8 +20,10 @@
     "vercel:build": "npx vercel build",
     "db:push": "prisma db push",
     "db:seed": "tsx src/scripts/seed.ts",
+    "db:init": "tsx src/scripts/init-db.ts",
     "db:push:local": "node scripts/with-envlocal.mjs prisma db push --accept-data-loss",
     "db:seed:local": "node scripts/with-envlocal.mjs tsx src/scripts/seed.ts",
+    "db:init:local": "node scripts/with-envlocal.mjs tsx src/scripts/init-db.ts",
     "vercel-build": "node scripts/vercel-build.mjs"
   },
   "prisma": {
