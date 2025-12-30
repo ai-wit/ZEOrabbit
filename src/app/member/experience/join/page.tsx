@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { requireRole } from "@/server/auth/require-user";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
@@ -32,7 +32,7 @@ interface ValidationResult {
   team: TeamInfo | null;
 }
 
-export default function JoinTeamPage() {
+function JoinTeamPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const code = searchParams.get('code');
@@ -271,5 +271,27 @@ export default function JoinTeamPage() {
         )}
       </div>
     </PageShell>
+  );
+}
+
+export default function JoinTeamPage() {
+  return (
+    <Suspense fallback={
+      <PageShell
+        header={
+          <PageHeader
+            eyebrow="EXPERIENCE"
+            title="팀 참여"
+            description="초대코드를 확인하는 중입니다..."
+          />
+        }
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-lg text-zinc-400">로딩 중...</div>
+        </div>
+      </PageShell>
+    }>
+      <JoinTeamPageContent />
+    </Suspense>
   );
 }

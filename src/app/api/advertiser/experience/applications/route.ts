@@ -4,6 +4,12 @@ import { requireRole } from '@/server/auth/require-user';
 import { prisma } from '@/server/prisma';
 import { getAdvertiserProfileIdByUserId } from '@/server/advertiser/advertiser-profile';
 
+// 세금을 포함한 총 금액 계산 함수
+function calculateTotalAmount(priceKrw: number, taxPercent: number): number {
+  const taxAmount = Math.round(priceKrw * taxPercent / 100);
+  return priceKrw + taxAmount;
+}
+
 const Schema = z.object({
   pricingPlanId: z.string().min(1),
   placeType: z.enum(['OPENING_SOON', 'OPERATING']),
@@ -48,13 +54,13 @@ export async function POST(req: NextRequest) {
 
     // 요금제 확인 (하드코딩된 데이터에서 찾기)
     const hardcodedPlans = [
-      { id: 'opening-basic', name: 'Basic', displayName: 'Basic 29만원', priceKrw: 290000 },
-      { id: 'opening-pro', name: 'Pro', displayName: 'Pro 49만원', priceKrw: 490000 },
-      { id: 'opening-vip', name: 'VIP', displayName: 'VIP 79만원', priceKrw: 790000 },
-      { id: 'operating-basic', name: 'Basic', displayName: '① 29만원 (실속형)', priceKrw: 290000 },
-      { id: 'operating-tech', name: 'Tech', displayName: '② 49만원 A (기술형)', priceKrw: 490000 },
-      { id: 'operating-volume', name: 'Volume', displayName: '③ 49만원 B (물량형)', priceKrw: 490000 },
-      { id: 'operating-vip', name: 'VIP', displayName: '④ 79만원 (VIP형)', priceKrw: 790000 },
+      { id: 'opening-basic', name: 'Basic', displayName: 'Basic 29만원', priceKrw: 290000, taxPercent: 10 },
+      { id: 'opening-pro', name: 'Pro', displayName: 'Pro 49만원', priceKrw: 490000, taxPercent: 10 },
+      { id: 'opening-vip', name: 'VIP', displayName: 'VIP 79만원', priceKrw: 790000, taxPercent: 10 },
+      { id: 'operating-basic', name: 'Basic', displayName: '① 29만원 (실속형)', priceKrw: 290000, taxPercent: 10 },
+      { id: 'operating-tech', name: 'Tech', displayName: '② 49만원 A (기술형)', priceKrw: 490000, taxPercent: 10 },
+      { id: 'operating-volume', name: 'Volume', displayName: '③ 49만원 B (물량형)', priceKrw: 490000, taxPercent: 10 },
+      { id: 'operating-vip', name: 'VIP', displayName: '④ 79만원 (VIP형)', priceKrw: 790000, taxPercent: 10 },
     ];
 
     const pricingPlan = hardcodedPlans.find(plan => plan.id === pricingPlanId);
@@ -107,6 +113,7 @@ export async function POST(req: NextRequest) {
             name: pricingPlan.name,
             displayName: pricingPlan.displayName,
             priceKrw: pricingPlan.priceKrw,
+            // taxPercent: pricingPlan.taxPercent || 10, // TODO: AWS 배포 시 활성화
             description: '',
             teamCount: 1,
             leaderLevel: 'Lv1',
@@ -114,7 +121,7 @@ export async function POST(req: NextRequest) {
             hasRankingBoost: false,
             trafficTarget: 3000,
             saveTarget: 100,
-          }
+          } as any // 임시: 타입 에러 우회
         });
       }
     }
@@ -147,13 +154,14 @@ export async function POST(req: NextRequest) {
     console.log('ExperienceApplication 생성됨:', application.id);
 
     // 결제 생성 (BANK_TRANSFER의 경우 즉시 완료, CARD의 경우 토스페이먼츠)
+    const totalAmount = calculateTotalAmount(pricingPlan.priceKrw, pricingPlan.taxPercent);
     let payment;
     if (paymentMethod === 'BANK_TRANSFER') {
       // 무통장 입금의 경우 즉시 결제 완료로 처리
       payment = await prisma.payment.create({
         data: {
           advertiserId,
-          amountKrw: pricingPlan.priceKrw,
+          amountKrw: totalAmount,
           status: 'CREATED', // 실제로는 관리자가 확인 후 PAID로 변경
           provider: 'BANK_TRANSFER',
           providerRef: `bank_${Date.now()}`,
@@ -168,7 +176,7 @@ export async function POST(req: NextRequest) {
         data: {
           id: orderId,
           advertiserId,
-          amountKrw: pricingPlan.priceKrw,
+          amountKrw: totalAmount,
           status: 'CREATED',
           provider: 'TOSS',
           providerRef: orderId,

@@ -3,6 +3,8 @@ import { requireRole } from '@/server/auth/require-user';
 import { getAdvertiserProfileIdByUserId } from '@/server/advertiser/advertiser-profile';
 import { prisma } from '@/server/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const user = await requireRole('ADVERTISER');

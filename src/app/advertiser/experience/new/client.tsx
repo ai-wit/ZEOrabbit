@@ -22,6 +22,7 @@ interface PricingPlan {
   name: string;
   displayName: string;
   priceKrw: number;
+  taxPercent: number;
   description?: string;
   teamCount?: number;
   leaderLevel?: string;
@@ -455,6 +456,9 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                         <div className="text-2xl font-bold text-zinc-50">
                           {formatKrw(plan.priceKrw)}
                         </div>
+                        <div className="text-sm text-zinc-400">
+                          부가세 {plan.taxPercent}% 별도
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -490,9 +494,14 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                 <p className="text-xl font-semibold text-zinc-50">
                   {selectedPlan?.displayName}
                 </p>
-                <p className="text-2xl font-bold text-cyan-400">
-                  {formatKrw(selectedPlan?.priceKrw || 0)}
-                </p>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-cyan-400">
+                    {formatKrw(selectedPlan?.priceKrw || 0)}
+                  </p>
+                  <p className="text-sm text-cyan-200">
+                    부가세 {selectedPlan?.taxPercent}% 포함 총 {formatKrw(Math.round((selectedPlan?.priceKrw || 0) * (1 + (selectedPlan?.taxPercent || 0) / 100)))}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -596,9 +605,14 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">결제 금액</span>
-                  <span className="text-zinc-50 font-medium">
-                    {formatKrw(paymentInfo?.amount || selectedPlan?.priceKrw || 0)}
-                  </span>
+                  <div className="text-right">
+                    <span className="text-zinc-50 font-medium">
+                      {formatKrw(paymentInfo?.amount || Math.round((selectedPlan?.priceKrw || 0) * (1 + (selectedPlan?.taxPercent || 0) / 100)))}
+                    </span>
+                    <div className="text-xs text-zinc-500">
+                      (부가세 {selectedPlan?.taxPercent}% 포함)
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">결제 수단</span>
