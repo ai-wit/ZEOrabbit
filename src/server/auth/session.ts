@@ -4,6 +4,22 @@ import { prisma } from "@/server/prisma";
 
 const SESSION_COOKIE_NAME = "zeo_session";
 
+function parseEnvBoolean(value: string | undefined): boolean | undefined {
+  if (value === undefined) return undefined;
+  const v = value.trim().toLowerCase();
+  if (["1", "true", "yes", "y", "on"].includes(v)) return true;
+  if (["0", "false", "no", "n", "off"].includes(v)) return false;
+  return undefined;
+}
+
+function shouldUseSecureSessionCookie(): boolean {
+  // In production, cookies are "Secure" by default to prevent session leakage over HTTP.
+  // For IP-based HTTP environments (no TLS), set SESSION_COOKIE_SECURE=0 explicitly.
+  const fromEnv = parseEnvBoolean(process.env.SESSION_COOKIE_SECURE);
+  if (fromEnv !== undefined) return fromEnv;
+  return process.env.NODE_ENV === "production";
+}
+
 function sha256Base64Url(input: string): string {
   return crypto.createHash("sha256").update(input).digest("base64url");
 }
@@ -34,7 +50,7 @@ export async function createSessionForUser(params: {
     value: token,
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookie(),
     path: "/",
     expires: expiresAt
   });
@@ -55,7 +71,7 @@ export async function destroyCurrentSession(): Promise<void> {
     value: "",
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookie(),
     path: "/",
     expires: new Date(0)
   });

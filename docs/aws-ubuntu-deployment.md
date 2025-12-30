@@ -272,36 +272,9 @@ ls -la .next/
 
 ### PM2로 애플리케이션 실행
 ```bash
-# PM2용 ecosystem 파일 생성
-cat > ecosystem.config.js << EOF
-module.exports = {
-  apps: [{
-    name: 'zeorabbit',
-    script: 'npm',
-    args: 'start',
-    cwd: '/home/ubuntu/apps/zeorabbit',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3000
-    },
-    env_production: {
-      NODE_ENV: 'production',
-      PORT: 3000
-    },
-    instances: 1,
-    exec_mode: 'fork',
-    log_file: '/home/ubuntu/logs/zeorabbit.log',
-    out_file: '/home/ubuntu/logs/zeorabbit-out.log',
-    error_file: '/home/ubuntu/logs/zeorabbit-error.log',
-    time: true,
-    watch: false,
-    max_memory_restart: '1G'
-  }]
-}
-EOF
-
-# PM2로 애플리케이션 시작
-pm2 start ecosystem.config.js --env production
+# PM2로 애플리케이션 직접 시작 (ecosystem 파일 없이)
+cd /home/ubuntu/apps/zeorabbit
+pm2 start npm --name zeorabbit -- start -- --port 3000
 pm2 save
 pm2 startup
 ```
