@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
         id: true,
         title: true,
         description: true,
-        missionGuide: true,
-        benefits: true,
+        // missionGuide: true, // TODO: 데이터베이스 스키마 업데이트 후 활성화
+        // benefits: true, // TODO: 데이터베이스 스키마 업데이트 후 활성화
         targetTeamCount: true,
         maxMembersPerTeam: true,
         applicationDeadline: true,

@@ -29,12 +29,12 @@ export function CampaignsTab({
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600 text-lg">{error}</p>
+        <p className="text-zinc-500 text-lg">공고 목록을 불러오는데 문제가 발생했습니다.</p>
         <button
           onClick={() => window.location.reload()}
           className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
-          다시 시도
+          다시 불러오기
         </button>
       </div>
     );
@@ -56,7 +56,7 @@ export function CampaignsTab({
 
         {campaigns.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-zinc-500 text-lg">현재 모집 중인 체험단 공고가 없습니다.</p>
+            <p className="text-zinc-500 text-lg">현재 진행중인 체험단 공고가 없습니다.</p>
           </div>
         )}
       </div>

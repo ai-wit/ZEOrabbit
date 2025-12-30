@@ -90,9 +90,8 @@ export async function POST(
       );
     }
 
-    // 파일명 생성 (UUID + 원본 확장자)
-    const fileExtension = file.name.split(".").pop();
-    const fileName = `${randomUUID()}.${fileExtension}`;
+    // 파일명 생성 (UUID + .zip 확장자)
+    const fileName = `${randomUUID()}.zip`;
     const filePath = join(uploadDir, fileName);
 
     // 파일 저장
