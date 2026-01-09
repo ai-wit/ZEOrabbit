@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PageShell } from "@/app/_ui/shell";
-import { Button, Card, CardBody } from "@/app/_ui/primitives";
+import { Button, ButtonLink, Card, CardBody } from "@/app/_ui/primitives";
 import { AdvertiserHeader } from "../_components/AdvertiserHeader";
 
 type Product = {
@@ -90,11 +90,9 @@ export default function AdvertiserProductsPage() {
                     </p>
                   )}
 
-                  <Button asChild variant="primary" className="w-full">
-                    <Link href={`/advertiser/products/${product.id}`}>
-                      구매하기
-                    </Link>
-                  </Button>
+                  <ButtonLink href={`/advertiser/products/${product.id}`} variant="primary" className="w-full">
+                    구매하기
+                  </ButtonLink>
                 </CardBody>
               </Card>
             ))}

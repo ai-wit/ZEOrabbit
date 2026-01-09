@@ -26,9 +26,10 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
     },
     include: {
       place: {
-        select: { id: true, name: true, address: true }
+        select: { id: true, name: true }
       },
-      productOrder: {
+      productOrders: {
+        take: 1,
         include: {
           product: {
             select: {
@@ -46,28 +47,19 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
         select: {
           id: true,
           date: true,
-          targetCount: true,
-          completedCount: true,
-          status: true
-        }
-      },
-      members: {
-        take: 10,
-        select: {
-          id: true,
-          rewarderProfile: {
-            select: {
-              displayName: true,
-              level: true
-            }
-          },
+          quotaTotal: true,
           status: true,
-          completedMissions: true
+          _count: {
+            select: {
+              participations: {
+                where: { status: "APPROVED" }
+              }
+            }
+          }
         }
       },
       _count: {
         select: {
-          members: true,
           missionDays: true
         }
       }
@@ -78,8 +70,8 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
     notFound();
   }
 
-  const totalTarget = campaign.missionDays.reduce((sum, day) => sum + day.targetCount, 0);
-  const totalCompleted = campaign.missionDays.reduce((sum, day) => sum + day.completedCount, 0);
+  const totalTarget = campaign.missionDays.reduce((sum, day) => sum + day.quotaTotal, 0);
+  const totalCompleted = campaign.missionDays.reduce((sum, day) => sum + day._count.participations, 0);
   const completionRate = totalTarget > 0 ? Math.round((totalCompleted / totalTarget) * 100) : 0;
 
   const today = new Date();
@@ -99,30 +91,30 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
       <div className="space-y-6">
         {/* 캠페인 개요 */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader
+            title="캠페인 개요"
+            right={
               <div className="flex items-center gap-3">
-                <h2 className="text-lg font-semibold text-zinc-50">캠페인 개요</h2>
-                <Pill tone={campaign.status === "ACTIVE" ? "emerald" : campaign.status === "DRAFT" ? "cyan" : campaign.status === "PAUSED" ? "yellow" : "indigo"}>
+                <Pill tone={campaign.status === "ACTIVE" ? "emerald" : campaign.status === "DRAFT" ? "cyan" : campaign.status === "PAUSED" ? "neutral" : "indigo"}>
                   {campaign.status}
                 </Pill>
+                {campaign.status === "DRAFT" || campaign.status === "PAUSED" ? (
+                  <form action={`/api/advertiser/campaigns/${campaign.id}/activate`} method="post">
+                    <Button type="submit" variant="primary" size="sm">
+                      캠페인 활성화
+                    </Button>
+                  </form>
+                ) : null}
               </div>
-              {campaign.status === "DRAFT" || campaign.status === "PAUSED" ? (
-                <form action={`/api/advertiser/campaigns/${campaign.id}/activate`} method="post">
-                  <Button type="submit" variant="primary" size="sm">
-                    캠페인 활성화
-                  </Button>
-                </form>
-              ) : null}
-            </div>
-          </CardHeader>
+            }
+          />
           <CardBody className="space-y-4">
-            {campaign.productOrder?.product && (
+            {campaign.productOrders[0]?.product && (
               <div className="space-y-2">
                 <div className="text-sm font-medium text-zinc-50">구매 상품</div>
-                <div className="text-sm text-zinc-300">{campaign.productOrder.product.name}</div>
-                {campaign.productOrder.product.marketingCopy && (
-                  <div className="text-xs text-zinc-400">{campaign.productOrder.product.marketingCopy}</div>
+                <div className="text-sm text-zinc-300">{campaign.productOrders[0].product.name}</div>
+                {campaign.productOrders[0].product.marketingCopy && (
+                  <div className="text-xs text-zinc-400">{campaign.productOrders[0].product.marketingCopy}</div>
                 )}
               </div>
             )}
@@ -157,7 +149,7 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
               </div>
               <div>
                 <div className="text-zinc-400">총 참여자</div>
-                <div className="text-zinc-50 font-medium">{campaign._count.members}명</div>
+                <div className="text-zinc-50 font-medium">N/A명</div>
               </div>
               <div>
                 <div className="text-zinc-400">진행률</div>
@@ -170,9 +162,7 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
         {/* 오늘의 미션 */}
         {currentDay && (
           <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold text-zinc-50">오늘의 미션</h2>
-            </CardHeader>
+            <CardHeader title="오늘의 미션" />
             <CardBody>
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -180,12 +170,12 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
                     {new Date(currentDay.date).toLocaleDateString("ko-KR")} ({currentDay.status})
                   </div>
                   <div className="text-xs text-zinc-400">
-                    목표: {currentDay.targetCount}건 · 완료: {currentDay.completedCount}건
+                    목표: {currentDay.quotaTotal}건 · 완료: {currentDay._count.participations}건
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-semibold text-zinc-50">
-                    {currentDay.targetCount > 0 ? Math.round((currentDay.completedCount / currentDay.targetCount) * 100) : 0}%
+                    {currentDay.quotaTotal > 0 ? Math.round((currentDay._count.participations / currentDay.quotaTotal) * 100) : 0}%
                   </div>
                   <div className="text-xs text-zinc-400">달성률</div>
                 </div>
@@ -196,9 +186,7 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
 
         {/* 미션 진행 현황 */}
         <Card>
-          <CardHeader>
-            <h2 className="text-lg font-semibold text-zinc-50">미션 진행 현황</h2>
-          </CardHeader>
+          <CardHeader title="미션 진행 현황" />
           <CardBody>
             <div className="space-y-3">
               {campaign.missionDays.slice(0, 7).map((day) => (
@@ -207,15 +195,15 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
                     <div className="text-sm text-zinc-50 w-20">
                       {new Date(day.date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
                     </div>
-                    <Pill tone={day.status === "COMPLETED" ? "emerald" : day.status === "ACTIVE" ? "blue" : "gray"} size="sm">
+                    <Pill tone={day.status === "ENDED" ? "emerald" : day.status === "ACTIVE" ? "cyan" : "neutral"}>
                       {day.status}
                     </Pill>
                   </div>
                   <div className="text-sm text-zinc-300">
-                    {day.completedCount} / {day.targetCount}건
+                    {day._count.participations} / {day.quotaTotal}건
                   </div>
                   <div className="text-sm text-zinc-400 w-12 text-right">
-                    {day.targetCount > 0 ? Math.round((day.completedCount / day.targetCount) * 100) : 0}%
+                    {day.quotaTotal > 0 ? Math.round((day._count.participations / day.quotaTotal) * 100) : 0}%
                   </div>
                 </div>
               ))}
@@ -232,45 +220,11 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
 
         {/* 참여자 현황 */}
         <Card>
-          <CardHeader>
-            <h2 className="text-lg font-semibold text-zinc-50">참여자 현황</h2>
-          </CardHeader>
+          <CardHeader title="참여자 현황" />
           <CardBody>
-            {campaign.members.length === 0 ? (
-              <div className="text-center py-8 text-sm text-zinc-400">
-                아직 참여자가 없습니다.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {campaign.members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-b-0">
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm text-zinc-50">
-                        {member.rewarderProfile.displayName}
-                      </div>
-                      <Pill tone="gray" size="sm">
-                        Lv.{member.rewarderProfile.level}
-                      </Pill>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm text-zinc-300">
-                        {member.completedMissions}건 완료
-                      </div>
-                      <Pill tone={member.status === "ACTIVE" ? "emerald" : "gray"} size="sm">
-                        {member.status}
-                      </Pill>
-                    </div>
-                  </div>
-                ))}
-                {campaign._count.members > 10 && (
-                  <div className="text-center pt-2">
-                    <span className="text-xs text-zinc-500">
-                      총 {campaign._count.members}명 중 최근 10명 표시
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="text-center py-8 text-sm text-zinc-400">
+              참여자 상세 정보는 추후 제공 예정입니다.
+            </div>
           </CardBody>
         </Card>
 

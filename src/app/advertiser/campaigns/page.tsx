@@ -24,7 +24,8 @@ export default async function AdvertiserCampaignsPage() {
       rewardKrw: true,
       status: true,
       createdAt: true,
-      productOrder: {
+      productOrders: {
+        take: 1,
         select: {
           product: {
             select: {
@@ -37,8 +38,7 @@ export default async function AdvertiserCampaignsPage() {
       place: { select: { name: true } },
       _count: {
         select: {
-          missionDays: true,
-          members: true
+          missionDays: true
         }
       }
     }
@@ -73,14 +73,14 @@ export default async function AdvertiserCampaignsPage() {
                   <div className="space-y-2 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="text-sm font-semibold text-zinc-50">{c.name}</div>
-                      <Pill tone={c.status === "ACTIVE" ? "emerald" : c.status === "DRAFT" ? "cyan" : c.status === "PAUSED" ? "yellow" : "indigo"}>
+                      <Pill tone={c.status === "ACTIVE" ? "emerald" : c.status === "DRAFT" ? "cyan" : c.status === "PAUSED" ? "neutral" : "indigo"}>
                         {c.status}
                       </Pill>
                     </div>
 
-                    {c.productOrder?.product && (
+                    {c.productOrders[0]?.product && (
                       <div className="text-xs text-zinc-500">
-                        상품: {c.productOrder.product.name} ({c.productOrder.product.missionType})
+                        상품: {c.productOrders[0].product.name} ({c.productOrders[0].product.missionType})
                       </div>
                     )}
 
@@ -96,7 +96,7 @@ export default async function AdvertiserCampaignsPage() {
 
                     <div className="flex items-center gap-4 text-xs text-zinc-500">
                       <span>{c._count.missionDays}일차 진행</span>
-                      <span>{c._count.members}명 참여</span>
+                      <span>N/A명 참여</span>
                       <span>{new Date(c.createdAt).toLocaleDateString("ko-KR")} 생성</span>
                     </div>
                   </div>
@@ -110,7 +110,7 @@ export default async function AdvertiserCampaignsPage() {
                       </form>
                     ) : null}
 
-                    <ButtonLink href={`/advertiser/campaigns/${c.id}`} variant="outline" size="sm">
+                    <ButtonLink href={`/advertiser/campaigns/${c.id}`} variant="secondary" size="sm">
                       상세보기
                     </ButtonLink>
                   </div>

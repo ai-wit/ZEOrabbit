@@ -107,7 +107,7 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
     >
       <div className="space-y-8">
         {error && (
-          <Callout tone="red" title="구매 실패">
+          <Callout tone="warning" title="구매 실패">
             {getErrorMessage(error)}
           </Callout>
         )}

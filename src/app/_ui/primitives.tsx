@@ -126,7 +126,7 @@ export function ButtonLink(props: {
   );
 }
 
-export function Label(props: { htmlFor: string; children: ReactNode }) {
+export function Label(props: { htmlFor?: string; children: ReactNode }) {
   return (
     <label htmlFor={props.htmlFor} className="text-sm font-semibold text-zinc-200">
       {props.children}
