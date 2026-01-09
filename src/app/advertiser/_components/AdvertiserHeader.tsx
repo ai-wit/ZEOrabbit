@@ -23,8 +23,11 @@ export function AdvertiserHeader({ title, description }: AdvertiserHeaderProps) 
           <ButtonLink href="/advertiser/places" variant="secondary" size="sm">
             플레이스
           </ButtonLink>
+          <ButtonLink href="/advertiser/products" variant="secondary" size="sm">
+            상품 구매
+          </ButtonLink>
           <ButtonLink href="/advertiser/campaigns" variant="secondary" size="sm">
-            캠페인
+            집행 현황
           </ButtonLink>
           <ButtonLink href="/advertiser/experience" variant="secondary" size="sm">
             체험단

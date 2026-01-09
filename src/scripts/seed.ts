@@ -452,7 +452,6 @@ async function seedExperiencePricingPlans() {
       name: 'Basic',
       displayName: 'Basic 29만원',
       priceKrw: 290000,
-      taxPercent: 10,
       description: '오픈 준비 팩 - 리뷰 0개인 민망한 상태만 피하자. (사진/기본리뷰 확보)',
       teamCount: 1,
       leaderLevel: 'Lv1',
@@ -466,7 +465,6 @@ async function seedExperiencePricingPlans() {
       name: 'Pro',
       displayName: 'Pro 49만원',
       priceKrw: 490000,
-      taxPercent: 10,
       description: '그랜드 오픈 팩 - 오픈 첫 주에 리뷰 50개 깔아서 기선 제압하자.',
       teamCount: 1,
       leaderLevel: 'Lv1',
@@ -480,7 +478,6 @@ async function seedExperiencePricingPlans() {
       name: 'VIP',
       displayName: 'VIP 79만원',
       priceKrw: 790000,
-      taxPercent: 10,
       description: '런칭 컨설팅 팩 - 첫 단추부터 전문가가 끼워준다. SEO/키워드 완벽 세팅.',
       teamCount: 1,
       leaderLevel: 'Lv2',
@@ -495,7 +492,6 @@ async function seedExperiencePricingPlans() {
       name: 'Basic',
       displayName: '① 29만원 (실속형)',
       priceKrw: 290000,
-      taxPercent: 10,
       description: '자료 수집 & 기본 리뷰',
       teamCount: 1,
       leaderLevel: 'Lv1',
@@ -509,7 +505,6 @@ async function seedExperiencePricingPlans() {
       name: 'Tech',
       displayName: '② 49만원 A (기술형)',
       priceKrw: 490000,
-      taxPercent: 10,
       description: '리뷰 + 순위 부스팅',
       teamCount: 1,
       leaderLevel: 'Lv1',
@@ -523,7 +518,6 @@ async function seedExperiencePricingPlans() {
       name: 'Volume',
       displayName: '③ 49만원 B (물량형)',
       priceKrw: 490000,
-      taxPercent: 10,
       description: '리뷰 폭격 (물량 2배) - 도배 효과',
       teamCount: 2,
       leaderLevel: 'Lv1',
@@ -537,7 +531,6 @@ async function seedExperiencePricingPlans() {
       name: 'VIP',
       displayName: '④ 79만원 (VIP형)',
       priceKrw: 790000,
-      taxPercent: 10,
       description: '지역 1등 만들기 (Total) - 고퀄리티 보장',
       teamCount: 2,
       leaderLevel: 'Lv2',
@@ -926,6 +919,49 @@ async function seedAdditionalPayments(): Promise<void> {
 
 async function run(): Promise<void> {
   await ensurePolicies();
+
+  // Mission Templates
+  console.log("🌱 Seeding mission templates...");
+  const naverSearchTemplate = await prisma.missionTemplate.upsert({
+    where: { key_version: { key: "NAVER_SEARCH_CLICK", version: 1 } },
+    update: {},
+    create: {
+      key: "NAVER_SEARCH_CLICK",
+      version: 1,
+      missionType: "TRAFFIC",
+      name: "네이버 검색 클릭 미션",
+      description: "특정 검색어로 네이버 검색 후 클릭하는 미션",
+      payloadJson: {
+        steps: [
+          { type: "SEARCH", keyword: "제품명" },
+          { type: "CLICK", target: "플레이스 링크" }
+        ]
+      },
+      isActive: true
+    }
+  });
+
+  // Products
+  console.log("🌱 Seeding products...");
+  const trafficProduct = await prisma.product.upsert({
+    where: { id: "product-traffic-basic" },
+    update: {},
+    create: {
+      id: "product-traffic-basic",
+      missionType: "TRAFFIC",
+      name: "트래픽 기본 상품",
+      marketingCopy: "100% 리얼 휴먼 트래픽으로 매장 방문 유도",
+      guideText: "1. 네이버 검색어 입력\n2. 매장 링크 클릭\n3. 스크린샷 제출",
+      unitPriceKrw: 100,
+      vatPercent: 10,
+      minOrderDays: 7,
+      missionTemplateId: naverSearchTemplate.id,
+      createdByAdminId: (await ensureUser({ email: "admin+super@example.com", role: "ADMIN" })).userId,
+      isActive: true
+    }
+  });
+
+  console.log("✅ Mission templates and products seeded");
 
   // 다양한 역할 타입을 테스트하기 위한 사용자들
   const admins = ["admin+super@example.com", "admin+manager@example.com"];

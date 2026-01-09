@@ -360,7 +360,7 @@ export default async function HomePage() {
             ) : (
               <PrimaryButton href="/signup">광고주로 시작하기</PrimaryButton>
             )}
-            <SecondaryButton href="/advertiser/campaigns">캠페인 둘러보기</SecondaryButton>
+            <SecondaryButton href="/advertiser/products">상품 둘러보기</SecondaryButton>
           </div>
         </div>
 

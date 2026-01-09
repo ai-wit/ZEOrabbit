@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/prisma';
 import { verifyTossWebhookSignature } from '@/server/toss-payments';
 
+function shouldCreditTopupBudget(params: { paymentId: string }): boolean {
+  return params.paymentId.startsWith('pay_');
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Get raw body for signature verification
@@ -109,7 +113,11 @@ export async function POST(req: NextRequest) {
       });
 
       // Create budget ledger entry for successful payments
-      if (newStatus === 'PAID' && payment.status !== 'PAID') {
+      if (
+        newStatus === 'PAID' &&
+        payment.status !== 'PAID' &&
+        shouldCreditTopupBudget({ paymentId: payment.id })
+      ) {
         await tx.budgetLedger.create({
           data: {
             advertiserId: payment.advertiserId,

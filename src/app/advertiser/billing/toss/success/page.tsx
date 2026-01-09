@@ -39,6 +39,7 @@ export default function TossPaymentSuccessPage() {
 
         // 체험단 결제인지 일반 충전 결제인지 구분
         const isExperiencePayment = orderId.startsWith('exp_');
+        const isProductOrderPayment = orderId.startsWith('prd_');
 
         if (isExperiencePayment) {
           // 체험단 결제의 경우 체험단 결제 확인 API 사용
@@ -84,6 +85,34 @@ export default function TossPaymentSuccessPage() {
             });
           }
         } else {
+          if (isProductOrderPayment) {
+            const response = await fetch('/api/advertiser/product-orders/confirm', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                paymentKey,
+                orderId,
+                amount: parseInt(amount),
+              }),
+            });
+
+            const data = await response.json();
+            if (response.ok && data.success) {
+              window.location.href = `/advertiser/campaigns?created=1&campaignId=${encodeURIComponent(
+                data.campaign?.id || ''
+              )}`;
+              return;
+            }
+
+            setResult({
+              success: false,
+              error: data.error || '결제 확인 중 오류가 발생했습니다.',
+            });
+            return;
+          }
+
           // 일반 충전 결제
           // For development: simulate successful confirmation
           if (process.env.NODE_ENV === 'development') {
@@ -237,7 +266,7 @@ export default function TossPaymentSuccessPage() {
             </Link>
             <Link href="/advertiser/campaigns">
               <Button variant="secondary">
-                캠페인 생성하기
+                집행 현황 보기
               </Button>
             </Link>
           </div>

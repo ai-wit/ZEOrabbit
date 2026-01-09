@@ -336,18 +336,18 @@ export default async function AdvertiserPage() {
                 <ButtonLink href="/advertiser/places/new" variant="primary">
                   플레이스 등록
                 </ButtonLink>
-                <ButtonLink href="/advertiser/campaigns/new" variant="secondary">
-                  캠페인 생성
+                <ButtonLink href="/advertiser/products" variant="secondary">
+                  상품 구매
                 </ButtonLink>
                 <ButtonLink href="/advertiser/campaigns" variant="secondary">
-                  캠페인 관리
+                  집행 현황
                 </ButtonLink>
                 <ButtonLink href="/advertiser/reports" variant="secondary">
                   리포트 보기
                 </ButtonLink>
               </div>
               <div className="text-xs text-zinc-400">
-                플레이스 등록 → 캠페인 생성(DRAFT) → 활성화 → 일별 미션 운영 순서로 진행합니다.
+                플레이스 등록 → 상품 구매 → 캠페인 자동 생성/집행 순서로 진행합니다.
               </div>
             </CardBody>
           </Card>
@@ -368,10 +368,10 @@ export default async function AdvertiserPage() {
               {recentCampaigns.length === 0 ? (
                 <EmptyState
                   title="캠페인이 아직 없습니다."
-                  description="플레이스를 등록한 뒤 캠페인을 생성해보세요."
+                  description="플레이스를 등록한 뒤 상품을 구매해보세요."
                   action={
-                    <ButtonLink href="/advertiser/campaigns/new" variant="primary" size="sm">
-                      캠페인 생성
+                    <ButtonLink href="/advertiser/products" variant="primary" size="sm">
+                      상품 구매
                     </ButtonLink>
                   }
                 />

@@ -142,6 +142,8 @@ enum LedgerReason {
   PAYOUT
   PAYOUT_REVERSAL
   TOPUP
+  PRODUCT_ORDER_CREDIT
+  PRODUCT_ORDER_BURN
   REFUND
   ADJUSTMENT
 }
@@ -160,6 +162,14 @@ enum PaymentStatus {
   FAILED
   CANCELED
   REFUNDED
+}
+
+enum ProductOrderStatus {
+  CREATED
+  PAID
+  FULFILLED
+  FAILED
+  CANCELED
 }
 
 enum PolicyKey {
@@ -204,6 +214,8 @@ model User {
   reviewedSubmissions  ExperienceSubmission[] @relation("SubmissionReviewer") // 검토한 제출물들
   generatedReports     ExperienceReport[] // 생성한 리포트들
   reviewedReports      ExperienceReport[] @relation("ReportReviewer") // 검토한 리포트들
+
+  createdProducts Product[] @relation("ProductCreatedBy")
 }
 
 model AuthCredential {
@@ -254,6 +266,7 @@ model AdvertiserProfile {
   campaigns Campaign[]
   budgetLedgers BudgetLedger[]
   payments Payment[]
+  productOrders ProductOrder[]
   advertiserManagers AdvertiserManager[]
   experienceCampaigns ExperienceCampaign[]
   experienceApplications ExperienceApplication[]
@@ -288,6 +301,7 @@ model Place {
   advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
   campaigns  Campaign[]
   experienceCampaigns ExperienceCampaign[]
+  productOrders ProductOrder[]
 
   @@index([advertiserId])
   @@index([externalProvider, externalId])
@@ -312,6 +326,7 @@ model Campaign {
   advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
   place      Place            @relation(fields: [placeId], references: [id], onDelete: Restrict)
   missionDays MissionDay[]
+  productOrders ProductOrder[]
 
   @@index([advertiserId, status])
   @@index([placeId])
@@ -464,8 +479,88 @@ model Payment {
 
   advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
   experienceApplications ExperienceApplication[]
+  productOrder ProductOrder?
 
   @@index([advertiserId, status, createdAt])
+}
+
+model MissionTemplate {
+  id          String     @id @default(cuid())
+  missionType MissionType
+  key         String
+  version     Int        @default(1)
+  name        String
+  description String?    @db.Text
+  payloadJson Json
+
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products Product[]
+
+  @@unique([key, version])
+  @@index([missionType, isActive])
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  missionType MissionType
+
+  name          String
+  marketingCopy String?   @db.Text
+  guideText     String?   @db.Text
+
+  unitPriceKrw  Int
+  vatPercent    Int       @default(0)
+  minOrderDays  Int       @default(7)
+  isActive      Boolean   @default(true)
+
+  missionTemplateId String?
+  createdByAdminId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  missionTemplate MissionTemplate? @relation(fields: [missionTemplateId], references: [id], onDelete: SetNull)
+  createdByAdmin  User?            @relation("ProductCreatedBy", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  orders          ProductOrder[]
+
+  @@index([isActive, missionType])
+  @@index([createdByAdminId, createdAt])
+}
+
+model ProductOrder {
+  id           String            @id @default(cuid())
+  advertiserId String
+  productId    String
+  placeId      String
+
+  startDate    DateTime
+  endDate      DateTime
+  dailyTarget  Int
+
+  unitPriceKrw     Int
+  budgetTotalKrw   Int
+  vatAmountKrw     Int
+  totalAmountKrw   Int
+
+  status        ProductOrderStatus @default(CREATED)
+
+  paymentId     String?            @unique
+  campaignId    String?            @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  advertiser AdvertiserProfile @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+  product    Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  place      Place             @relation(fields: [placeId], references: [id], onDelete: Restrict)
+  payment    Payment?          @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  campaign   Campaign?         @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([advertiserId, status, createdAt])
+  @@index([productId, createdAt])
 }
 
 model FraudSignal {

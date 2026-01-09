@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/server/prisma";
 
+function shouldCreditTopupBudget(params: { paymentId: string }): boolean {
+  return params.paymentId.startsWith("pay_");
+}
+
 const BodySchema = z.object({
   providerRef: z.string().min(1),
   status: z.enum(["PAID", "FAILED", "CANCELED", "REFUNDED"])
@@ -26,7 +30,7 @@ export async function POST(req: Request) {
       data: { status }
     });
 
-    if (status === "PAID") {
+    if (status === "PAID" && shouldCreditTopupBudget({ paymentId: payment.id })) {
       await tx.budgetLedger.createMany({
         data: [
           {

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireRole } from '@/server/auth/require-user';
 import { prisma } from '@/server/prisma';
 import { confirmTossPayment } from '@/server/toss-payments';
+import { getAdvertiserProfileIdByUserId } from '@/server/advertiser/advertiser-profile';
 
 const Schema = z.object({
   paymentKey: z.string().min(1),
@@ -13,6 +14,7 @@ const Schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const user = await requireRole('ADVERTISER');
+    const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
     const json = await req.json();
     const parsed = Schema.safeParse(json);
 
@@ -24,6 +26,14 @@ export async function POST(req: NextRequest) {
     }
 
     const { paymentKey, orderId, amount } = parsed.data;
+
+    // This endpoint is only for TOPUP payments.
+    if (!orderId.startsWith('pay_')) {
+      return NextResponse.json(
+        { error: 'Invalid payment type' },
+        { status: 400 }
+      );
+    }
 
     // Verify payment exists and belongs to user
     const payment = await prisma.payment.findUnique({
@@ -45,7 +55,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (payment.advertiserId !== user.id) {
+    if (payment.advertiserId !== advertiserId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
