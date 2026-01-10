@@ -20,10 +20,18 @@ type Product = {
 export default function AdvertiserProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        // 사용자 정보 가져오기
+        const userResponse = await fetch('/api/me');
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setCurrentUser(userData.user);
+        }
+
         const response = await fetch('/api/advertiser/products');
         if (response.ok) {
           const data = await response.json();
@@ -41,7 +49,7 @@ export default function AdvertiserProductsPage() {
 
   if (loading) {
     return (
-      <PageShell header={<AdvertiserHeader title="상품" description="로딩 중..." />}>
+      <PageShell header={<AdvertiserHeader title="상품" description="로딩 중..." currentUser={currentUser} />}>
         <Card>
           <CardBody className="text-center py-12">
             <div className="text-sm text-zinc-400">상품 목록을 불러오는 중...</div>
@@ -57,6 +65,7 @@ export default function AdvertiserProductsPage() {
         <AdvertiserHeader
           title="상품"
           description={`${products.length}개의 상품이 있습니다.`}
+          currentUser={currentUser}
         />
       }
     >
@@ -81,7 +90,7 @@ export default function AdvertiserProductsPage() {
                   </div>
 
                   <div className="text-xl font-bold text-zinc-50">
-                    {product.unitPriceKrw.toLocaleString()}원/일
+                    {product.unitPriceKrw.toLocaleString()}원/건당
                   </div>
 
                   {product.marketingCopy && (
@@ -90,9 +99,15 @@ export default function AdvertiserProductsPage() {
                     </p>
                   )}
 
-                  <ButtonLink href={`/advertiser/products/${product.id}`} variant="primary" className="w-full">
-                    구매하기
-                  </ButtonLink>
+                  {currentUser && currentUser.adminType === "MANAGER" ? (
+                    <div className="w-full px-3 py-2 text-center text-sm text-zinc-500 bg-zinc-800/50 rounded-md">
+                      매니저는 구매할 수 없습니다
+                    </div>
+                  ) : (
+                    <ButtonLink href={`/advertiser/products/${product.id}`} variant="primary" className="w-full">
+                      구매하기
+                    </ButtonLink>
+                  )}
                 </CardBody>
               </Card>
             ))}

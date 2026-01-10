@@ -60,19 +60,33 @@ export async function POST(req: NextRequest) {
     });
     if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
+    // If payment is already marked as PAID (via webhook), accept it
     if (payment.status !== "PAID") {
-      // In development, we skip Toss confirmation.
-      if (process.env.NODE_ENV !== "development") {
-        if (!paymentKey) {
-          return NextResponse.json({ error: "Missing paymentKey" }, { status: 400 });
-        }
-
+      // If paymentKey is provided, verify with Toss (skip in development)
+      if (paymentKey && process.env.NODE_ENV !== "development") {
         const tossResponse = await confirmTossPayment({ paymentKey, orderId, amount });
         if (tossResponse.status !== "DONE") {
           return NextResponse.json(
             { error: "Payment not completed", status: tossResponse.status },
             { status: 400 }
           );
+        }
+      } else if (paymentKey && process.env.NODE_ENV === "development") {
+        // In development, mark payment as PAID for test paymentKeys
+        console.log('Development mode: marking payment as PAID for paymentKey:', paymentKey);
+      } else {
+        // In development, allow confirmation without paymentKey
+        // In production, this might happen if webhook arrives after success redirect
+        if (process.env.NODE_ENV !== "development") {
+          // Wait a bit and check again in case webhook just arrived
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const updatedPayment = await prisma.payment.findUnique({
+            where: { id: orderId },
+            select: { status: true },
+          });
+          if (!updatedPayment || updatedPayment.status !== "PAID") {
+            return NextResponse.json({ error: "Missing paymentKey and payment not confirmed" }, { status: 400 });
+          }
         }
       }
     }
@@ -91,6 +105,15 @@ export async function POST(req: NextRequest) {
           data: {
             status: "PAID",
             providerRef: paymentKey ?? payment.providerRef,
+            updatedAt: new Date(),
+          },
+        });
+      } else if (process.env.NODE_ENV === "development" && paymentKey && payment.providerRef !== paymentKey) {
+        // In development, update providerRef if it's a test paymentKey
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: {
+            providerRef: paymentKey,
             updatedAt: new Date(),
           },
         });

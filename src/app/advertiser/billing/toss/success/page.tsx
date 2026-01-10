@@ -11,6 +11,7 @@ interface PaymentResult {
     id: string;
     amount: number;
     status: string;
+    campaignId?: string;
   };
   error?: string;
 }
@@ -35,6 +36,12 @@ export default function TossPaymentSuccessPage() {
           });
           setIsConfirming(false);
           return;
+        }
+
+        // For product orders, wait a bit for webhook to arrive
+        if (orderId.startsWith('prd_')) {
+          console.log('Waiting for webhook to process payment...');
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
         }
 
         // 체험단 결제인지 일반 충전 결제인지 구분
@@ -100,9 +107,16 @@ export default function TossPaymentSuccessPage() {
 
             const data = await response.json();
             if (response.ok && data.success) {
-              window.location.href = `/advertiser/campaigns?created=1&campaignId=${encodeURIComponent(
-                data.campaign?.id || ''
-              )}`;
+              setResult({
+                success: true,
+                payment: {
+                  id: orderId,
+                  amount: parseInt(amount),
+                  status: 'PAID',
+                  campaignId: data.campaign?.id,
+                }
+              });
+              setIsConfirming(false);
               return;
             }
 
@@ -240,7 +254,9 @@ export default function TossPaymentSuccessPage() {
 
           <div>
             <h2 className="text-2xl font-semibold text-zinc-50 mb-2">결제 완료</h2>
-            <p className="text-zinc-400">충전이 성공적으로 완료되었습니다.</p>
+            <p className="text-zinc-400">
+              {result.payment?.campaignId ? '캠페인이 성공적으로 생성되었습니다.' : '충전이 성공적으로 완료되었습니다.'}
+            </p>
           </div>
 
           <div className="bg-green-400/10 border border-green-400/20 p-6 rounded-lg">
@@ -254,21 +270,47 @@ export default function TossPaymentSuccessPage() {
           </div>
 
           <div className="text-sm text-zinc-400 space-y-1">
-            <p>충전된 금액은 즉시 광고 예산으로 사용할 수 있습니다.</p>
-            <p>결제 내역은 결제/충전 페이지에서 확인하실 수 있습니다.</p>
+            {result.payment?.campaignId ? (
+              <>
+                <p>생성된 캠페인은 즉시 실행되어 체험단 모집을 시작합니다.</p>
+                <p>캠페인 진행 상황은 집행 현황 페이지에서 확인하실 수 있습니다.</p>
+              </>
+            ) : (
+              <>
+                <p>충전된 금액은 즉시 광고 예산으로 사용할 수 있습니다.</p>
+                <p>결제 내역은 결제/충전 페이지에서 확인하실 수 있습니다.</p>
+              </>
+            )}
           </div>
 
           <div className="flex gap-3 justify-center">
-            <Link href="/advertiser/billing">
-              <Button>
-                결제/충전 페이지로 이동
-              </Button>
-            </Link>
-            <Link href="/advertiser/campaigns">
-              <Button variant="secondary">
-                집행 현황 보기
-              </Button>
-            </Link>
+            {result.payment?.campaignId ? (
+              <>
+                <Link href={`/advertiser/campaigns?created=1&campaignId=${encodeURIComponent(result.payment.campaignId)}`}>
+                  <Button>
+                    집행 현황 보기
+                  </Button>
+                </Link>
+                <Link href="/advertiser/billing">
+                  <Button variant="secondary">
+                    결제/충전 페이지로 이동
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/advertiser/billing">
+                  <Button>
+                    결제/충전 페이지로 이동
+                  </Button>
+                </Link>
+                <Link href="/advertiser/campaigns">
+                  <Button variant="secondary">
+                    집행 현황 보기
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </CardBody>
       </Card>

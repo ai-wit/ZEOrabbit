@@ -115,6 +115,11 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState<AdvertiserDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  const isManager = (user: any): boolean => {
+    return user?.role === 'ADMIN' && user?.adminType === 'MANAGER';
+  };
 
   // 매니저 검색 관련 상태
   const [managerSearchQuery, setManagerSearchQuery] = useState('');
@@ -150,6 +155,13 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
     try {
       setLoading(true);
       setError(null);
+
+      // 사용자 정보 가져오기
+      const userResponse = await fetch('/api/me');
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        setCurrentUser(userData.user);
+      }
 
       const response = await fetch(`/api/admin/advertisers/${params.id}`);
       if (!response.ok) {
@@ -447,7 +459,7 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
         <Card>
           <CardBody className="space-y-6">
             <div className="text-sm font-semibold text-zinc-50">
-              기본 정보 수정
+              기본 정보 {currentUser && isManager(currentUser) ? '(읽기 전용)' : '수정'}
             </div>
 
             {error && (
@@ -465,6 +477,7 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="광고주 이름"
+                  disabled={currentUser && isManager(currentUser)}
                 />
               </div>
 
@@ -476,6 +489,7 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
                   value={formData.displayName}
                   onChange={(e) => handleInputChange('displayName', e.target.value)}
                   placeholder="웹사이트에 표시될 이름"
+                  disabled={currentUser && isManager(currentUser)}
                 />
               </div>
 
@@ -487,6 +501,7 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="advertiser@example.com"
+                  disabled={currentUser && isManager(currentUser)}
                 />
               </div>
             </div>
@@ -497,42 +512,44 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
           </CardBody>
         </Card>
 
-        {/* 비밀번호 변경 */}
-        <Card>
-          <CardBody className="space-y-6">
-            <div className="text-sm font-semibold text-zinc-50">
-              비밀번호 변경
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="password">새 비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  placeholder="새 비밀번호 (8자 이상)"
-                />
+        {/* 비밀번호 변경 - 매니저 숨김 */}
+        {!(currentUser && isManager(currentUser)) && (
+          <Card>
+            <CardBody className="space-y-6">
+              <div className="text-sm font-semibold text-zinc-50">
+                비밀번호 변경
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">비밀번호 확인</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  placeholder="비밀번호 확인"
-                />
-              </div>
-            </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="password">새 비밀번호</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    placeholder="새 비밀번호 (8자 이상)"
+                  />
+                </div>
 
-            <div className="text-xs text-zinc-500">
-              비밀번호를 변경하지 않으려면 필드를 비워두세요.
-            </div>
-          </CardBody>
-        </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    placeholder="비밀번호 확인"
+                  />
+                </div>
+              </div>
+
+              <div className="text-xs text-zinc-500">
+                비밀번호를 변경하지 않으려면 필드를 비워두세요.
+              </div>
+            </CardBody>
+          </Card>
+        )}
 
         {/* 통계 정보 */}
         <Card>
@@ -566,104 +583,106 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
           </CardBody>
         </Card>
 
-        {/* 할당된 매니저 관리 */}
-        <Card>
-          <CardBody className="space-y-6">
-            <div className="text-sm font-semibold text-zinc-50">
-              할당된 매니저 ({formatNumber(data.managers.length)}명)
-            </div>
-
-            {/* 매니저 검색 및 추가 */}
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="managerSearch">매니저 검색 및 추가</Label>
-                <Input
-                  id="managerSearch"
-                  type="text"
-                  placeholder="매니저 이름 또는 이메일로 검색..."
-                  value={managerSearchQuery || ''}
-                  onChange={(e) => handleManagerSearchChange(e.target.value)}
-                />
+        {/* 할당된 매니저 관리 - 매니저 숨김 */}
+        {!(currentUser && isManager(currentUser)) && (
+          <Card>
+            <CardBody className="space-y-6">
+              <div className="text-sm font-semibold text-zinc-50">
+                할당된 매니저 ({formatNumber(data.managers.length)}명)
               </div>
 
-              {/* 검색 결과 */}
-              {managerSearchQuery && (
-                <div className="rounded-lg border border-white/10 bg-white/[0.02] max-h-60 overflow-y-auto">
-                  {managerSearching ? (
-                    <div className="px-4 py-3 text-sm text-zinc-400">검색 중...</div>
-                  ) : managerSearchResults.length === 0 ? (
-                    <div className="px-4 py-3 text-sm text-zinc-400">검색 결과가 없습니다.</div>
-                  ) : (
-                    <div className="divide-y divide-white/10">
-                      {managerSearchResults.map((manager) => {
-                        const isAlreadyAssigned = data.managers.some(m => m.id === manager.id);
-                        const isAssigning = managerAssigning === manager.id;
-                        return (
-                          <div key={manager.id} className="px-4 py-3 flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-zinc-50">{manager.name}</div>
-                              <div className="text-xs text-zinc-400">{manager.email}</div>
-                              <div className="text-xs text-zinc-500">
-                                할당된 광고주: {formatNumber(manager._count.managedAdvertisers)}개
-                              </div>
-                            </div>
-                            <Button
-                              onClick={() => assignManager(manager.id)}
-                              disabled={isAlreadyAssigned || isAssigning}
-                              variant={isAlreadyAssigned ? "secondary" : "primary"}
-                              size="sm"
-                            >
-                              {isAssigning ? '할당 중...' : isAlreadyAssigned ? '이미 할당됨' : '할당'}
-                            </Button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+              {/* 매니저 검색 및 추가 */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="managerSearch">매니저 검색 및 추가</Label>
+                  <Input
+                    id="managerSearch"
+                    type="text"
+                    placeholder="매니저 이름 또는 이메일로 검색..."
+                    value={managerSearchQuery || ''}
+                    onChange={(e) => handleManagerSearchChange(e.target.value)}
+                  />
                 </div>
-              )}
-            </div>
 
-            {/* 할당된 매니저 목록 */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.02]">
-              <DividerList>
-                {data.managers.length === 0 ? (
-                  <EmptyState title="할당된 매니저가 없습니다." />
-                ) : (
-                  data.managers.map((manager) => (
-                    <div key={manager.id} className="px-6 py-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="text-sm font-semibold text-zinc-50">
-                              {manager.name}
+                {/* 검색 결과 */}
+                {managerSearchQuery && (
+                  <div className="rounded-lg border border-white/10 bg-white/[0.02] max-h-60 overflow-y-auto">
+                    {managerSearching ? (
+                      <div className="px-4 py-3 text-sm text-zinc-400">검색 중...</div>
+                    ) : managerSearchResults.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-zinc-400">검색 결과가 없습니다.</div>
+                    ) : (
+                      <div className="divide-y divide-white/10">
+                        {managerSearchResults.map((manager) => {
+                          const isAlreadyAssigned = data.managers.some(m => m.id === manager.id);
+                          const isAssigning = managerAssigning === manager.id;
+                          return (
+                            <div key={manager.id} className="px-4 py-3 flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-zinc-50">{manager.name}</div>
+                                <div className="text-xs text-zinc-400">{manager.email}</div>
+                                <div className="text-xs text-zinc-500">
+                                  할당된 광고주: {formatNumber(manager._count.managedAdvertisers)}개
+                                </div>
+                              </div>
+                              <Button
+                                onClick={() => assignManager(manager.id)}
+                                disabled={isAlreadyAssigned || isAssigning}
+                                variant={isAlreadyAssigned ? "secondary" : "primary"}
+                                size="sm"
+                              >
+                                {isAssigning ? '할당 중...' : isAlreadyAssigned ? '이미 할당됨' : '할당'}
+                              </Button>
                             </div>
-                            <Pill tone="indigo">
-                              매니저
-                            </Pill>
-                          </div>
-                          <div className="text-xs text-zinc-400">
-                            {manager.email}
-                          </div>
-                          <div className="text-xs text-zinc-500">
-                            배정자: {manager.assignedBy} · 배정일: {formatDateTime(manager.assignedAt)}
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => unassignManager(manager.id)}
-                          variant="danger"
-                          size="sm"
-                        >
-                          해제
-                        </Button>
+                          );
+                        })}
                       </div>
-                    </div>
-                  ))
+                    )}
+                  </div>
                 )}
-              </DividerList>
-            </div>
-          </CardBody>
-        </Card>
+              </div>
+
+              {/* 할당된 매니저 목록 */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02]">
+                <DividerList>
+                  {data.managers.length === 0 ? (
+                    <EmptyState title="할당된 매니저가 없습니다." />
+                  ) : (
+                    data.managers.map((manager) => (
+                      <div key={manager.id} className="px-6 py-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="text-sm font-semibold text-zinc-50">
+                                {manager.name}
+                              </div>
+                              <Pill tone="indigo">
+                                매니저
+                              </Pill>
+                            </div>
+                            <div className="text-xs text-zinc-400">
+                              {manager.email}
+                            </div>
+                            <div className="text-xs text-zinc-500">
+                              배정자: {manager.assignedBy} · 배정일: {formatDateTime(manager.assignedAt)}
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => unassignManager(manager.id)}
+                            variant="danger"
+                            size="sm"
+                          >
+                            해제
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </DividerList>
+              </div>
+            </CardBody>
+          </Card>
+        )}
 
         {/* 장소 목록 */}
         <Card>
@@ -747,21 +766,25 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
 
         {/* 액션 버튼 */}
         <div className="flex flex-wrap gap-3">
-          <Button
-            onClick={handleUpdate}
-            disabled={saving}
-            variant="primary"
-          >
-            {saving ? '저장 중...' : '정보 수정'}
-          </Button>
+          {!(currentUser && isManager(currentUser)) && (
+            <>
+              <Button
+                onClick={handleUpdate}
+                disabled={saving}
+                variant="primary"
+              >
+                {saving ? '저장 중...' : '정보 수정'}
+              </Button>
 
-          <Button
-            onClick={handleDelete}
-            variant="danger"
-            disabled={saving}
-          >
-            광고주 삭제
-          </Button>
+              <Button
+                onClick={handleDelete}
+                variant="danger"
+                disabled={saving}
+              >
+                광고주 삭제
+              </Button>
+            </>
+          )}
 
           <ButtonLink href="/admin/advertisers" variant="secondary">
             목록으로 돌아가기

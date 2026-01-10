@@ -4,9 +4,14 @@ import { Button, ButtonLink } from "@/app/_ui/primitives";
 interface AdvertiserHeaderProps {
   title: string;
   description: string;
+  currentUser?: any;
 }
 
-export function AdvertiserHeader({ title, description }: AdvertiserHeaderProps) {
+function isManager(user: any): boolean {
+  return user?.role === 'ADMIN' && user?.adminType === 'MANAGER';
+}
+
+export function AdvertiserHeader({ title, description, currentUser }: AdvertiserHeaderProps) {
   return (
     <PageHeader
       eyebrow="ADVERTISER"
@@ -23,9 +28,12 @@ export function AdvertiserHeader({ title, description }: AdvertiserHeaderProps) 
           <ButtonLink href="/advertiser/places" variant="secondary" size="sm">
             플레이스
           </ButtonLink>
-          <ButtonLink href="/advertiser/products" variant="secondary" size="sm">
-            상품 구매
-          </ButtonLink>
+          {/* 매니저에게는 상품 메뉴를 표시하지 않음 */}
+          {currentUser && !isManager(currentUser) && (
+            <ButtonLink href="/advertiser/products" variant="secondary" size="sm">
+              상품 구매
+            </ButtonLink>
+          )}
           <ButtonLink href="/advertiser/campaigns" variant="secondary" size="sm">
             집행 현황
           </ButtonLink>

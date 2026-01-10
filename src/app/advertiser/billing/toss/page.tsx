@@ -89,7 +89,7 @@ export default function TossPaymentPage() {
           amount: { currency: 'KRW', value: paymentAmount },
           orderId,
           orderName,
-          successUrl: `${window.location.origin}/advertiser/billing/toss/success?orderId=${orderId}`,
+          successUrl: `${window.location.origin}/advertiser/billing/toss/success`,
           failUrl: `${window.location.origin}/advertiser/billing/toss/fail?orderId=${orderId}`,
         });
 

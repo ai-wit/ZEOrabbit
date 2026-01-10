@@ -75,7 +75,7 @@ export function Button(props: {
   size?: "sm" | "md";
   disabled?: boolean;
   className?: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const variant =
     props.variant === "primary"

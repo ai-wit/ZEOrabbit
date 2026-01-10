@@ -32,6 +32,12 @@ function daysInclusive(start: Date, end: Date): number {
 
 export async function POST(req: Request) {
   const user = await requireRole("ADVERTISER");
+
+  // 매니저는 상품 구매 불가
+  if (user.adminType === "MANAGER") {
+    return NextResponse.redirect(new URL(`/advertiser/products?error=managerNotAllowed`, req.url), 303);
+  }
+
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
   const form = await req.formData();

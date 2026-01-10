@@ -20,13 +20,45 @@ async function requireSuperAdmin() {
   return user;
 }
 
+// 관리자 권한 확인 헬퍼 함수 (슈퍼관리자 또는 매니저)
+async function requireAdminOrManager() {
+  const user = await requireRole("ADMIN");
+  return user;
+}
+
+// 매니저가 할당된 광고주인지 확인하는 헬퍼 함수
+async function checkManagerAccess(advertiserUserId: string, managerUserId: string) {
+  const assignment = await prisma.advertiserManager.findFirst({
+    where: {
+      advertiser: {
+        userId: advertiserUserId
+      },
+      managerId: managerUserId,
+      isActive: true
+    }
+  });
+
+  return !!assignment;
+}
+
 // GET /api/admin/advertisers/[id] - 광고주 상세 조회
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireSuperAdmin();
+    const user = await requireAdminOrManager();
+
+    // 매니저인 경우, 자신이 할당된 광고주인지 확인
+    if (user.adminType === "MANAGER") {
+      const hasAccess = await checkManagerAccess(params.id, user.id);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: "권한이 없습니다" },
+          { status: 403 }
+        );
+      }
+    }
 
     const advertiser = await prisma.advertiserProfile.findUnique({
       where: { userId: params.id },
