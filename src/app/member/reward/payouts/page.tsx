@@ -6,6 +6,7 @@ import { getRewarderAvailableBalanceKrw, getRewarderBalanceKrw } from "@/server/
 import { getPayoutPolicy } from "@/server/policy/get-policy";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, DividerList, EmptyState, Input, Label, Pill } from "@/app/_ui/primitives";
+import { RewardNavigation } from "../_components/RewardNavigation";
 
 export default async function RewarderPayoutsPage() {
   const user = await requireRole("MEMBER");
@@ -34,27 +35,7 @@ export default async function RewarderPayoutsPage() {
           eyebrow="REWARDER"
           title="출금/정산"
           description={`현재 잔액: ${balance}원 · 출금 가능액: ${available}원`}
-          right={
-            <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/rewarder" variant="secondary" size="sm">
-                리워더 홈
-              </ButtonLink>
-              <ButtonLink href="/member/reward/missions" variant="secondary" size="sm">
-                오늘의 미션
-              </ButtonLink>
-              <ButtonLink href="/member/reward/participations" variant="secondary" size="sm">
-                내 참여 내역
-              </ButtonLink>
-              <ButtonLink href="/" variant="secondary" size="sm">
-                홈
-              </ButtonLink>
-              <form action="/api/auth/logout" method="post">
-                <Button type="submit" variant="danger" size="sm">
-                  로그아웃
-                </Button>
-              </form>
-            </div>
-          }
+          right={<RewardNavigation />}
         />
       }
     >

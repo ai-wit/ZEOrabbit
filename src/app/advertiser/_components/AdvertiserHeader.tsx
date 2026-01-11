@@ -29,12 +29,12 @@ export function AdvertiserHeader({ title, description, currentUser }: Advertiser
             플레이스
           </ButtonLink>
           {/* 매니저에게는 상품 메뉴를 표시하지 않음 */}
-          {currentUser && !isManager(currentUser) && (
-            <ButtonLink href="/advertiser/products" variant="secondary" size="sm">
+          {(!currentUser || !isManager(currentUser)) && (
+            <ButtonLink href="/advertiser/reward/products" variant="secondary" size="sm">
               상품 구매
             </ButtonLink>
           )}
-          <ButtonLink href="/advertiser/campaigns" variant="secondary" size="sm">
+          <ButtonLink href="/advertiser/reward/campaigns" variant="secondary" size="sm">
             집행 현황
           </ButtonLink>
           <ButtonLink href="/advertiser/experience" variant="secondary" size="sm">

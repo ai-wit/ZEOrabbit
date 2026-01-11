@@ -271,7 +271,7 @@ export async function POST(req: Request) {
       await tx.verificationEvidence.create({
         data: {
           participationId: p.id,
-          type: "SCREENSHOT",
+          type: "IMAGE",
           fileRef: ONE_BY_ONE_PNG_DATA_URL,
           metadataJson: { demo: true }
         }

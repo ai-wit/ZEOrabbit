@@ -259,7 +259,7 @@ async function ensureParticipationScenario(params: {
 
     if (params.withEvidence) {
       await tx.verificationEvidence.create({
-        data: { participationId: p.id, type: "SCREENSHOT", fileRef: ONE_BY_ONE_PNG_DATA_URL, metadataJson: { seeded: true } }
+        data: { participationId: p.id, type: "IMAGE", fileRef: ONE_BY_ONE_PNG_DATA_URL, metadataJson: { seeded: true } }
       });
     }
 
@@ -1163,6 +1163,26 @@ async function run(): Promise<void> {
     status: "REQUESTED"
   });
 
+  // 리워드 상품 시드
+  console.log('리워드 상품 시드 시작...');
+  await seedRewardProducts();
+  console.log('리워드 상품 시드 완료');
+
+  // 리워드 상품 주문 시드
+  console.log('리워드 상품 주문 시드 시작...');
+  await seedRewardProductOrders();
+  console.log('리워드 상품 주문 시드 완료');
+
+  // 리워드 캠페인 시드
+  console.log('리워드 캠페인 시드 시작...');
+  await seedRewardCampaigns();
+  console.log('리워드 캠페인 시드 완료');
+
+  // 리워드 참여 시드
+  console.log('리워드 참여 시드 시작...');
+  await seedRewardParticipations();
+  console.log('리워드 참여 시드 완료');
+
   // 체험단 요금제 시드
   console.log('체험단 요금제 시드 시작...');
   await seedExperiencePricingPlans();
@@ -1191,6 +1211,477 @@ async function run(): Promise<void> {
   await prisma.auditLog.create({
     data: { actorUserId: null, action: "CLI_SEED_DONE", payloadJson: { at: new Date().toISOString() } }
   });
+}
+
+async function seedRewardProducts(): Promise<void> {
+  console.log('리워드 상품 시드 중...');
+
+  const superAdmin = await prisma.user.findFirst({
+    where: { role: "ADMIN", adminType: "SUPER" },
+    select: { id: true }
+  });
+
+  if (!superAdmin) {
+    console.log('슈퍼 관리자를 찾을 수 없습니다.');
+    return;
+  }
+
+  const products = [
+    // 트래픽 상품들
+    {
+      id: "product-traffic-basic",
+      missionType: "TRAFFIC" as const,
+      name: "트래픽 기본 상품",
+      marketingCopy: "100% 리얼 휴먼 트래픽으로 매장 방문 유도",
+      guideText: "1. 네이버 검색어 입력\n2. 매장 링크 클릭\n3. 스크린샷 제출",
+      unitPriceKrw: 100,
+      minOrderDays: 7,
+    },
+    {
+      id: "product-traffic-pro",
+      missionType: "TRAFFIC" as const,
+      name: "트래픽 프로 상품",
+      marketingCopy: "프리미엄 트래픽으로 고퀄리티 방문자 유치",
+      guideText: "1. 검색어 입력 후 상세 검색\n2. 매장 방문 및 상호작용\n3. 방문 증거 제출",
+      unitPriceKrw: 200,
+      minOrderDays: 14,
+    },
+    {
+      id: "product-traffic-vip",
+      missionType: "TRAFFIC" as const,
+      name: "트래픽 VIP 상품",
+      marketingCopy: "VIP 등급 트래픽으로 최대 효과 달성",
+      guideText: "1. 타겟 지역 내 검색\n2. 매장 방문 및 체류\n3. 상세한 방문 리뷰 제출",
+      unitPriceKrw: 350,
+      minOrderDays: 21,
+    },
+
+    // 저장 상품들
+    {
+      id: "product-save-basic",
+      missionType: "SAVE" as const,
+      name: "저장 기본 상품",
+      marketingCopy: "네이버 플레이스 저장으로 관심도 상승",
+      guideText: "1. 네이버 플레이스 검색\n2. 매장 '저장하기'\n3. 저장 완료 화면 제출",
+      unitPriceKrw: 150,
+      minOrderDays: 7,
+    },
+    {
+      id: "product-save-pro",
+      missionType: "SAVE" as const,
+      name: "저장 프로 상품",
+      marketingCopy: "프리미엄 저장 활동으로 신뢰도 구축",
+      guideText: "1. 플레이스 검색 및 방문\n2. 저장하기 + 찜하기\n3. 상호작용 증거 제출",
+      unitPriceKrw: 250,
+      minOrderDays: 14,
+    },
+
+    // 공유 상품들
+    {
+      id: "product-share-basic",
+      missionType: "SHARE" as const,
+      name: "공유 기본 상품",
+      marketingCopy: "SNS 공유로 바이럴 효과 창출",
+      guideText: "1. 매장 정보 공유하기\n2. 공유 링크 캡처\n3. 공유 증거 제출",
+      unitPriceKrw: 200,
+      minOrderDays: 10,
+    },
+    {
+      id: "product-share-pro",
+      missionType: "SHARE" as const,
+      name: "공유 프로 상품",
+      marketingCopy: "프리미엄 공유로 최대 노출 효과",
+      guideText: "1. 다양한 플랫폼에 공유\n2. 해시태그 활용\n3. 공유 결과 분석 제출",
+      unitPriceKrw: 400,
+      minOrderDays: 15,
+    }
+  ];
+
+  for (const productData of products) {
+    await prisma.product.upsert({
+      where: { id: productData.id },
+      update: productData,
+      create: {
+        ...productData,
+        vatPercent: 10,
+        createdByAdminId: superAdmin.id,
+        isActive: true
+      }
+    });
+  }
+
+  console.log('리워드 상품 시드 완료');
+}
+
+async function seedRewardProductOrders(): Promise<void> {
+  console.log('리워드 상품 주문 시드 중...');
+
+  const advertisers = await prisma.advertiserProfile.findMany({
+    include: { user: true, places: true }
+  });
+
+  const products = await prisma.product.findMany();
+
+  if (advertisers.length === 0 || products.length === 0) {
+    console.log('광고주 또는 상품이 없습니다.');
+    return;
+  }
+
+  const orders = [
+    // 광고주 1의 주문들
+    {
+      advertiserId: advertisers[0].id,
+      productId: products.find(p => p.id === "product-traffic-basic")!.id,
+      placeId: advertisers[0].places[0]?.id,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      dailyTarget: 50,
+      unitPriceKrw: 100,
+      status: "FULFILLED" as const,
+      paymentId: "seed_payment_1"
+    },
+    {
+      advertiserId: advertisers[0].id,
+      productId: products.find(p => p.id === "product-save-basic")!.id,
+      placeId: advertisers[0].places[1]?.id || advertisers[0].places[0]?.id,
+      startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000),
+      dailyTarget: 30,
+      unitPriceKrw: 150,
+      status: "FULFILLED" as const,
+      paymentId: "seed_payment_2"
+    },
+
+    // 광고주 2의 주문들
+    {
+      advertiserId: advertisers[1].id,
+      productId: products.find(p => p.id === "product-traffic-pro")!.id,
+      placeId: advertisers[1].places[0]?.id,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      dailyTarget: 75,
+      unitPriceKrw: 200,
+      status: "FULFILLED" as const,
+      paymentId: "seed_payment_3"
+    },
+    {
+      advertiserId: advertisers[1].id,
+      productId: products.find(p => p.id === "product-share-basic")!.id,
+      placeId: advertisers[1].places[1]?.id || advertisers[1].places[0]?.id,
+      startDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() + 13 * 24 * 60 * 60 * 1000),
+      dailyTarget: 40,
+      unitPriceKrw: 200,
+      status: "FULFILLED" as const,
+      paymentId: "seed_payment_4"
+    }
+  ];
+
+  for (const orderData of orders) {
+    // 광고주 정보 조회
+    const advertiser = await prisma.advertiserProfile.findUnique({
+      where: { id: orderData.advertiserId },
+      include: { places: true }
+    });
+
+    if (!advertiser) {
+      console.log(`광고주를 찾을 수 없음: ${orderData.advertiserId}`);
+      continue;
+    }
+
+    // placeId가 없으면 기본 place 생성 또는 찾기
+    let placeId = orderData.placeId;
+    if (!placeId && advertiser.places.length > 0) {
+      placeId = advertiser.places[0].id;
+    } else if (!placeId) {
+      // 기본 place 생성
+      const newPlace = await prisma.place.create({
+        data: {
+          advertiserId: orderData.advertiserId,
+          name: "기본 매장",
+          externalProvider: "NAVER_PLACE",
+          externalId: `seed_place_${orderData.advertiserId.slice(-8)}`
+        }
+      });
+      placeId = newPlace.id;
+    }
+
+    // 결제 레코드 생성
+    const totalDays = Math.ceil((orderData.endDate.getTime() - orderData.startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+    const totalAmount = orderData.dailyTarget * totalDays * orderData.unitPriceKrw;
+
+    const payment = await prisma.payment.upsert({
+      where: { id: orderData.paymentId },
+      update: {},
+      create: {
+        id: orderData.paymentId,
+        advertiserId: orderData.advertiserId,
+        amountKrw: totalAmount,
+        status: "PAID",
+        provider: "DEV",
+        providerRef: orderData.paymentId
+      }
+    });
+
+    // 이미 존재하는지 확인
+    const existingOrder = await prisma.productOrder.findUnique({
+      where: { paymentId: payment.id }
+    });
+
+    if (existingOrder) {
+      console.log(`상품 주문 이미 존재: ${existingOrder.id} - ${existingOrder.status}`);
+      continue;
+    }
+
+    // 상품 주문 생성
+    const vatAmount = Math.floor(payment.amountKrw * 0.1); // 10% VAT
+    const order = await prisma.productOrder.create({
+      data: {
+        advertiserId: orderData.advertiserId,
+        productId: orderData.productId,
+        placeId: placeId,
+        startDate: orderData.startDate,
+        endDate: orderData.endDate,
+        dailyTarget: orderData.dailyTarget,
+        unitPriceKrw: orderData.unitPriceKrw,
+        budgetTotalKrw: payment.amountKrw,
+        vatAmountKrw: vatAmount,
+        totalAmountKrw: payment.amountKrw,
+        status: orderData.status,
+        paymentId: payment.id
+      }
+    });
+
+    console.log(`상품 주문 생성: ${order.id} - ${orderData.status}`);
+  }
+
+  console.log('리워드 상품 주문 시드 완료');
+}
+
+async function seedRewardCampaigns(): Promise<void> {
+  console.log('리워드 캠페인 시드 중...');
+
+  const managerUser = await prisma.user.findFirst({
+    where: { role: "ADMIN", adminType: "MANAGER" },
+    select: { id: true }
+  });
+
+  if (!managerUser) {
+    console.log('매니저 사용자를 찾을 수 없습니다.');
+    return;
+  }
+
+  // 완료된 상품 주문들을 조회
+  const fulfilledOrders = await prisma.productOrder.findMany({
+    where: { status: "FULFILLED" },
+    include: {
+      advertiser: { include: { user: true } },
+      place: true,
+      product: true
+    }
+  });
+
+  for (const order of fulfilledOrders) {
+    // 이미 캠페인이 있는지 확인 (ProductOrder의 campaignId로 확인)
+    const existingCampaign = await prisma.campaign.findFirst({
+      where: {
+        productOrders: {
+          some: { id: order.id }
+        }
+      }
+    });
+
+    if (existingCampaign) {
+      console.log(`캠페인 이미 존재: ${existingCampaign.id}`);
+      continue;
+    }
+
+    // 캠페인 생성
+    const campaign = await prisma.campaign.create({
+      data: {
+        advertiserId: order.advertiserId,
+        placeId: order.placeId,
+        name: `${order.product.name} - ${order.place.name}`,
+        missionType: order.product.missionType,
+        missionText: order.product.guideText,
+        startDate: order.startDate,
+        endDate: order.endDate,
+        dailyTarget: order.dailyTarget,
+        unitPriceKrw: order.unitPriceKrw,
+        rewardKrw: Math.floor(order.unitPriceKrw * 0.25), // 기본 리워드 비율
+        budgetTotalKrw: order.totalAmountKrw,
+        status: "ACTIVE"
+      }
+    });
+
+    console.log(`캠페인 생성: ${campaign.name} (${campaign.status})`);
+
+    // ProductOrder에 campaignId 연결
+    await prisma.productOrder.update({
+      where: { id: order.id },
+      data: { campaignId: campaign.id }
+    });
+
+    // 캠페인 버튼 추가 (샘플)
+    if (campaign.missionType === "TRAFFIC") {
+      await prisma.campaignButton.create({
+        data: {
+          campaignId: campaign.id,
+          label: "매장 방문하기",
+          url: `https://map.naver.com/p/search/${encodeURIComponent(order.place.name)}`,
+          sortOrder: 1
+        }
+      });
+    }
+
+    // MissionDay 생성 (활성 기간 동안)
+    const startDate = toDateOnlyUtc(order.startDate);
+    const endDate = toDateOnlyUtc(order.endDate);
+    const days = [];
+
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      days.push(new Date(d));
+    }
+
+    for (const day of days) {
+      await prisma.missionDay.create({
+        data: {
+          campaignId: campaign.id,
+          date: day,
+          quotaTotal: order.dailyTarget,
+          quotaRemaining: day.getTime() >= Date.now() - 24 * 60 * 60 * 1000 ? order.dailyTarget : 0, // 과거는 소진된 것으로
+          status: day.getTime() >= Date.now() - 24 * 60 * 60 * 1000 ? "ACTIVE" : "ENDED"
+        }
+      });
+    }
+
+    console.log(`미션 데이 생성: ${days.length}일`);
+  }
+
+  console.log('리워드 캠페인 시드 완료');
+}
+
+async function seedRewardParticipations(): Promise<void> {
+  console.log('리워드 참여 시드 중...');
+
+  const members = await prisma.memberProfile.findMany({
+    include: { user: true }
+  });
+
+  if (members.length === 0) {
+    console.log('멤버가 없습니다.');
+    return;
+  }
+
+  // 활성 캠페인과 오늘의 미션 데이 조회
+  const today = toDateOnlyUtc(new Date());
+  const activeMissionDays = await prisma.missionDay.findMany({
+    where: {
+      date: today,
+      status: "ACTIVE",
+      quotaRemaining: { gt: 0 },
+      campaign: { status: "ACTIVE" }
+    },
+    include: { campaign: true },
+    take: 5 // 테스트용으로 5개만
+  });
+
+  if (activeMissionDays.length === 0) {
+    console.log('활성 미션 데이가 없습니다.');
+    return;
+  }
+
+  // 각 미션 데이에 대해 참여 생성
+  for (let i = 0; i < Math.min(activeMissionDays.length, members.length); i++) {
+    const missionDay = activeMissionDays[i];
+    const member = members[i];
+
+    // 이미 참여했는지 확인
+    const existing = await prisma.participation.findFirst({
+      where: {
+        rewarderId: member.id,
+        missionDayId: missionDay.id
+      }
+    });
+
+    if (existing) continue;
+
+    // 참여 상태 결정 (다양한 상태를 위해)
+    const statuses = ["IN_PROGRESS", "PENDING_REVIEW", "APPROVED", "REJECTED"] as const;
+    const randomStatus = statuses[i % statuses.length];
+
+    const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2시간 후 만료
+    const submittedAt = randomStatus !== "IN_PROGRESS" ? new Date(Date.now() - Math.random() * 60 * 60 * 1000) : null; // 1시간 내 랜덤
+    const decidedAt = (randomStatus === "APPROVED" || randomStatus === "REJECTED") && submittedAt ? new Date(submittedAt.getTime() + Math.random() * 30 * 60 * 1000) : null; // 제출 후 30분 내
+
+    // 참여 생성
+    const participation = await prisma.participation.create({
+      data: {
+        missionDayId: missionDay.id,
+        rewarderId: member.id,
+        status: randomStatus,
+        expiresAt,
+        submittedAt,
+        decidedAt,
+        proofText: randomStatus !== "IN_PROGRESS" ? `${missionDay.campaign.name} 미션에 참여했습니다. 증거를 제출합니다.` : null,
+        failureReason: randomStatus === "REJECTED" ? "증거 자료가 불충분합니다." : null
+      }
+    });
+
+    // 증거 생성 (제출된 경우)
+    if (randomStatus !== "IN_PROGRESS") {
+      await prisma.verificationEvidence.create({
+        data: {
+          participationId: participation.id,
+          type: "IMAGE",
+          fileRef: ONE_BY_ONE_PNG_DATA_URL,
+          metadataJson: { seeded: true, status: randomStatus }
+        }
+      });
+
+      // 승인된 경우 크레딧 지급
+      if (randomStatus === "APPROVED") {
+        await prisma.creditLedger.create({
+          data: {
+            rewarderId: member.id,
+            amountKrw: missionDay.campaign.rewardKrw,
+            reason: "MISSION_REWARD",
+            refId: participation.id
+          }
+        });
+
+        // 검증 결과 기록
+        await prisma.verificationResult.upsert({
+          where: { participationId: participation.id },
+          update: {},
+          create: {
+            participationId: participation.id,
+            manualDecision: "APPROVE",
+            decidedAt: decidedAt!,
+            decidedByAdminId: null
+          }
+        });
+      }
+
+      // 거절된 경우 검증 결과 기록
+      if (randomStatus === "REJECTED") {
+        await prisma.verificationResult.upsert({
+          where: { participationId: participation.id },
+          update: {},
+          create: {
+            participationId: participation.id,
+            manualDecision: "REJECT",
+            decidedAt: decidedAt!,
+            decidedByAdminId: null
+          }
+        });
+      }
+    }
+
+    console.log(`참여 생성: ${participation.id} - ${randomStatus}`);
+  }
+
+  console.log('리워드 참여 시드 완료');
 }
 
 async function seedExperienceWorkflow(): Promise<void> {

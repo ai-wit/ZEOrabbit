@@ -13,7 +13,7 @@ const ClaimSchema = z.object({
 
 export async function POST(req: Request) {
   if (await isIpBlocked(getClientIp(req.headers))) {
-    return NextResponse.redirect(new URL("/member/missions", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/missions", req.url), 303);
   }
 
   const user = await requireRole("MEMBER");
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     missionDayId: form.get("missionDayId")
   });
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/member/missions", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/missions", req.url), 303);
   }
 
   const missionDayId = parsed.data.missionDayId;
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.redirect(
-      new URL(`/member/participations/${participation.id}`, req.url),
+      new URL(`/member/reward/participations/${participation.id}`, req.url),
       303
     );
   } catch {

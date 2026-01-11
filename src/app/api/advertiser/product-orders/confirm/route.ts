@@ -6,7 +6,6 @@ import { prisma } from "@/server/prisma";
 import { confirmTossPayment } from "@/server/toss-payments";
 import { getPricingPolicy } from "@/server/policy/get-policy";
 import { calculateRewardKrw } from "@/server/advertiser/pricing";
-import { eachDateUtcInclusive, toDateOnlyUtc } from "@/server/date/date-only";
 
 const Schema = z.object({
   paymentKey: z.string().min(1).optional(),
@@ -146,55 +145,12 @@ export async function POST(req: NextRequest) {
         skipDuplicates: true,
       });
 
-      let campaignId = order.campaignId;
-      if (!campaignId) {
-        const totalDays = daysInclusive(order.startDate, order.endDate);
-        const budgetTotalKrw = order.dailyTarget * totalDays * order.unitPriceKrw;
-
-        const campaign = await tx.campaign.create({
-          data: {
-            advertiserId,
-            placeId: order.placeId,
-            name: `${order.product.name}`,
-            missionType: order.product.missionType,
-            dailyTarget: order.dailyTarget,
-            startDate: order.startDate,
-            endDate: order.endDate,
-            unitPriceKrw: order.unitPriceKrw,
-            rewardKrw,
-            budgetTotalKrw,
-            status: "ACTIVE",
-          },
-          select: { id: true, startDate: true, endDate: true, dailyTarget: true },
-        });
-
-        for (const date of eachDateUtcInclusive(campaign.startDate, campaign.endDate)) {
-          const dateOnly = toDateOnlyUtc(date);
-          await tx.missionDay.upsert({
-            where: { campaignId_date: { campaignId: campaign.id, date: dateOnly } },
-            update: { status: "ACTIVE" },
-            create: {
-              campaignId: campaign.id,
-              date: dateOnly,
-              quotaTotal: campaign.dailyTarget,
-              quotaRemaining: campaign.dailyTarget,
-              status: "ACTIVE",
-            },
-          });
-        }
-
-        campaignId = campaign.id;
-
-        await tx.productOrder.update({
-          where: { id: order.id },
-          data: { campaignId, status: "FULFILLED" },
-        });
-      } else {
-        await tx.productOrder.update({
-          where: { id: order.id },
-          data: { status: "FULFILLED" },
-        });
-      }
+      // NOTE: 캠페인은 결제 확정 시 자동 생성하지 않습니다.
+      // 매니저가 구매 상품을 캠페인으로 '등록'한 후 활성화/비활성화를 관리합니다.
+      await tx.productOrder.update({
+        where: { id: order.id },
+        data: { status: "FULFILLED" }
+      });
 
       await tx.auditLog.create({
         data: {
@@ -202,17 +158,17 @@ export async function POST(req: NextRequest) {
           action: "ADVERTISER_PRODUCT_ORDER_FULFILLED",
           targetType: "ProductOrder",
           targetId: order.id,
-          payloadJson: { paymentId: payment.id, campaignId },
+          payloadJson: { paymentId: payment.id, rewardKrwSuggested: rewardKrw },
         },
       });
 
-      return { campaignId };
+      return { ok: true };
     });
 
     return NextResponse.json({
       success: true,
       order: { id: order.id, status: "FULFILLED" },
-      campaign: { id: fulfilled.campaignId },
+      campaign: null
     });
   } catch (error) {
     console.error("Product order confirmation error:", error);

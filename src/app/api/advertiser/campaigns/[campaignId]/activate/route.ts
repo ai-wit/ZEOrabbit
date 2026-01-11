@@ -8,44 +8,8 @@ export async function POST(
   req: Request,
   ctx: { params: { campaignId: string } }
 ) {
-  const user = await requireRole("ADVERTISER");
-  const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
-  const campaignId = ctx.params.campaignId;
-
-  const campaign = await prisma.campaign.findFirst({
-    where: { id: campaignId, advertiserId },
-    select: { id: true, startDate: true, endDate: true, dailyTarget: true, status: true }
-  });
-  if (!campaign) return NextResponse.redirect(new URL("/advertiser/campaigns", req.url), 303);
-
-  if (campaign.status !== "DRAFT" && campaign.status !== "PAUSED") {
-    return NextResponse.redirect(new URL("/advertiser/campaigns", req.url), 303);
-  }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.campaign.update({
-      where: { id: campaign.id },
-      data: { status: "ACTIVE" }
-    });
-
-    for (const date of eachDateUtcInclusive(campaign.startDate, campaign.endDate)) {
-      const dateOnly = toDateOnlyUtc(date);
-      await tx.missionDay.upsert({
-        where: { campaignId_date: { campaignId: campaign.id, date: dateOnly } },
-        update: {
-          status: "ACTIVE"
-        },
-        create: {
-          campaignId: campaign.id,
-          date: dateOnly,
-          quotaTotal: campaign.dailyTarget,
-          quotaRemaining: campaign.dailyTarget,
-          status: "ACTIVE"
-        }
-      });
-    }
-  });
-
+  // NOTE: 캠페인 활성화/비활성화는 매니저가 수행합니다.
+  await requireRole("ADVERTISER");
   return NextResponse.redirect(new URL("/advertiser/campaigns", req.url), 303);
 }
 

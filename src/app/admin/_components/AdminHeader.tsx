@@ -55,7 +55,7 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
               🧩 상품
             </ButtonLink>
           )}
-          <ButtonLink href="/admin/campaigns" variant="secondary" size="sm">
+          <ButtonLink href={isManager ? "/admin/reward/product-orders" : "/admin/campaigns"} variant="secondary" size="sm">
             📊 캠페인
           </ButtonLink>
           <ButtonLink href="/admin/experience" variant="secondary" size="sm">
@@ -66,6 +66,13 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
           {!isManager && (
             <ButtonLink href="/admin/payouts" variant="secondary" size="sm">
               💰 출금 요청
+            </ButtonLink>
+          )}
+
+          {/* 정책 설정 메뉴는 슈퍼관리자에게만 표시 */}
+          {!isManager && (
+            <ButtonLink href="/admin/policies" variant="secondary" size="sm">
+              ⚙️ 정책 설정
             </ButtonLink>
           )}
 

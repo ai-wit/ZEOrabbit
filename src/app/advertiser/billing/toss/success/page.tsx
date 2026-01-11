@@ -11,7 +11,6 @@ interface PaymentResult {
     id: string;
     amount: number;
     status: string;
-    campaignId?: string;
   };
   error?: string;
 }
@@ -113,7 +112,6 @@ export default function TossPaymentSuccessPage() {
                   id: orderId,
                   amount: parseInt(amount),
                   status: 'PAID',
-                  campaignId: data.campaign?.id,
                 }
               });
               setIsConfirming(false);
@@ -255,7 +253,7 @@ export default function TossPaymentSuccessPage() {
           <div>
             <h2 className="text-2xl font-semibold text-zinc-50 mb-2">결제 완료</h2>
             <p className="text-zinc-400">
-              {result.payment?.campaignId ? '캠페인이 성공적으로 생성되었습니다.' : '충전이 성공적으로 완료되었습니다.'}
+              결제가 성공적으로 완료되었습니다.
             </p>
           </div>
 
@@ -270,47 +268,20 @@ export default function TossPaymentSuccessPage() {
           </div>
 
           <div className="text-sm text-zinc-400 space-y-1">
-            {result.payment?.campaignId ? (
-              <>
-                <p>생성된 캠페인은 즉시 실행되어 체험단 모집을 시작합니다.</p>
-                <p>캠페인 진행 상황은 집행 현황 페이지에서 확인하실 수 있습니다.</p>
-              </>
-            ) : (
-              <>
-                <p>충전된 금액은 즉시 광고 예산으로 사용할 수 있습니다.</p>
-                <p>결제 내역은 결제/충전 페이지에서 확인하실 수 있습니다.</p>
-              </>
-            )}
+            <p>구매 내역을 기반으로 매니저가 캠페인을 등록/활성화하면 집행이 시작됩니다.</p>
+            <p>결제 내역은 결제/충전 페이지에서 확인하실 수 있습니다.</p>
           </div>
 
           <div className="flex gap-3 justify-center">
-            {result.payment?.campaignId ? (
-              <>
-                <Link href={`/advertiser/campaigns?created=1&campaignId=${encodeURIComponent(result.payment.campaignId)}`}>
-                  <Button>
-                    집행 현황 보기
-                  </Button>
-                </Link>
-                <Link href="/advertiser/billing">
-                  <Button variant="secondary">
-                    결제/충전 페이지로 이동
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/advertiser/billing">
-                  <Button>
-                    결제/충전 페이지로 이동
-                  </Button>
-                </Link>
-                <Link href="/advertiser/campaigns">
-                  <Button variant="secondary">
-                    집행 현황 보기
-                  </Button>
-                </Link>
-              </>
-            )}
+            <Link href="/advertiser/reward/campaigns">
+              <Button>집행 현황 보기</Button>
+            </Link>
+            <Link href="/advertiser/reward/products">
+              <Button variant="secondary">상품 보러가기</Button>
+            </Link>
+            <Link href="/advertiser/billing">
+              <Button variant="secondary">결제/충전</Button>
+            </Link>
           </div>
         </CardBody>
       </Card>

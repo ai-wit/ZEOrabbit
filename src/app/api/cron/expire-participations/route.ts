@@ -37,7 +37,7 @@ export async function GET(req: Request) {
   const result = await prisma.$transaction(async (tx) => {
     const updated = await tx.participation.updateMany({
       where: { id: { in: ids }, status: "IN_PROGRESS", expiresAt: { lt: now } },
-      data: { status: "EXPIRED", failureReason: "Expired" }
+      data: { status: "EXPIRED", failureReason: "증빙 제출 기한이 지나 참여가 자동 취소되었습니다." }
     });
 
     let restored = 0;

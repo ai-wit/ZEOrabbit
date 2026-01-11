@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
   // 매니저는 상품 구매 불가
   if (user.adminType === "MANAGER") {
-    return NextResponse.redirect(new URL(`/advertiser/products?error=managerNotAllowed`, req.url), 303);
+    return NextResponse.redirect(new URL(`/advertiser/reward/products?error=managerNotAllowed`, req.url), 303);
   }
 
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
@@ -51,13 +51,13 @@ export async function POST(req: Request) {
   });
 
   if (!parsed.success) {
-    return NextResponse.redirect(new URL(`/advertiser/products?error=invalid`, req.url), 303);
+    return NextResponse.redirect(new URL(`/advertiser/reward/products?error=invalid`, req.url), 303);
   }
 
   const start = parseDateInput(parsed.data.startDate);
   const end = parseDateInput(parsed.data.endDate);
   if (!start || !end || start.getTime() > end.getTime()) {
-    return NextResponse.redirect(new URL(`/advertiser/products/${parsed.data.productId}?error=date`, req.url), 303);
+    return NextResponse.redirect(new URL(`/advertiser/reward/products/${parsed.data.productId}?error=date`, req.url), 303);
   }
 
   const [product, place] = await Promise.all([
@@ -72,12 +72,12 @@ export async function POST(req: Request) {
   ]);
 
   if (!product || !place) {
-    return NextResponse.redirect(new URL(`/advertiser/products/${parsed.data.productId}?error=notfound`, req.url), 303);
+    return NextResponse.redirect(new URL(`/advertiser/reward/products/${parsed.data.productId}?error=notfound`, req.url), 303);
   }
 
   const totalDays = daysInclusive(start, end);
   if (totalDays < product.minOrderDays) {
-    return NextResponse.redirect(new URL(`/advertiser/products/${product.id}?error=minDays`, req.url), 303);
+    return NextResponse.redirect(new URL(`/advertiser/reward/products/${product.id}?error=minDays`, req.url), 303);
   }
 
   const totalQty = parsed.data.dailyTarget * totalDays;

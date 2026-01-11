@@ -108,6 +108,11 @@ enum CampaignStatus {
   ENDED
 }
 
+enum EvidenceType {
+  IMAGE
+  VIDEO
+}
+
 enum MissionType {
   TRAFFIC
   SAVE
@@ -320,6 +325,7 @@ model Campaign {
   rewardKrw     Int
   budgetTotalKrw Int
   status        CampaignStatus @default(DRAFT)
+  missionText   String?       @db.Text
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -327,10 +333,25 @@ model Campaign {
   place      Place            @relation(fields: [placeId], references: [id], onDelete: Restrict)
   missionDays MissionDay[]
   productOrders ProductOrder[]
+  buttons     CampaignButton[]
 
   @@index([advertiserId, status])
   @@index([placeId])
   @@index([missionType])
+}
+
+model CampaignButton {
+  id         String   @id @default(cuid())
+  campaignId String
+  label      String
+  url        String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, sortOrder])
 }
 
 model MissionDay {
@@ -361,6 +382,7 @@ model Participation {
   submittedAt    DateTime?
   decidedAt      DateTime?
   failureReason  String?
+  proofText      String?            @db.Text
   idempotencyKey String?            @unique
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
@@ -378,8 +400,8 @@ model Participation {
 model VerificationEvidence {
   id              String   @id @default(cuid())
   participationId String
-  type            String   // SCREENSHOT | LOG (keep flexible for MVP)
-  // In MVP we store images as data URLs (base64). This can exceed typical varchar limits, so use TEXT.
+  type            EvidenceType
+  // Stored file path (e.g. /api/uploads/...) or legacy data URLs (base64).
   fileRef         String?  @db.Text
   metadataJson    Json?
   ocrText         String?

@@ -45,6 +45,7 @@ export default async function AdminReviewDetailPage(props: { params: { id: strin
 
   const evidence = participation.evidences[0] ?? null;
   const evidenceSrc = evidence?.fileRef ? evidence.fileRef.trim() : null;
+  const isVideo = evidence?.type === "VIDEO";
 
   return (
     <PageShell
@@ -98,20 +99,30 @@ export default async function AdminReviewDetailPage(props: { params: { id: strin
           {evidenceSrc ? (
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/60">
               <div className="flex h-[52vh] min-h-[240px] max-h-[520px] w-full items-center justify-center bg-white/[0.02] p-3">
-                <ImageLightbox
-                  src={evidenceSrc}
-                  className="h-full w-full rounded-xl"
-                  trigger={
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={evidenceSrc}
-                      alt="evidence"
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full rounded-xl object-contain"
-                    />
-                  }
-                />
+                {isVideo ? (
+                  // eslint-disable-next-line jsx-a11y/media-has-caption
+                  <video
+                    src={evidenceSrc}
+                    controls
+                    preload="metadata"
+                    className="h-full w-full rounded-xl object-contain"
+                  />
+                ) : (
+                  <ImageLightbox
+                    src={evidenceSrc}
+                    className="h-full w-full rounded-xl"
+                    trigger={
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={evidenceSrc}
+                        alt="evidence"
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full rounded-xl object-contain"
+                      />
+                    }
+                  />
+                )}
               </div>
             </div>
           ) : (
