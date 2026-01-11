@@ -2,13 +2,9 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
-import { isJpeg, isPng, isWebp } from "@/server/upload/magic";
+import { storeRewardEvidenceFile } from "@/server/upload/storage";
 import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
-
-function toBase64(buffer: ArrayBuffer): string {
-  return Buffer.from(buffer).toString("base64");
-}
 
 export async function POST(
   req: Request,
@@ -24,7 +20,7 @@ export async function POST(
 
   const participation = await prisma.participation.findFirst({
     where: { id: participationId, rewarderId },
-    select: { id: true, status: true, expiresAt: true }
+    select: { id: true, status: true, expiresAt: true, missionDayId: true }
   });
   if (!participation) {
     return NextResponse.redirect(new URL("/rewarder/participations", req.url), 303);
@@ -35,61 +31,57 @@ export async function POST(
   }
 
   if (Date.now() > new Date(participation.expiresAt).getTime()) {
-    await prisma.participation.update({
-      where: { id: participation.id },
-      data: { status: "EXPIRED", failureReason: "Expired before submission" }
+    await prisma.$transaction(async (tx) => {
+      await tx.participation.update({
+        where: { id: participation.id },
+        data: { status: "EXPIRED", failureReason: "증빙 제출 기한 초과로 참여가 취소되었습니다." }
+      });
+
+      // 만료된 참여의 슬롯 복원
+      await tx.missionDay.updateMany({
+        where: { id: participation.missionDayId },
+        data: { quotaRemaining: { increment: 1 } }
+      });
     });
     return NextResponse.redirect(new URL(`/rewarder/participations/${participation.id}`, req.url), 303);
   }
 
   const form = await req.formData();
-  const file = form.get("screenshot");
+  const proofText = String(form.get("proofText") ?? "").trim();
+  const file = form.get("file");
   if (!(file instanceof File)) {
     return NextResponse.redirect(new URL(`/rewarder/participations/${participation.id}`, req.url), 303);
   }
-
-  // Hard limit to keep DB safe in MVP (1MB).
-  const maxBytes = 1_000_000;
-  if (file.size <= 0 || file.size > maxBytes) {
+  if (proofText.length > 2000) {
     return NextResponse.redirect(new URL(`/rewarder/participations/${participation.id}`, req.url), 303);
   }
 
-  const mime = file.type || "application/octet-stream";
-  const allowed = new Set(["image/png", "image/jpeg", "image/webp"]);
-  if (!allowed.has(mime)) {
+  let stored;
+  try {
+    stored = await storeRewardEvidenceFile({ participationId: participation.id, file });
+  } catch {
     return NextResponse.redirect(new URL(`/rewarder/participations/${participation.id}`, req.url), 303);
   }
 
-  const buffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  const okMagic =
-    (mime === "image/png" && isPng(bytes)) ||
-    (mime === "image/jpeg" && isJpeg(bytes)) ||
-    (mime === "image/webp" && isWebp(bytes));
-  if (!okMagic) {
-    return NextResponse.redirect(new URL(`/rewarder/participations/${participation.id}`, req.url), 303);
-  }
-
-  const base64 = toBase64(buffer);
-  const dataUrl = `data:${mime};base64,${base64}`;
+  const evidenceType = stored.mime.startsWith("video/") ? "VIDEO" : "IMAGE";
 
   await prisma.$transaction(async (tx) => {
     await tx.verificationEvidence.create({
       data: {
         participationId: participation.id,
-        type: "SCREENSHOT",
-        fileRef: dataUrl,
+        type: evidenceType,
+        fileRef: stored.fileRef,
         metadataJson: {
-          originalName: file.name,
-          size: file.size,
-          mime
+          originalName: stored.originalName,
+          size: stored.size,
+          mime: stored.mime
         }
       }
     });
 
     await tx.participation.update({
       where: { id: participation.id },
-      data: { status: "PENDING_REVIEW", submittedAt: new Date() }
+      data: { status: "PENDING_REVIEW", submittedAt: new Date(), proofText: proofText || null }
     });
 
     await tx.auditLog.create({

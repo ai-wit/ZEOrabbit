@@ -5,6 +5,7 @@ import { prisma } from "@/server/prisma";
 import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, DividerList, Pill } from "@/app/_ui/primitives";
+import { BackButton } from "./BackButton";
 
 export default async function RewarderParticipationDetailPage(props: {
   params: { id: string };
@@ -20,6 +21,7 @@ export default async function RewarderParticipationDetailPage(props: {
       expiresAt: true,
       submittedAt: true,
       failureReason: true,
+      proofText: true,
       missionDay: {
         select: {
           date: true,
@@ -32,7 +34,17 @@ export default async function RewarderParticipationDetailPage(props: {
           }
         }
       },
-      evidences: { orderBy: { createdAt: "desc" }, take: 3, select: { id: true, type: true, createdAt: true } }
+      evidences: {
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: {
+          id: true,
+          type: true,
+          fileRef: true,
+          metadataJson: true,
+          createdAt: true
+        }
+      }
     }
   });
 
@@ -50,20 +62,23 @@ export default async function RewarderParticipationDetailPage(props: {
           description={`${participation.missionDay.campaign.place.name} · ${participation.missionDay.campaign.missionType} · 리워드 ${participation.missionDay.campaign.rewardKrw}원`}
           right={
             <div className="flex flex-wrap gap-2">
+              <ButtonLink href="/" variant="secondary" size="sm">
+                홈
+              </ButtonLink>
+              <ButtonLink href="/member/reward" variant="secondary" size="sm">
+                리워더 홈
+              </ButtonLink>
               <ButtonLink href="/member/reward/missions" variant="secondary" size="sm">
                 오늘의 미션
+              </ButtonLink>
+              <ButtonLink href="/member/reward/campaigns" variant="secondary" size="sm">
+                캠페인
               </ButtonLink>
               <ButtonLink href="/member/reward/participations" variant="secondary" size="sm">
                 내 참여 내역
               </ButtonLink>
               <ButtonLink href="/member/reward/payouts" variant="secondary" size="sm">
                 출금/정산
-              </ButtonLink>
-              <ButtonLink href="/rewarder" variant="secondary" size="sm">
-                리워더 홈
-              </ButtonLink>
-              <ButtonLink href="/" variant="secondary" size="sm">
-                홈
               </ButtonLink>
               <form action="/api/auth/logout" method="post">
                 <Button type="submit" variant="danger" size="sm">
@@ -89,6 +104,12 @@ export default async function RewarderParticipationDetailPage(props: {
             {participation.submittedAt ? ` · 제출: ${new Date(participation.submittedAt).toLocaleString("ko-KR")}` : ""}
           </div>
           {participation.failureReason ? <div className="text-xs text-red-200">사유: {participation.failureReason}</div> : null}
+          {participation.proofText ? (
+            <div className="space-y-2">
+              <div className="text-sm font-semibold text-zinc-50">제출 내용</div>
+              <div className="text-sm text-zinc-300 whitespace-pre-wrap">{participation.proofText}</div>
+            </div>
+          ) : null}
         </CardBody>
       </Card>
 
@@ -96,17 +117,28 @@ export default async function RewarderParticipationDetailPage(props: {
         <Card>
           <CardBody className="space-y-4">
             <div className="text-sm font-semibold text-zinc-50">인증 제출</div>
-            <div className="text-sm text-zinc-300">인증 스크린샷 1장을 업로드하세요.</div>
+            <div className="text-sm text-zinc-300">
+              증빙 내용을 입력하고 이미지 또는 동영상 1개를 업로드하세요.
+              <br />
+              <span className="text-amber-200">주의: 제출 기한({new Date(participation.expiresAt).toLocaleString("ko-KR")})까지 업로드하지 않으면 참여가 취소됩니다.</span>
+            </div>
             <form
               action={`/api/member/participations/${participation.id}/evidence`}
               method="post"
               encType="multipart/form-data"
               className="space-y-4"
             >
+              <textarea
+                name="proofText"
+                maxLength={2000}
+                placeholder="증빙 내용(선택)"
+                className="block w-full rounded-xl border border-white/10 bg-zinc-950/40 p-3 text-sm text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/10"
+                rows={4}
+              />
               <input
                 type="file"
-                name="screenshot"
-                accept="image/png,image/jpeg,image/webp"
+                name="file"
+                accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"
                 required
                 className="block w-full rounded-xl border border-white/10 bg-zinc-950/40 p-3 text-sm text-zinc-200 file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-zinc-50 hover:file:bg-white/15"
               />
@@ -125,20 +157,47 @@ export default async function RewarderParticipationDetailPage(props: {
             <div className="text-sm text-zinc-400">아직 업로드된 증빙이 없습니다.</div>
           ) : (
             <DividerList>
-              {participation.evidences.map((e) => (
-                <div key={e.id} className="py-3 text-sm text-zinc-300">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Pill tone="neutral">{e.type}</Pill>
+              {participation.evidences.map((e) => {
+                const metadata = e.metadataJson as any;
+                const fileUrl = e.fileRef; // fileRef is already a full URL like /api/uploads/reward/participations/...
+
+                return (
+                  <div key={e.id} className="py-3 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Pill tone="neutral">{e.type}</Pill>
+                        {metadata?.originalName && (
+                          <span className="text-xs text-zinc-500">{metadata.originalName}</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-zinc-500">{new Date(e.createdAt).toLocaleString("ko-KR")}</div>
                     </div>
-                    <div className="text-xs text-zinc-500">{new Date(e.createdAt).toLocaleString("ko-KR")}</div>
+                    {fileUrl && e.type === "IMAGE" ? (
+                      <img
+                        src={fileUrl}
+                        alt="증빙 이미지"
+                        className="max-w-full h-auto rounded-lg border border-white/10"
+                        style={{ maxHeight: "300px" }}
+                      />
+                    ) : fileUrl && e.type === "VIDEO" ? (
+                      <video
+                        src={fileUrl}
+                        controls
+                        className="max-w-full h-auto rounded-lg border border-white/10"
+                        style={{ maxHeight: "300px" }}
+                      />
+                    ) : null}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </DividerList>
           )}
         </CardBody>
       </Card>
+
+      <div className="flex justify-end mt-6">
+        <BackButton />
+      </div>
     </PageShell>
   );
 }
