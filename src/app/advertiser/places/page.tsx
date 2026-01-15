@@ -16,6 +16,7 @@ export default async function AdvertiserPlacesPage() {
     select: {
       id: true,
       name: true,
+      url: true,
       externalProvider: true,
       externalId: true,
       createdAt: true
@@ -47,6 +48,19 @@ export default async function AdvertiserPlacesPage() {
                 <div className="text-sm font-semibold text-zinc-50">{p.name}</div>
                 <div className="mt-1 text-xs text-zinc-400">
                   {p.externalProvider ?? "—"} {p.externalId ? `(${p.externalId})` : ""} ·{" "}
+                  {p.url ? (
+                    <>
+                      <Link
+                        href={p.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-zinc-300 hover:underline underline-offset-4"
+                      >
+                        네이버 플레이스
+                      </Link>{" "}
+                      ·{" "}
+                    </>
+                  ) : null}
                   {new Date(p.createdAt).toLocaleString("ko-KR")}
                 </div>
               </div>

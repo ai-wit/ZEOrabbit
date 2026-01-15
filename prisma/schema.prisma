@@ -298,6 +298,7 @@ model Place {
   id              String   @id @default(cuid())
   advertiserId     String
   name            String
+  url             String?  @db.Text // full URL (e.g. https://m.place.naver.com/place/11556036)
   externalProvider String? // e.g. NAVER_PLACE
   externalId       String? // provider-specific identifier
   createdAt       DateTime @default(now())

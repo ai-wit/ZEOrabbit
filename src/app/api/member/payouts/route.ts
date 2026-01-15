@@ -15,7 +15,7 @@ const Schema = z.object({
 
 export async function POST(req: Request) {
   if (await isIpBlocked(getClientIp(req.headers))) {
-    return NextResponse.redirect(new URL("/member/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/payouts", req.url), 303);
   }
 
   const user = await requireRole("MEMBER");
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     amountKrw: form.get("amountKrw")
   });
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/member/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/payouts", req.url), 303);
   }
 
   const account = await prisma.payoutAccount.findFirst({
@@ -35,18 +35,18 @@ export async function POST(req: Request) {
     select: { id: true }
   });
   if (!account) {
-    return NextResponse.redirect(new URL("/member/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/payouts", req.url), 303);
   }
 
   const payoutPolicy = await getPayoutPolicy();
   const minPayoutKrw = payoutPolicy?.minPayoutKrw ?? 1000;
   if (parsed.data.amountKrw < minPayoutKrw) {
-    return NextResponse.redirect(new URL("/member/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/payouts", req.url), 303);
   }
 
   const available = await getRewarderAvailableBalanceKrw(rewarderId);
   if (available < parsed.data.amountKrw) {
-    return NextResponse.redirect(new URL("/member/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/payouts", req.url), 303);
   }
 
   await prisma.$transaction(async (tx) => {
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     });
   });
 
-  return NextResponse.redirect(new URL("/member/payouts", req.url), 303);
+  return NextResponse.redirect(new URL("/member/reward/payouts", req.url), 303);
 }
 
 

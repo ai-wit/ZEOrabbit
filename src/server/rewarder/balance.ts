@@ -22,7 +22,7 @@ export async function getRewarderAvailableBalanceKrw(rewarderId: string): Promis
 
   const balance = balanceAgg._sum.amountKrw ?? 0;
   const pending = pendingAgg._sum.amountKrw ?? 0;
-  return balance - pending;
+  return Math.max(0, balance - pending);
 }
 
 

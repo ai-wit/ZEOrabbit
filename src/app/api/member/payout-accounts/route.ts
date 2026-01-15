@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     accountHolderName: (form.get("accountHolderName") || undefined) as string | undefined
   });
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/member/payouts/account", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/payouts/account", req.url), 303);
   }
 
   const masked = maskAccountNumber(parsed.data.accountNumber);
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     });
   });
 
-  return NextResponse.redirect(new URL("/member/payouts", req.url), 303);
+  return NextResponse.redirect(new URL("/member/reward/payouts", req.url), 303);
 }
 
 

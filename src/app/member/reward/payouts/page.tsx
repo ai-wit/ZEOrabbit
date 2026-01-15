@@ -34,7 +34,7 @@ export default async function RewarderPayoutsPage() {
         <PageHeader
           eyebrow="REWARDER"
           title="출금/정산"
-          description={`현재 잔액: ${balance}원 · 출금 가능액: ${available}원`}
+          description={`현재 잔액: ${balance.toLocaleString()}원 · 출금 가능액: ${available.toLocaleString()}원`}
           right={<RewardNavigation />}
         />
       }
@@ -72,14 +72,21 @@ export default async function RewarderPayoutsPage() {
                 name="amountKrw"
                 type="number"
                 min={minPayoutKrw}
+                max={available}
                 step={100}
                 required
-                placeholder={`최소 ${minPayoutKrw}원`}
+                placeholder={`최소 ${minPayoutKrw.toLocaleString()}원, 최대 ${available.toLocaleString()}원`}
               />
             </div>
-            <Button type="submit" variant="primary" disabled={!account} className="w-full">
-              출금 신청
-            </Button>
+            {available === 0 ? (
+              <div className="w-full px-3 py-2 text-center text-sm text-zinc-500 bg-zinc-800/50 rounded-md">
+                출금 가능액이 없습니다
+              </div>
+            ) : (
+              <Button type="submit" variant="primary" disabled={!account} className="w-full">
+                출금 신청
+              </Button>
+            )}
           </form>
         </CardBody>
       </Card>
@@ -95,7 +102,7 @@ export default async function RewarderPayoutsPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-sm font-semibold text-zinc-50">{r.amountKrw}원</div>
+                      <div className="text-sm font-semibold text-zinc-50">{r.amountKrw.toLocaleString()}원</div>
                       <Pill tone={r.status === "PAID" ? "emerald" : r.status === "REJECTED" ? "red" : "cyan"}>
                         {r.status}
                       </Pill>

@@ -1870,8 +1870,28 @@ async function seedExperienceWorkflow(): Promise<void> {
     }
   }
 
-  console.log('체험단 워크플로우 시드 완료');
-}
+    console.log('체험단 워크플로우 시드 완료');
+
+    // 출금 테스트를 위한 초기 잔액 추가
+    console.log('리워더 초기 잔액 추가 중...');
+    const rewarders = await prisma.memberProfile.findMany({
+      where: { user: { role: "MEMBER" } }
+    });
+
+    for (const rewarder of rewarders) {
+      // 각 리워더에게 50,000원의 초기 잔액 추가
+      await prisma.creditLedger.create({
+        data: {
+          rewarderId: rewarder.id,
+          amountKrw: 50000,
+          reason: "ADJUSTMENT",
+          refId: "seed_balance_" + rewarder.id
+        }
+      });
+    }
+
+    console.log(`${rewarders.length}명의 리워더에게 초기 잔액 50,000원씩 추가 완료`);
+  }
 
 run()
   .then(async () => {
