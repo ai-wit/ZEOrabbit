@@ -55,7 +55,7 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
               🧩 상품
             </ButtonLink>
           )}
-          <ButtonLink href={isManager ? "/admin/reward/product-orders" : "/admin/campaigns"} variant="secondary" size="sm">
+          <ButtonLink href={isManager ? "/admin/reward/campaigns" : "/admin/campaigns"} variant="secondary" size="sm">
             📊 캠페인
           </ButtonLink>
           <ButtonLink href="/admin/experience" variant="secondary" size="sm">

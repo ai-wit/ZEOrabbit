@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageShell } from "@/app/_ui/shell";
 import { AdminHeader } from "@/app/admin/_components/AdminHeader";
-import { Button, ButtonLink, Card, CardBody, DividerList, EmptyState, Input, Pill } from "@/app/_ui/primitives";
+import { Button, ButtonLink, Card, CardBody, DividerList, EmptyState, Input, Label, Pill, TextArea } from "@/app/_ui/primitives";
 import { ImageLightbox } from "@/app/_ui/ImageLightbox";
 
 type Participation = {
@@ -20,27 +20,43 @@ type Participation = {
   evidences: Array<{ type: "IMAGE" | "VIDEO"; fileRef: string | null; createdAt: string }>;
 };
 
+type CampaignButton = { id?: string; label: string; url: string; sortOrder: number };
+
 type Campaign = {
   id: string;
   name: string;
   status: string;
   missionType: string;
+  dailyTarget: number;
   rewardKrw: number;
   startDate: string;
   endDate: string;
+  missionText: string | null;
+  buttons: Array<{ id: string; label: string; url: string; sortOrder: number }>;
   place: { name: string };
 };
 
 export default function AdminRewardCampaignDetailPage({ params }: { params: { id: string } }) {
   const sp = useSearchParams();
-  const tab = sp?.get("tab") === "evaluation" ? "evaluation" : "overview";
+  const tabParam = sp?.get("tab");
+  const tab = tabParam === "evaluation" ? "evaluation" : "dashboard";
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [order, setOrder] = useState<{ id: string; startDate: string; endDate: string; status: string } | null>(null);
   const [participations, setParticipations] = useState<Participation[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({});
+
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    missionText: "",
+    startDate: "",
+    endDate: "",
+    buttons: [] as CampaignButton[]
+  });
 
   const load = async () => {
     setLoading(true);
@@ -54,10 +70,26 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
         name: cJson.campaign.name,
         status: cJson.campaign.status,
         missionType: cJson.campaign.missionType,
+        dailyTarget: cJson.campaign.dailyTarget,
         rewardKrw: cJson.campaign.rewardKrw,
         startDate: cJson.campaign.startDate,
         endDate: cJson.campaign.endDate,
+        missionText: cJson.campaign.missionText ?? null,
+        buttons: cJson.campaign.buttons ?? [],
         place: { name: cJson.campaign.place.name }
+      });
+      setOrder(cJson.order ?? null);
+      setForm({
+        name: cJson.campaign.name ?? "",
+        missionText: cJson.campaign.missionText ?? "",
+        startDate: new Date(cJson.campaign.startDate).toISOString().slice(0, 10),
+        endDate: new Date(cJson.campaign.endDate).toISOString().slice(0, 10),
+        buttons: (cJson.campaign.buttons ?? []).map((b: any) => ({
+          id: b.id,
+          label: b.label,
+          url: b.url,
+          sortOrder: b.sortOrder
+        }))
       });
 
       const pRes = await fetch(`/api/admin/reward/campaigns/${params.id}/participations`);
@@ -75,6 +107,82 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
+
+  const saveCampaign = async () => {
+    if (!campaign || !order) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const start = new Date(form.startDate);
+      const end = new Date(form.endDate);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) throw new Error("기간을 입력해주세요.");
+      if (start > end) throw new Error("기간이 올바르지 않습니다.");
+      const purchaseStart = new Date(order.startDate);
+      const purchaseEnd = new Date(order.endDate);
+      if (start < purchaseStart) throw new Error("시작일은 구매 기간 범위 내여야 합니다.");
+      if (end > purchaseEnd) throw new Error("종료일은 구매 기간 범위 내여야 합니다.");
+
+      const res = await fetch(`/api/admin/reward/campaigns/${campaign.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          missionText: form.missionText || null,
+          startDate: start,
+          endDate: end,
+          buttons: form.buttons
+            .map((b, idx) => ({ ...b, sortOrder: Number.isFinite(b.sortOrder) ? b.sortOrder : idx }))
+            .filter((b) => b.label.trim() && b.url.trim())
+        })
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "저장에 실패했습니다.");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "저장에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const activate = async () => {
+    if (!campaign) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/reward/campaigns/${campaign.id}/activate`, { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "활성화에 실패했습니다.");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "활성화에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const pause = async () => {
+    if (!campaign) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/reward/campaigns/${campaign.id}/pause`, { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "비활성화에 실패했습니다.");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "비활성화에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addButton = () => {
+    setForm((prev) => ({
+      ...prev,
+      buttons: [...prev.buttons, { label: "", url: "", sortOrder: prev.buttons.length }]
+    }));
+  };
 
   const approve = async (id: string) => {
     setProcessingId(id);
@@ -130,7 +238,7 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-center gap-2">
-          <ButtonLink href={`/admin/reward/campaigns/${params.id}?tab=overview`} variant={tab === "overview" ? "primary" : "secondary"} size="sm">
+          <ButtonLink href={`/admin/reward/campaigns/${params.id}?tab=dashboard`} variant={tab === "dashboard" ? "primary" : "secondary"} size="sm">
             대시보드
           </ButtonLink>
           <ButtonLink
@@ -139,9 +247,6 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
             size="sm"
           >
             수행 평가
-          </ButtonLink>
-          <ButtonLink href="/admin/reward/product-orders" variant="secondary" size="sm">
-            구매 목록
           </ButtonLink>
         </div>
 
@@ -153,40 +258,160 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
           <Card>
             <CardBody className="text-sm text-red-400">{error}</CardBody>
           </Card>
-        ) : !campaign ? (
+        ) : !campaign || !order ? (
           <Card>
             <CardBody className="text-sm text-zinc-400">캠페인을 찾을 수 없습니다.</CardBody>
           </Card>
-        ) : tab === "overview" ? (
-          <Card>
-            <CardBody className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="text-sm font-semibold text-zinc-50">{campaign.name}</div>
-                <Pill tone={campaign.status === "ACTIVE" ? "emerald" : campaign.status === "PAUSED" ? "neutral" : "cyan"}>
-                  {campaign.status}
-                </Pill>
-                <Pill tone="neutral">{campaign.missionType}</Pill>
-              </div>
-              <div className="text-xs text-zinc-500">
-                기간: {new Date(campaign.startDate).toLocaleDateString("ko-KR")} ~ {new Date(campaign.endDate).toLocaleDateString("ko-KR")}
-              </div>
-              <div className="text-xs text-zinc-500">리워드: {campaign.rewardKrw.toLocaleString()}원</div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
-                  <div className="text-xs text-zinc-400">검수 대기</div>
-                  <div className="mt-1 text-sm font-semibold text-zinc-50">{counts.pending}</div>
+        ) : tab === "dashboard" ? (
+          <div className="space-y-6">
+            <Card>
+              <CardBody className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-semibold text-zinc-50">{campaign.name}</div>
+                    <Pill tone={campaign.status === "ACTIVE" ? "emerald" : campaign.status === "PAUSED" ? "neutral" : "cyan"}>
+                      {campaign.status}
+                    </Pill>
+                    <Pill tone="neutral">{campaign.missionType}</Pill>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {campaign.status === "ACTIVE" ? (
+                      <Button onClick={pause} disabled={saving} variant="secondary" size="sm">
+                        비활성화
+                      </Button>
+                    ) : (
+                      <Button onClick={activate} disabled={saving} variant="primary" size="sm">
+                        활성화
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
-                  <div className="text-xs text-zinc-400">승인</div>
-                  <div className="mt-1 text-sm font-semibold text-zinc-50">{counts.approved}</div>
+
+                <div className="text-xs text-zinc-500">
+                  기간: {new Date(campaign.startDate).toLocaleDateString("ko-KR")} ~{" "}
+                  {new Date(campaign.endDate).toLocaleDateString("ko-KR")}
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
-                  <div className="text-xs text-zinc-400">반려</div>
-                  <div className="mt-1 text-sm font-semibold text-zinc-50">{counts.rejected}</div>
+                <div className="text-xs text-zinc-500">
+                  리워드: {campaign.rewardKrw.toLocaleString()}원 · 일일 목표 {campaign.dailyTarget}
                 </div>
-              </div>
-            </CardBody>
-          </Card>
+                <div className="text-xs text-zinc-500">
+                  구매 기간: {new Date(order.startDate).toLocaleDateString("ko-KR")} ~{" "}
+                  {new Date(order.endDate).toLocaleDateString("ko-KR")}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                    <div className="text-xs text-zinc-400">검수 대기</div>
+                    <div className="mt-1 text-sm font-semibold text-zinc-50">{counts.pending}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                    <div className="text-xs text-zinc-400">승인</div>
+                    <div className="mt-1 text-sm font-semibold text-zinc-50">{counts.approved}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                    <div className="text-xs text-zinc-400">반려</div>
+                    <div className="mt-1 text-sm font-semibold text-zinc-50">{counts.rejected}</div>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody className="space-y-4">
+                <div className="text-sm font-semibold text-zinc-50">캠페인 수정</div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">캠페인 이름</Label>
+                    <Input id="name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>미션 타입 / 일일 목표</Label>
+                    <div className="rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-200">
+                      {campaign.missionType} · {campaign.dailyTarget} / day · 리워드 {campaign.rewardKrw}원
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">시작일 (구매 범위 내)</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={form.startDate}
+                      min={new Date(order.startDate).toISOString().slice(0, 10)}
+                      max={new Date(order.endDate).toISOString().slice(0, 10)}
+                      onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate">종료일 (구매 범위 내)</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={form.endDate}
+                      min={new Date(order.startDate).toISOString().slice(0, 10)}
+                      max={new Date(order.endDate).toISOString().slice(0, 10)}
+                      onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="missionText">상세 정보(미션)</Label>
+                  <TextArea label="" value={form.missionText} onChange={(v) => setForm((p) => ({ ...p, missionText: v }))} rows={8} />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-semibold text-zinc-50">추가 옵션 버튼</div>
+                    <Button onClick={addButton} variant="secondary" size="sm">
+                      버튼 추가
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {form.buttons.length === 0 ? (
+                      <div className="text-sm text-zinc-400">등록된 버튼이 없습니다.</div>
+                    ) : (
+                      form.buttons.map((b, idx) => (
+                        <div key={b.id ?? idx} className="grid gap-3 sm:grid-cols-5">
+                          <div className="sm:col-span-2">
+                            <Input
+                              value={b.label}
+                              placeholder="버튼 이름"
+                              onChange={(e) =>
+                                setForm((p) => ({
+                                  ...p,
+                                  buttons: p.buttons.map((x, i) => (i === idx ? { ...x, label: e.target.value } : x))
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="sm:col-span-3">
+                            <Input
+                              value={b.url}
+                              placeholder="https://..."
+                              onChange={(e) =>
+                                setForm((p) => ({
+                                  ...p,
+                                  buttons: p.buttons.map((x, i) => (i === idx ? { ...x, url: e.target.value } : x))
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <Button onClick={saveCampaign} disabled={saving} variant="primary" className="w-full">
+                  {saving ? "저장 중..." : "저장"}
+                </Button>
+              </CardBody>
+            </Card>
+          </div>
         ) : (
           <Card>
             <CardBody className="space-y-4">
@@ -278,8 +503,8 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
         )}
 
         <div className="flex flex-wrap gap-3">
-          <Link href="/admin/reward/product-orders" className="text-sm text-zinc-300 hover:underline underline-offset-4">
-            ← 구매 목록
+          <Link href="/admin/reward/campaigns" className="text-sm text-zinc-300 hover:underline underline-offset-4">
+            ← 캠페인 목록
           </Link>
         </div>
       </div>

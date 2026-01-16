@@ -138,14 +138,16 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { cla
   return (
     <input
       {...props}
+      style={
+        props.type === "date"
+          ? {
+              colorScheme: "dark",
+              ...props.style,
+            }
+          : props.style
+      }
       className={cn(
         "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10",
-        // Date input 전용 스타일링 - 달력 아이콘을 밝은 회색으로 변경해서 배경과 확실히 구분
-        props.type === "date" && [
-          "[&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-1.8 [&::-webkit-calendar-picker-indicator]:contrast-1.5 [&::-webkit-calendar-picker-indicator]:opacity-95 hover:[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:transition-opacity",
-          // Firefox용 - 밝은 회색으로 변경
-          "[&::-moz-calendar-picker-indicator]:filter [&::-moz-calendar-picker-indicator]:invert [&::-moz-calendar-picker-indicator]:brightness-1.8 [&::-moz-calendar-picker-indicator]:opacity-95 hover:[&::-moz-calendar-picker-indicator]:opacity-100 [&::-moz-calendar-picker-indicator]:transition-opacity"
-        ],
         props.className
       )}
     />

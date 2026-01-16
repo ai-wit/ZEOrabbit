@@ -27,7 +27,7 @@ type Order = {
   product: { id: string; name: string; missionType: string };
 };
 
-export default function AdminRewardProductOrdersPage() {
+export default function AdminRewardCampaignsPage() {
   const router = useRouter();
   const sp = useSearchParams();
   const advertiserId = sp?.get("advertiserId") || "";
@@ -37,6 +37,8 @@ export default function AdminRewardProductOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const [registeringOrderId, setRegisteringOrderId] = useState<string | null>(null);
+
   useEffect(() => {
     const run = async () => {
       setLoading(true);
@@ -44,7 +46,7 @@ export default function AdminRewardProductOrdersPage() {
       try {
         const advRes = await fetch("/api/admin/managers/assigned-advertisers");
         if (advRes.ok) {
-          const advJson = await advRes.json();
+          const advJson = await advRes.json().catch(() => ({}));
           setManagedAdvertisers(advJson.advertisers || []);
         }
 
@@ -63,10 +65,29 @@ export default function AdminRewardProductOrdersPage() {
     run();
   }, [advertiserId]);
 
+  const registerCampaign = async (orderId: string) => {
+    setRegisteringOrderId(orderId);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/reward/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productOrderId: orderId })
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "캠페인 등록에 실패했습니다.");
+      router.push(`/admin/reward/campaigns/${json.campaign.id}?tab=dashboard`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "캠페인 등록에 실패했습니다.");
+    } finally {
+      setRegisteringOrderId(null);
+    }
+  };
+
   return (
     <PageShell
       header={
-        <AdminHeader title="리워드 · 구매 상품" description="담당 광고주의 구매 상품을 캠페인으로 등록/관리합니다." />
+        <AdminHeader title="캠페인 관리 - 구매 목록" description="담당 광고주의 구매 상품을 캠페인으로 등록/관리합니다." />
       }
     >
       <div className="space-y-6">
@@ -90,7 +111,7 @@ export default function AdminRewardProductOrdersPage() {
                     const next = e.target.value;
                     const params = new URLSearchParams();
                     if (next) params.set("advertiserId", next);
-                    router.push(`/admin/reward/product-orders?${params.toString()}`);
+                    router.push(`/admin/reward/campaigns?${params.toString()}`);
                   }}
                   className="px-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-md text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -102,16 +123,14 @@ export default function AdminRewardProductOrdersPage() {
                   ))}
                 </select>
                 {advertiserId ? (
-                  <Button
-                    onClick={() => router.push("/admin/reward/product-orders")}
-                    variant="secondary"
-                    size="sm"
-                  >
+                  <Button onClick={() => router.push("/admin/reward/campaigns")} variant="secondary" size="sm">
                     필터 해제
                   </Button>
                 ) : null}
               </div>
             ) : null}
+
+            {error ? <div className="text-sm text-red-400">{error}</div> : null}
           </CardBody>
         </Card>
 
@@ -120,34 +139,45 @@ export default function AdminRewardProductOrdersPage() {
           <DividerList>
             {loading ? (
               <div className="px-6 py-8 text-sm text-zinc-400">로딩 중...</div>
-            ) : error ? (
-              <div className="px-6 py-8 text-sm text-red-400">{error}</div>
             ) : orders.length === 0 ? (
               <EmptyState title="구매 내역이 없습니다." />
             ) : (
-              orders.map((o) => (
-                <div key={o.id} className="px-6 py-4">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="text-sm font-semibold text-zinc-50">{o.product.name}</div>
-                        <Pill tone={o.status === "FULFILLED" ? "emerald" : "neutral"}>{o.status}</Pill>
-                        <Pill tone={o.campaignId ? "cyan" : "neutral"}>{o.campaignId ? "캠페인 등록됨" : "미등록"}</Pill>
+              orders.map((o) => {
+                const hasCampaign = !!o.campaignId;
+                const canRegister = o.status === "FULFILLED" && !hasCampaign;
+                const busy = registeringOrderId === o.id;
+                return (
+                  <div key={o.id} className="px-6 py-4">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="text-sm font-semibold text-zinc-50">{o.product.name}</div>
+                          <Pill tone={hasCampaign ? "cyan" : "neutral"}>{hasCampaign ? "캠페인 등록됨" : "미등록"}</Pill>
+                        </div>
+                        <div className="text-xs text-zinc-400">
+                          광고주: {o.advertiser.user.name ?? o.advertiser.user.email ?? o.advertiser.id} · 장소: {o.place.name}
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          기간: {new Date(o.startDate).toLocaleDateString("ko-KR")} ~{" "}
+                          {new Date(o.endDate).toLocaleDateString("ko-KR")} · 일일 목표 {o.dailyTarget} · 결제금액{" "}
+                          {o.totalAmountKrw.toLocaleString()}원
+                        </div>
+                        <div className="text-xs text-zinc-500">구매일: {new Date(o.createdAt).toLocaleString("ko-KR")}</div>
                       </div>
-                      <div className="text-xs text-zinc-400">
-                        광고주: {o.advertiser.user.name ?? o.advertiser.user.email ?? o.advertiser.id} · 장소: {o.place.name}
-                      </div>
-                      <div className="text-xs text-zinc-500">
-                        기간: {new Date(o.startDate).toLocaleDateString("ko-KR")} ~ {new Date(o.endDate).toLocaleDateString("ko-KR")} · 일일 목표 {o.dailyTarget} · 결제금액 {o.totalAmountKrw.toLocaleString()}원
-                      </div>
-                      <div className="text-xs text-zinc-500">구매일: {new Date(o.createdAt).toLocaleString("ko-KR")}</div>
+
+                      {hasCampaign ? (
+                        <ButtonLink href={`/admin/reward/campaigns/${o.campaignId}?tab=dashboard`} variant="secondary" size="sm">
+                          캠페인 대시보드/평가
+                        </ButtonLink>
+                      ) : (
+                        <Button onClick={() => registerCampaign(o.id)} disabled={!canRegister || busy} variant="primary" size="sm">
+                          {busy ? "처리 중..." : "캠페인 등록"}
+                        </Button>
+                      )}
                     </div>
-                    <ButtonLink href={`/admin/reward/product-orders/${o.id}`} variant="secondary" size="sm">
-                      상세/관리
-                    </ButtonLink>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </DividerList>
         </Card>
@@ -161,5 +191,4 @@ export default function AdminRewardProductOrdersPage() {
     </PageShell>
   );
 }
-
 
