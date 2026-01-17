@@ -32,9 +32,12 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
   const { user } = adminData;
   const isManager = user?.adminType === "MANAGER";
 
+  const adminTypeText = isManager ? "매니저" : "관리자";
+  const userName = user?.name || user?.email || "이름 없음";
+
   return (
     <PageHeader
-      eyebrow={isManager ? "MANAGER" : "ADMIN"}
+      eyebrow={`${adminTypeText}(${userName})`}
       title={title}
       description={description}
       right={
@@ -83,6 +86,9 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
             </ButtonLink>
           )}
 
+          <ButtonLink href="/admin/my-page" variant="secondary" size="sm">
+            👤 마이페이지
+          </ButtonLink>
           <form action="/api/auth/logout" method="post">
             <Button type="submit" variant="danger" size="sm">
               로그아웃
