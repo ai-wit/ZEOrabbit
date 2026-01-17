@@ -7,6 +7,15 @@ import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, DividerList, Pill } from "@/app/_ui/primitives";
 import { BackButton } from "./BackButton";
 
+function getMissionTypeLabel(missionType: string) {
+  switch (missionType) {
+    case "TRAFFIC": return "방문 미션";
+    case "SAVE": return "저장 미션";
+    case "SHARE": return "공유 미션";
+    default: return missionType;
+  }
+}
+
 export default async function RewarderParticipationDetailPage(props: {
   params: { id: string };
 }) {
@@ -29,7 +38,17 @@ export default async function RewarderParticipationDetailPage(props: {
             select: {
               missionType: true,
               rewardKrw: true,
-              place: { select: { name: true } }
+              missionText: true,
+              place: { select: { name: true } },
+              buttons: {
+                select: {
+                  id: true,
+                  label: true,
+                  url: true,
+                  sortOrder: true
+                },
+                orderBy: { sortOrder: "asc" }
+              }
             }
           }
         }
@@ -110,6 +129,50 @@ export default async function RewarderParticipationDetailPage(props: {
               <div className="text-sm text-zinc-300 whitespace-pre-wrap">{participation.proofText}</div>
             </div>
           ) : null}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardBody className="space-y-3">
+          <div className="text-sm font-semibold text-zinc-50">미션 정보</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="text-xs text-zinc-500">미션 타입</div>
+              <Pill tone="neutral">{getMissionTypeLabel(participation.missionDay.campaign.missionType)}</Pill>
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs text-zinc-500">리워드</div>
+              <div className="text-sm font-semibold text-emerald-400">{participation.missionDay.campaign.rewardKrw.toLocaleString()}원</div>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <div className="text-xs text-zinc-500">장소</div>
+              <div className="text-sm text-zinc-300">{participation.missionDay.campaign.place.name}</div>
+            </div>
+            {participation.missionDay.campaign.missionText && (
+              <div className="space-y-2 md:col-span-2">
+                <div className="text-xs text-zinc-500">미션 설명</div>
+                <div className="text-sm text-zinc-300 whitespace-pre-wrap">{participation.missionDay.campaign.missionText}</div>
+              </div>
+            )}
+            {participation.missionDay.campaign.buttons.length > 0 && (
+              <div className="space-y-2 md:col-span-2">
+                <div className="text-xs text-zinc-500">미션 버튼</div>
+                <div className="flex flex-wrap gap-2">
+                  {participation.missionDay.campaign.buttons.map((button) => (
+                    <a
+                      key={button.id}
+                      href={button.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center px-3 py-2 text-xs rounded-xl border border-white/10 bg-white/5 text-zinc-50 hover:bg-white/10 font-semibold transition"
+                    >
+                      {button.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </CardBody>
       </Card>
 

@@ -26,15 +26,12 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
   });
   if (!assignment) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // Enforce purchase date bounds: campaign must be linked to an order and within its window.
+  // Verify order linkage exists
   const order = await prisma.productOrder.findFirst({
     where: { campaignId: campaign.id },
-    select: { startDate: true, endDate: true }
+    select: { id: true }
   });
   if (!order) return NextResponse.json({ error: "Order linkage required" }, { status: 400 });
-  if (campaign.startDate < order.startDate || campaign.endDate > order.endDate) {
-    return NextResponse.json({ error: "Campaign date out of order bounds" }, { status: 400 });
-  }
 
   if (campaign.status !== "DRAFT" && campaign.status !== "PAUSED") {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });

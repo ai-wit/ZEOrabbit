@@ -7,6 +7,7 @@ import { PageShell } from "@/app/_ui/shell";
 import { Button, Card, CardBody, Hint, Input, Label, Select, Callout } from "@/app/_ui/primitives";
 import { AdvertiserHeader } from "@/app/advertiser/_components/AdvertiserHeader";
 import { DateInput } from "@/app/_ui/DateInput";
+import { getProductOrderLimitsPolicy } from "@/server/policy/get-policy";
 
 type Product = {
   id: string;
@@ -33,6 +34,9 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [productOrderLimits, setProductOrderLimits] = useState<{maxAdditionalDays: number; maxDailyTarget: number} | null>(null);
+  const [additionalDaysValue, setAdditionalDaysValue] = useState<string>("0");
+  const [dailyTargetValue, setDailyTargetValue] = useState<string>("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,6 +46,13 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setCurrentUser(userData.user);
+        }
+
+        // 상품 주문 제한 정책 가져오기
+        const limitsResponse = await fetch('/api/advertiser/product-order-limits');
+        if (limitsResponse.ok) {
+          const limitsData = await limitsResponse.json();
+          setProductOrderLimits(limitsData);
         }
 
         const response = await fetch(`/api/advertiser/products/${params.id}`);
@@ -73,83 +84,91 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
   };
 
   // 결제 버튼 클릭 시 클라이언트 측 검증
-  const validateOrder = (formData: FormData): Record<string, string> => {
+  const validateOrder = (): Record<string, string> => {
     const errors: Record<string, string> = {};
-    const startDate = formData.get('startDate') as string;
-    const endDate = formData.get('endDate') as string;
-    const dailyTarget = parseInt(formData.get('dailyTarget') as string);
 
-    // 날짜 유효성 검증
-    if (!startDate) {
-      errors.startDate = '시작일을 선택해주세요.';
-    }
-    if (!endDate) {
-      errors.endDate = '종료일을 선택해주세요.';
+    // 입력값 존재성 및 형식 검증
+    if (!additionalDaysValue || additionalDaysValue.trim() === "") {
+      errors.additionalDays = '추가 일수를 입력해주세요.';
+      return errors;
     }
 
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (start < today) {
-        errors.startDate = '시작일은 오늘 이후여야 합니다.';
-      }
-
-      if (end <= start) {
-        errors.endDate = '종료일은 시작일보다 늦어야 합니다.';
-      }
-
-      // 최소 기간 검증
-      if (product && Object.keys(errors).length === 0) {
-        const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysDiff < product.minOrderDays) {
-          errors.endDate = `최소 주문 기간보다 짧습니다. 기간을 ${product.minOrderDays}일 이상으로 설정해주세요.`;
-        }
-      }
+    if (!dailyTargetValue || dailyTargetValue.trim() === "") {
+      errors.dailyTarget = '일일 목표 수량을 입력해주세요.';
+      return errors;
     }
 
-    // 일일 목표 수량 검증
-    if (!dailyTarget || dailyTarget < 1) {
+    const additionalDays = parseInt(additionalDaysValue);
+    const dailyTarget = parseInt(dailyTargetValue);
+
+    // 숫자 형식 검증
+    if (isNaN(additionalDays)) {
+      errors.additionalDays = '추가 일수는 숫자만 입력 가능합니다.';
+      return errors;
+    }
+
+    if (isNaN(dailyTarget)) {
+      errors.dailyTarget = '일일 목표 수량은 숫자만 입력 가능합니다.';
+      return errors;
+    }
+
+    // 값 범위 검증
+    if (additionalDays < 0) {
+      errors.additionalDays = '추가 일수는 0 이상이어야 합니다.';
+      return errors;
+    }
+
+    if (dailyTarget < 1) {
       errors.dailyTarget = '일일 목표 수량은 1개 이상이어야 합니다.';
+      return errors;
     }
 
-    // 예산 부족 검증 (간단한 추정치 계산)
-    if (product && startDate && endDate && dailyTarget && Object.keys(errors).length === 0) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-      const totalQuantity = daysDiff * dailyTarget;
+    // 정책 최대치 검증
+    const maxDays = productOrderLimits?.maxAdditionalDays || 300;
+    if (additionalDays > maxDays) {
+      errors.additionalDays = `추가 일수는 최대 ${maxDays}일까지 가능합니다.`;
+      return errors;
+    }
+
+    const maxTarget = productOrderLimits?.maxDailyTarget || 1000;
+    if (dailyTarget > maxTarget) {
+      errors.dailyTarget = `일일 목표 수량은 최대 ${maxTarget}개까지 가능합니다.`;
+      return errors;
+    }
+
+    // 결제 금액 검증
+    if (product) {
+      const totalDays = product.minOrderDays + additionalDays;
+      const totalQuantity = totalDays * dailyTarget;
       const estimatedTotal = totalQuantity * product.unitPriceKrw * (1 + product.vatPercent / 100);
 
-      // 실제 예산 체크는 서버에서 하지만, 여기서는 기본적인 추정만
-      if (estimatedTotal <= 0) {
-        errors.dailyTarget = '계산된 금액이 올바르지 않습니다.';
+      if (estimatedTotal <= 0 || !isFinite(estimatedTotal)) {
+        errors.dailyTarget = '결제 금액 계산에 문제가 있습니다. 입력값을 확인해주세요.';
+        return errors;
+      }
+
+      // 너무 큰 금액 검증 (선택사항)
+      const maxReasonableAmount = 100000000; // 1억원
+      if (estimatedTotal > maxReasonableAmount) {
+        errors.dailyTarget = '계산된 금액이 너무 큽니다. 입력값을 확인해주세요.';
+        return errors;
       }
     }
 
-    return errors; // 에러 객체 반환
+    return errors;
   };
 
   // 결제 금액 계산 함수
-  const calculatePaymentAmount = (startDate: string, endDate: string, dailyTarget: number): number => {
-    if (!product || !startDate || !endDate || !dailyTarget || dailyTarget < 1) {
+  const calculatePaymentAmount = (additionalDays: number, dailyTarget: number): number => {
+    if (!product || additionalDays < 0 || !dailyTarget || dailyTarget < 1) {
       return 0;
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // 총 기간 = 최소 주문 기간 + 추가 일수
+    const totalDays = product.minOrderDays + additionalDays;
 
-    if (start >= end) {
-      return 0;
-    }
-
-    // 일수 계산 (종료일 포함)
-    const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-    // 총 수량 = 일수 * 일일 목표 수량
-    const totalQuantity = daysDiff * dailyTarget;
+    // 총 수량 = 총 기간 * 일일 목표 수량
+    const totalQuantity = totalDays * dailyTarget;
 
     // 금액 계산 = 총수량 * 단가 * (1 + VAT/100)
     const amount = totalQuantity * product.unitPriceKrw * (1 + product.vatPercent / 100);
@@ -157,41 +176,60 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
     return Math.round(amount); // 정수로 반올림
   };
 
-  // 입력값 변경 시 결제 금액 자동 계산
-  const updatePaymentAmount = () => {
-    const form = document.querySelector('form[action="/api/advertiser/product-orders"]') as HTMLFormElement;
-    if (!form) return;
+  // 추가 일수 입력 변경 핸들러
+  const handleAdditionalDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numValue = parseInt(value) || 0;
+    const maxDays = productOrderLimits?.maxAdditionalDays || 300;
 
-    const formData = new FormData(form);
-    const startDate = formData.get('startDate') as string;
-    const endDate = formData.get('endDate') as string;
-    const dailyTargetStr = formData.get('dailyTarget') as string;
-    const dailyTarget = dailyTargetStr ? parseInt(dailyTargetStr) : 0;
+    // 최대치를 초과하면 자동으로 최대치로 설정
+    const clampedValue = Math.min(numValue, maxDays);
+    setAdditionalDaysValue(clampedValue.toString());
 
-    const amount = calculatePaymentAmount(startDate, endDate, dailyTarget);
+    // 결제 금액 업데이트
+    const dailyTarget = parseInt(dailyTargetValue) || 0;
+    const amount = calculatePaymentAmount(clampedValue, dailyTarget);
+    setPaymentAmount(amount);
+  };
+
+  // 일일 목표 수량 입력 변경 핸들러
+  const handleDailyTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numValue = parseInt(value) || 0;
+    const maxTarget = productOrderLimits?.maxDailyTarget || 1000;
+
+    // 최대치를 초과하면 자동으로 최대치로 설정
+    const clampedValue = Math.min(numValue, maxTarget);
+    setDailyTargetValue(clampedValue.toString());
+
+    // 결제 금액 업데이트
+    const additionalDays = parseInt(additionalDaysValue) || 0;
+    const amount = calculatePaymentAmount(additionalDays, clampedValue);
     setPaymentAmount(amount);
   };
 
   const handlePaymentClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const form = e.currentTarget.closest('form') as HTMLFormElement;
-    if (!form) return;
+    e.preventDefault(); // 일단 무조건 폼 제출 방지
 
-    const formData = new FormData(form);
-    const validationErrors = validateOrder(formData);
+    const validationErrors = validateOrder();
 
     if (Object.keys(validationErrors).length > 0) {
-      e.preventDefault();
       setFieldErrors(validationErrors);
       // 첫 번째 에러가 있는 필드로 스크롤
       const firstErrorField = Object.keys(validationErrors)[0];
-      const errorField = form.querySelector(`[name="${firstErrorField}"]`);
+      const errorField = document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement;
       if (errorField) {
-        (errorField as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-        (errorField as HTMLElement).focus();
+        errorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        errorField.focus();
       }
-    } else {
-      setFieldErrors({});
-      // 폼 제출 진행
+      return; // 검증 실패 시 여기서 중단
+    }
+
+    // 검증 통과 시 폼 제출
+    setFieldErrors({});
+    const form = e.currentTarget.closest('form') as HTMLFormElement;
+    if (form) {
+      form.submit();
     }
   };
 
@@ -273,6 +311,10 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
               <form action="/api/advertiser/product-orders" method="post" className="space-y-6">
                 <input type="hidden" name="productId" value={product.id} />
                 <input type="hidden" name="paymentAmount" value={paymentAmount} />
+                <input type="hidden" name="additionalDays" value={additionalDaysValue} />
+                <input type="hidden" name="dailyTarget" value={dailyTargetValue} />
+                <input type="hidden" name="startDate" value={new Date().toISOString().split('T')[0]} />
+                <input type="hidden" name="endDate" value={new Date(Date.now() + (product.minOrderDays + parseInt(additionalDaysValue || '0')) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} />
 
                 <div className="space-y-2">
                   <Label htmlFor="placeId">플레이스</Label>
@@ -288,30 +330,48 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                   )}
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="additionalDays">추가 일수 (최대 {productOrderLimits?.maxAdditionalDays || 300}일)</Label>
+                  <Input
+                    id="additionalDays"
+                    type="number"
+                    required
+                    min={0}
+                    max={productOrderLimits?.maxAdditionalDays || 300}
+                    step={1}
+                    placeholder="예: 3"
+                    value={additionalDaysValue}
+                    onChange={handleAdditionalDaysChange}
+                  />
+                  {fieldErrors.additionalDays && (
+                    <div className="text-sm text-red-400">{fieldErrors.additionalDays}</div>
+                  )}
                   <div className="space-y-2">
-                    <Label htmlFor="startDate">시작일</Label>
-                    <DateInput id="startDate" name="startDate" required onChange={updatePaymentAmount} />
-                    {fieldErrors.startDate && (
-                      <div className="text-sm text-red-400">{fieldErrors.startDate}</div>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">종료일</Label>
-                    <DateInput id="endDate" name="endDate" required onChange={updatePaymentAmount} />
-                    {fieldErrors.endDate && (
-                      <div className="text-sm text-red-400">{fieldErrors.endDate}</div>
-                    )}
+                    <div className="text-sm font-semibold text-amber-400">
+                      최소 주문 기간은 {product.minOrderDays}일입니다.
+                    </div>
+                    <div className="text-sm text-zinc-400">
+                      최소일수외 추가 일수를 작성해 주세요.
+                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dailyTarget">일일 목표 수량</Label>
-                  <Input id="dailyTarget" name="dailyTarget" type="number" required min={1} step={1} placeholder="예: 150" onChange={updatePaymentAmount} />
+                  <Label htmlFor="dailyTarget">일일 목표 수량 (최대 {productOrderLimits?.maxDailyTarget || 1000}개)</Label>
+                  <Input
+                    id="dailyTarget"
+                    type="number"
+                    required
+                    min={1}
+                    max={productOrderLimits?.maxDailyTarget || 1000}
+                    step={1}
+                    placeholder="예: 150"
+                    value={dailyTargetValue}
+                    onChange={handleDailyTargetChange}
+                  />
                   {fieldErrors.dailyTarget && (
                     <div className="text-sm text-red-400">{fieldErrors.dailyTarget}</div>
                   )}
-                  <Hint>최소 주문 기간은 {product.minOrderDays}일입니다. (기간이 짧으면 결제가 진행되지 않습니다)</Hint>
                 </div>
 
                 <div className="space-y-2">
@@ -338,7 +398,7 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                 </div>
 
                 <Button type="submit" variant="primary" className="w-full" onClick={handlePaymentClick}>
-                  결제하고 캠페인 시작하기
+                  결제하기
                 </Button>
               </form>
             )}

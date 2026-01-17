@@ -45,6 +45,12 @@ export async function GET(req: NextRequest) {
       paymentId: true,
       campaignId: true,
       createdAt: true,
+      campaign: {
+        select: {
+          id: true,
+          status: true
+        }
+      },
       advertiser: { select: { id: true, user: { select: { name: true, email: true } } } },
       place: { select: { id: true, name: true } },
       product: { select: { id: true, name: true, missionType: true } }

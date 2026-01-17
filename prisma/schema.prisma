@@ -183,6 +183,7 @@ enum PolicyKey {
   FRAUD
   PAYOUT
   MISSION_LIMITS
+  PRODUCT_ORDER_LIMITS
 }
 
 model User {

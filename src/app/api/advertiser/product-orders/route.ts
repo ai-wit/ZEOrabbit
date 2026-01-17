@@ -33,16 +33,21 @@ function daysInclusive(start: Date, end: Date): number {
 export async function POST(req: Request) {
   const user = await requireRole("ADVERTISER");
 
+  const form = await req.formData();
+  const productId = form.get("productId") as string;
+
   // 매니저는 상품 구매 불가
   if (user.adminType === "MANAGER") {
-    return NextResponse.redirect(new URL(`/advertiser/reward/products?error=managerNotAllowed`, req.url), 303);
+    const redirectUrl = productId
+      ? `/advertiser/reward/products/${productId}?error=managerNotAllowed`
+      : `/advertiser/reward/products?error=managerNotAllowed`;
+    return NextResponse.redirect(new URL(redirectUrl, req.url), 303);
   }
 
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
-  const form = await req.formData();
   const parsed = Schema.safeParse({
-    productId: form.get("productId"),
+    productId,
     placeId: form.get("placeId"),
     startDate: form.get("startDate"),
     endDate: form.get("endDate"),
@@ -51,7 +56,10 @@ export async function POST(req: Request) {
   });
 
   if (!parsed.success) {
-    return NextResponse.redirect(new URL(`/advertiser/reward/products?error=invalid`, req.url), 303);
+    const redirectUrl = productId
+      ? `/advertiser/reward/products/${productId}?error=invalid`
+      : `/advertiser/reward/products?error=invalid`;
+    return NextResponse.redirect(new URL(redirectUrl, req.url), 303);
   }
 
   const start = parseDateInput(parsed.data.startDate);

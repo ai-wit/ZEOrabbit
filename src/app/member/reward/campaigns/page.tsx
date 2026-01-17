@@ -72,9 +72,14 @@ export default async function MemberRewardCampaignsPage() {
 
                     <div className="flex items-center gap-2">
                       {md && md.quotaRemaining <= 0 ? <Pill tone="neutral">수량 소진</Pill> : null}
-                      <ButtonLink href={`/member/reward/campaigns/${c.id}`} variant="secondary" size="sm">
+                      <a
+                        href={`/member/reward/campaigns/${c.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center px-3 py-2 text-xs rounded-xl border border-white/10 bg-white/5 text-zinc-50 hover:bg-white/10 font-semibold transition"
+                      >
                         상세
-                      </ButtonLink>
+                      </a>
                     </div>
                   </div>
                 </div>

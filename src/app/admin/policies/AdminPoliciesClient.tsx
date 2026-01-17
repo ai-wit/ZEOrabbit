@@ -28,10 +28,16 @@ interface PayoutPayload {
   minPayoutKrw: number;
 }
 
+interface ProductOrderLimitsPayload {
+  maxAdditionalDays: number;
+  maxDailyTarget: number;
+}
+
 interface PolicyData {
   missionLimits: any;
   pricing: any;
   payout: any;
+  productOrderLimits: any;
 }
 
 interface AdminPoliciesClientProps {
@@ -52,7 +58,7 @@ export function AdminPoliciesClient({ initialData, userRole }: AdminPoliciesClie
     setEditing(null);
   };
 
-  const handleSave = async (key: string, payload: MissionLimitsPayload | PricingPayload | PayoutPayload) => {
+  const handleSave = async (key: string, payload: MissionLimitsPayload | PricingPayload | PayoutPayload | ProductOrderLimitsPayload) => {
     setSaving(true);
     try {
       const response = await fetch('/api/admin/policies', {
@@ -70,6 +76,8 @@ export function AdminPoliciesClient({ initialData, userRole }: AdminPoliciesClie
           setData(prev => ({ ...prev, pricing: result.policy.payloadJson }));
         } else if (key === 'PAYOUT') {
           setData(prev => ({ ...prev, payout: result.policy.payloadJson }));
+        } else if (key === 'PRODUCT_ORDER_LIMITS') {
+          setData(prev => ({ ...prev, productOrderLimits: result.policy.payloadJson }));
         }
         setEditing(null);
         alert('정책이 성공적으로 업데이트되었습니다.');
@@ -161,6 +169,24 @@ export function AdminPoliciesClient({ initialData, userRole }: AdminPoliciesClie
               onEdit={() => handleEdit('PAYOUT')}
               onCancel={handleCancel}
               editing={editing === 'PAYOUT'}
+              saving={saving}
+            />
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody className="space-y-4">
+            <div className="text-sm font-semibold text-zinc-50">상품 주문 제한 정책</div>
+            <div className="text-sm text-zinc-300">
+              상품 구매 시 추가 일수와 일일 목표 수량의 최대값을 설정합니다.
+            </div>
+
+            <ProductOrderLimitsForm
+              currentData={data.productOrderLimits}
+              onSave={(payload) => handleSave('PRODUCT_ORDER_LIMITS', payload)}
+              onEdit={() => handleEdit('PRODUCT_ORDER_LIMITS')}
+              onCancel={handleCancel}
+              editing={editing === 'PRODUCT_ORDER_LIMITS'}
               saving={saving}
             />
           </CardBody>
@@ -413,6 +439,80 @@ function PayoutForm({
               disabled={!editing}
               onChange={(e) => setFormData(parseInt(e.target.value))}
               min="0"
+            />
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end gap-2">
+        {editing ? (
+          <>
+            <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
+              취소
+            </Button>
+            <Button type="button" variant="primary" size="sm" disabled={saving} onClick={handleSubmit}>
+              {saving ? '저장 중...' : '저장'}
+            </Button>
+          </>
+        ) : (
+          <Button type="button" variant="secondary" size="sm" onClick={onEdit}>
+            수정
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProductOrderLimitsForm({
+  currentData,
+  onSave,
+  onEdit,
+  onCancel,
+  editing,
+  saving
+}: {
+  currentData: any;
+  onSave: (payload: ProductOrderLimitsPayload) => void;
+  onEdit: () => void;
+  onCancel: () => void;
+  editing: boolean;
+  saving: boolean;
+}) {
+  const [formData, setFormData] = useState(currentData || {
+    maxAdditionalDays: 300,
+    maxDailyTarget: 1000
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-zinc-900/50 rounded-lg p-4">
+        <div className="text-sm font-medium text-zinc-200 mb-3">상품 구매 제한 설정</div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="maxAdditionalDays">최대 추가 일수</Label>
+            <Input
+              id="maxAdditionalDays"
+              type="number"
+              value={formData.maxAdditionalDays}
+              disabled={!editing}
+              onChange={(e) => setFormData(prev => ({ ...prev, maxAdditionalDays: parseInt(e.target.value) }))}
+              min="1"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="maxDailyTarget">최대 일일 목표 수량</Label>
+            <Input
+              id="maxDailyTarget"
+              type="number"
+              value={formData.maxDailyTarget}
+              disabled={!editing}
+              onChange={(e) => setFormData(prev => ({ ...prev, maxDailyTarget: parseInt(e.target.value) }))}
+              min="1"
             />
           </div>
         </div>

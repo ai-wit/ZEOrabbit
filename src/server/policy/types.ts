@@ -20,4 +20,10 @@ export const PayoutPolicySchema = z.object({
 });
 export type PayoutPolicy = z.infer<typeof PayoutPolicySchema>;
 
+export const ProductOrderLimitsPolicySchema = z.object({
+  maxAdditionalDays: z.number().int().min(1),
+  maxDailyTarget: z.number().int().min(1)
+});
+export type ProductOrderLimitsPolicy = z.infer<typeof ProductOrderLimitsPolicySchema>;
+
 

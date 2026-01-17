@@ -187,12 +187,14 @@ export function TextArea(props: {
   placeholder?: string;
   rows?: number;
   required?: boolean;
+  id?: string;
   className?: string;
 }) {
   return (
     <div className="space-y-2">
       {props.label && <label className="text-sm font-semibold text-zinc-200">{props.label}</label>}
       <textarea
+        id={props.id}
         value={props.value}
         onChange={(e) => props.onChange(e.target.value)}
         placeholder={props.placeholder}

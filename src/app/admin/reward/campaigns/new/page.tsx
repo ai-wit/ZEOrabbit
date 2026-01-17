@@ -336,7 +336,7 @@ export default function NewCampaignPage() {
               <TextArea
                 id="missionText"
                 value={formData.missionText}
-                onChange={(e) => handleInputChange('missionText', e.target.value)}
+                onChange={(value) => handleInputChange('missionText', value)}
                 placeholder="리워더가 수행해야 할 미션에 대한 설명을 입력하세요"
                 rows={4}
               />

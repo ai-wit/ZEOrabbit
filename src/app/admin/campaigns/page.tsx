@@ -141,11 +141,13 @@ export default function AdminCampaignsPage() {
                             <Pill tone={
                               campaign.status === "ACTIVE" ? "emerald" :
                               campaign.status === "DRAFT" ? "neutral" :
-                              campaign.status === "PAUSED" ? "red" : "neutral"
+                              campaign.status === "PAUSED" ? "red" :
+                              campaign.status === "ENDED" ? "neutral" : "neutral"
                             }>
                               {campaign.status === "ACTIVE" ? "활성" :
                                campaign.status === "DRAFT" ? "초안" :
-                               campaign.status === "PAUSED" ? "일시중지" : campaign.status}
+                               campaign.status === "PAUSED" ? "일시중지" :
+                               campaign.status === "ENDED" ? "종료됨" : campaign.status}
                             </Pill>
                           </div>
                             <div className="text-xs text-zinc-400">

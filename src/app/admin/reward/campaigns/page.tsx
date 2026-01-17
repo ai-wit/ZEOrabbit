@@ -21,6 +21,7 @@ type Order = {
   totalAmountKrw: number;
   paymentId: string | null;
   campaignId: string | null;
+  campaign?: { id: string; status: string } | null;
   createdAt: string;
   advertiser: { id: string; user: { name: string | null; email: string | null } };
   place: { id: string; name: string };
@@ -138,7 +139,21 @@ export default function AdminRewardCampaignsPage() {
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="text-sm font-semibold text-zinc-50">{o.product.name}</div>
-                          <Pill tone={hasCampaign ? "cyan" : "neutral"}>{hasCampaign ? "캠페인 등록됨" : "미등록"}</Pill>
+                          {hasCampaign ? (
+                            <Pill tone={
+                              o.campaign?.status === "ACTIVE" ? "emerald" :
+                              o.campaign?.status === "DRAFT" ? "neutral" :
+                              o.campaign?.status === "PAUSED" ? "red" :
+                              o.campaign?.status === "ENDED" ? "neutral" : "cyan"
+                            }>
+                              {o.campaign?.status === "ACTIVE" ? "활성" :
+                               o.campaign?.status === "DRAFT" ? "초안" :
+                               o.campaign?.status === "PAUSED" ? "일시중지" :
+                               o.campaign?.status === "ENDED" ? "종료됨" : "등록됨"}
+                            </Pill>
+                          ) : (
+                            <Pill tone="neutral">미등록</Pill>
+                          )}
                         </div>
                         <div className="text-xs text-zinc-400">
                           광고주: {o.advertiser.user.name ?? o.advertiser.user.email ?? o.advertiser.id} · 장소: {o.place.name}

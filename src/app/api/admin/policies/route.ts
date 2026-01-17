@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
-import { MissionLimitsPolicySchema, PricingPolicySchema, PayoutPolicySchema } from "@/server/policy/types";
+import { MissionLimitsPolicySchema, PricingPolicySchema, PayoutPolicySchema, ProductOrderLimitsPolicySchema } from "@/server/policy/types";
 
 export async function GET() {
   const user = await requireRole("ADMIN");
@@ -42,6 +42,8 @@ export async function POST(req: NextRequest) {
       validatedPayload = PricingPolicySchema.parse(payload);
     } else if (key === "PAYOUT") {
       validatedPayload = PayoutPolicySchema.parse(payload);
+    } else if (key === "PRODUCT_ORDER_LIMITS") {
+      validatedPayload = ProductOrderLimitsPolicySchema.parse(payload);
     } else {
       return NextResponse.json({ error: "Invalid policy key" }, { status: 400 });
     }

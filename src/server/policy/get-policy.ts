@@ -5,10 +5,12 @@ import {
   PayoutPolicySchema,
   type PayoutPolicy,
   PricingPolicySchema,
-  type PricingPolicy
+  type PricingPolicy,
+  ProductOrderLimitsPolicySchema,
+  type ProductOrderLimitsPolicy
 } from "@/server/policy/types";
 
-async function getActivePolicyPayload(key: "PRICING" | "MISSION_LIMITS" | "PAYOUT") {
+async function getActivePolicyPayload(key: "PRICING" | "MISSION_LIMITS" | "PAYOUT" | "PRODUCT_ORDER_LIMITS") {
   const policy = await prisma.policy.findFirst({
     where: { key, isActive: true },
     orderBy: { createdAt: "desc" },
@@ -35,6 +37,13 @@ export async function getPayoutPolicy(): Promise<PayoutPolicy | null> {
   const payload = await getActivePolicyPayload("PAYOUT");
   if (!payload) return null;
   const parsed = PayoutPolicySchema.safeParse(payload);
+  return parsed.success ? parsed.data : null;
+}
+
+export async function getProductOrderLimitsPolicy(): Promise<ProductOrderLimitsPolicy | null> {
+  const payload = await getActivePolicyPayload("PRODUCT_ORDER_LIMITS");
+  if (!payload) return null;
+  const parsed = ProductOrderLimitsPolicySchema.safeParse(payload);
   return parsed.success ? parsed.data : null;
 }
 
