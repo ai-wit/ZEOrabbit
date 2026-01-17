@@ -39,6 +39,9 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
       description={description}
       right={
         <div className="flex flex-wrap items-center gap-2">
+          <ButtonLink href="/" variant="secondary" size="sm">
+            🏠 홈
+          </ButtonLink>
           <ButtonLink href="/admin" variant="secondary" size="sm">
             📊 대시보드
           </ButtonLink>
@@ -80,9 +83,6 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
             </ButtonLink>
           )}
 
-          <ButtonLink href="/" variant="secondary" size="sm">
-            홈
-          </ButtonLink>
           <form action="/api/auth/logout" method="post">
             <Button type="submit" variant="danger" size="sm">
               로그아웃

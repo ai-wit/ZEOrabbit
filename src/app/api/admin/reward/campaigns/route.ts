@@ -6,7 +6,18 @@ import { getPricingPolicy } from "@/server/policy/get-policy";
 import { calculateRewardKrw } from "@/server/advertiser/pricing";
 
 const CreateSchema = z.object({
-  productOrderId: z.string().min(1)
+  productOrderId: z.string().min(1),
+  name: z.string().min(1).optional(),
+  missionText: z.string().optional(),
+  dailyTarget: z.number().min(1).optional(),
+  rewardKrw: z.number().min(1).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  buttons: z.array(z.object({
+    label: z.string(),
+    url: z.string(),
+    sortOrder: z.number().optional()
+  })).optional()
 });
 
 export async function POST(req: NextRequest) {
@@ -66,16 +77,25 @@ export async function POST(req: NextRequest) {
       data: {
         advertiserId: order.advertiserId,
         placeId: order.placeId,
-        name: order.product.name,
+        name: parsed.data.name ?? order.product.name,
         missionType: order.product.missionType,
-        dailyTarget: order.dailyTarget,
-        startDate: order.startDate,
-        endDate: order.endDate,
+        dailyTarget: parsed.data.dailyTarget ?? order.dailyTarget,
+        startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : order.startDate,
+        endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : order.endDate,
         unitPriceKrw: order.unitPriceKrw,
-        rewardKrw,
+        rewardKrw: parsed.data.rewardKrw ?? rewardKrw,
         budgetTotalKrw: order.budgetTotalKrw,
         status: "DRAFT",
-        missionText: order.product.guideText ?? order.product.marketingCopy ?? null
+        missionText: parsed.data.missionText ?? order.product.guideText ?? order.product.marketingCopy ?? null,
+        buttons: {
+          create: (parsed.data.buttons ?? [])
+            .filter(b => b.label.trim() && b.url.trim())
+            .map((b, idx) => ({
+              label: b.label.trim(),
+              url: b.url.trim(),
+              sortOrder: b.sortOrder ?? idx
+            }))
+        }
       },
       select: { id: true }
     });

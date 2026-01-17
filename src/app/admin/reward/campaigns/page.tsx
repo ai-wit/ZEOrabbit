@@ -65,23 +65,9 @@ export default function AdminRewardCampaignsPage() {
     run();
   }, [advertiserId]);
 
-  const registerCampaign = async (orderId: string) => {
-    setRegisteringOrderId(orderId);
-    setError(null);
-    try {
-      const res = await fetch("/api/admin/reward/campaigns", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productOrderId: orderId })
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "캠페인 등록에 실패했습니다.");
-      router.push(`/admin/reward/campaigns/${json.campaign.id}?tab=dashboard`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "캠페인 등록에 실패했습니다.");
-    } finally {
-      setRegisteringOrderId(null);
-    }
+  const registerCampaign = (orderId: string) => {
+    // 세부 설정 페이지로 이동
+    router.push(`/admin/reward/campaigns/new?orderId=${orderId}`);
   };
 
   return (
