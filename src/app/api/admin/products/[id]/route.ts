@@ -22,7 +22,7 @@ const UpdateSchema = z.object({
   isActive: z.coerce.boolean(),
   marketingCopy: z.string().max(10_000).optional().or(z.literal("")),
   guideText: z.string().max(50_000).optional().or(z.literal("")),
-  missionTemplateId: z.string().optional().or(z.literal("")),
+  missionTemplateId: z.string().optional(),
 });
 
 export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
@@ -39,11 +39,12 @@ export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
       isActive: form.get("isActive") === "on" || form.get("isActive") === "true",
       marketingCopy: form.get("marketingCopy"),
       guideText: form.get("guideText"),
-      missionTemplateId: form.get("missionTemplateId"),
+      missionTemplateId: form.get("missionTemplateId") || undefined,
     });
 
     if (!parsed.success) {
-      return NextResponse.redirect(new URL(`/admin/products/${productId}?error=invalid`, req.url), 303);
+      const errorMessages = parsed.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join('; ');
+      return NextResponse.redirect(new URL(`/admin/products/${productId}?error=${encodeURIComponent(errorMessages)}`, req.url), 303);
     }
 
     const updated = await prisma.product.update({

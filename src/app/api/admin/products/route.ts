@@ -23,7 +23,7 @@ const CreateSchema = z.object({
   isActive: z.coerce.boolean().default(true),
   marketingCopy: z.string().max(10_000).optional().or(z.literal("")),
   guideText: z.string().max(50_000).optional().or(z.literal("")),
-  missionTemplateId: z.string().optional().or(z.literal("")),
+  missionTemplateId: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       isActive: form.get("isActive") === "on" || form.get("isActive") === "true",
       marketingCopy: form.get("marketingCopy"),
       guideText: form.get("guideText"),
-      missionTemplateId: form.get("missionTemplateId"),
+      missionTemplateId: form.get("missionTemplateId") || undefined,
     });
 
     if (!parsed.success) {
@@ -63,6 +63,8 @@ export async function POST(req: NextRequest) {
       select: { id: true },
     });
 
+    console.log("상품 생성 성공:", created.id);
+
     await prisma.auditLog.create({
       data: {
         actorUserId: user.id,
@@ -73,7 +75,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.redirect(new URL(`/admin/products/${created.id}`, req.url), 303);
+    console.log("감사 로그 생성 성공");
+
+    return NextResponse.json({ success: true, productId: created.id });
   } catch (error) {
     if (error instanceof Error && error.message.includes("권한")) {
       return NextResponse.json({ error: error.message }, { status: 403 });
