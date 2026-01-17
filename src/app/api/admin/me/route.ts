@@ -73,8 +73,20 @@ export async function PUT(request: Request) {
         );
       }
 
-      // 현재 비밀번호 확인
-      const isValidPassword = await bcrypt.compare(currentPassword, user.passwordHash);
+      // 현재 비밀번호 확인 - AuthCredential에서 passwordHash 가져오기
+      const authCredential = await prisma.authCredential.findUnique({
+        where: { userId: user.id },
+        select: { passwordHash: true }
+      });
+
+      if (!authCredential) {
+        return NextResponse.json(
+          { error: "인증 정보를 찾을 수 없습니다" },
+          { status: 404 }
+        );
+      }
+
+      const isValidPassword = await bcrypt.compare(currentPassword, authCredential.passwordHash);
       if (!isValidPassword) {
         return NextResponse.json(
           { error: "현재 비밀번호가 일치하지 않습니다" },

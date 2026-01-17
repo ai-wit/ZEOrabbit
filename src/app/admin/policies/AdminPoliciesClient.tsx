@@ -478,7 +478,7 @@ function ProductOrderLimitsForm({
   editing: boolean;
   saving: boolean;
 }) {
-  const [formData, setFormData] = useState(currentData || {
+  const [formData, setFormData] = useState<ProductOrderLimitsPayload>(currentData || {
     maxAdditionalDays: 300,
     maxDailyTarget: 1000
   });
