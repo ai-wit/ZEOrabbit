@@ -39,6 +39,10 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
       description={description}
       right={
         <div className="flex flex-wrap items-center gap-2">
+          <ButtonLink href="/admin" variant="secondary" size="sm">
+            📊 대시보드
+          </ButtonLink>
+
           {/* 슈퍼관리자만 매니저 관리 메뉴 표시 */}
           {!isManager && (
             <ButtonLink href="/admin/managers" variant="secondary" size="sm">
