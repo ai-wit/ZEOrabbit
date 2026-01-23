@@ -74,19 +74,14 @@ export default function AdminRewardCampaignsPage() {
   return (
     <PageShell
       header={
-        <AdminHeader title="캠페인 관리 - 구매 목록" description="담당 광고주의 구매 상품을 캠페인으로 등록/관리합니다." />
+        <AdminHeader title="캠페인 관리 - 주문 목록" description="담당 광고주의 구매 상품을 캠페인으로 등록/관리합니다." />
       }
     >
       <div className="space-y-6">
         <Card>
           <CardBody className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-sm font-semibold text-zinc-50">구매 목록</div>
-              <div className="flex flex-wrap items-center gap-2">
-                <ButtonLink href="/admin" variant="secondary" size="sm">
-                  관리자 홈
-                </ButtonLink>
-              </div>
+              <div className="text-sm font-semibold text-zinc-50">주문 목록</div>
             </div>
 
             {managedAdvertisers.length > 0 ? (
