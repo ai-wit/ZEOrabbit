@@ -5,6 +5,7 @@ import { verifyPassword } from "@/server/auth/password";
 import { createSessionForUser } from "@/server/auth/session";
 import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const LoginSchema = z.object({
   email: z.string().email().max(255),
@@ -12,8 +13,10 @@ const LoginSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const baseUrl = getBaseUrl(req);
+  
   if (await isIpBlocked(getClientIp(req.headers))) {
-    return NextResponse.redirect(new URL("/login", req.url), 303);
+    return NextResponse.redirect(new URL("/login", baseUrl), 303);
   }
 
   const form = await req.formData();
@@ -23,7 +26,7 @@ export async function POST(req: Request) {
   });
 
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/login", req.url), 303);
+    return NextResponse.redirect(new URL("/login", baseUrl), 303);
   }
 
   const email = parsed.data.email.toLowerCase();
@@ -38,11 +41,11 @@ export async function POST(req: Request) {
   });
 
   if (!user || user.status !== "ACTIVE" || !user.credential) {
-    return NextResponse.redirect(new URL("/login", req.url), 303);
+    return NextResponse.redirect(new URL("/login", baseUrl), 303);
   }
 
   const ok = await verifyPassword(parsed.data.password, user.credential.passwordHash);
-  if (!ok) return NextResponse.redirect(new URL("/login", req.url), 303);
+  if (!ok) return NextResponse.redirect(new URL("/login", baseUrl), 303);
 
   await createSessionForUser({ userId: user.id, ttlDays: 30 });
 
@@ -53,7 +56,7 @@ export async function POST(req: Request) {
         ? "/member"
         : "/admin";
 
-  return NextResponse.redirect(new URL(redirectTo, req.url), 303);
+  return NextResponse.redirect(new URL(redirectTo, baseUrl), 303);
 }
 
 

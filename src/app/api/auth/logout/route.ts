@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { destroyCurrentSession } from "@/server/auth/session";
+import { getBaseUrl } from "@/server/url-helpers";
 
 export async function POST(req: Request) {
   await destroyCurrentSession();
-  return NextResponse.redirect(new URL("/", req.url), 303);
+  const baseUrl = getBaseUrl(req);
+  return NextResponse.redirect(new URL("/", baseUrl), 303);
 }
 
 
