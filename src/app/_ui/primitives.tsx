@@ -7,7 +7,7 @@ export function Card(props: ComponentPropsWithoutRef<"div"> & { children: ReactN
     <div
       {...props}
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
+        "relative overflow-hidden rounded-2xl border border-border bg-surface shadow-sm",
         props.className
       )}
     >
@@ -18,10 +18,10 @@ export function Card(props: ComponentPropsWithoutRef<"div"> & { children: ReactN
 
 export function CardHeader(props: { title: string; description?: string; right?: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-6 py-5">
       <div className="space-y-1">
-        <div className="text-sm font-semibold text-zinc-50">{props.title}</div>
-        {props.description ? <div className="text-sm text-zinc-400">{props.description}</div> : null}
+        <div className="text-sm font-semibold text-text">{props.title}</div>
+        {props.description ? <div className="text-sm text-text-subtle">{props.description}</div> : null}
       </div>
       {props.right ? <div className="shrink-0">{props.right}</div> : null}
     </div>
@@ -33,14 +33,14 @@ export function CardBody(props: { children: ReactNode; className?: string }) {
 }
 
 export function DividerList(props: { children: ReactNode }) {
-  return <div className="divide-y divide-white/10">{props.children}</div>;
+  return <div className="divide-y divide-border">{props.children}</div>;
 }
 
 export function EmptyState(props: { title: string; description?: string; action?: ReactNode }) {
   return (
     <div className="px-6 py-12">
-      <div className="text-sm font-semibold text-zinc-100">{props.title}</div>
-      {props.description ? <div className="mt-1 text-sm text-zinc-400">{props.description}</div> : null}
+      <div className="text-sm font-semibold text-text">{props.title}</div>
+      {props.description ? <div className="mt-1 text-sm text-text-subtle">{props.description}</div> : null}
       {props.action ? <div className="mt-4">{props.action}</div> : null}
     </div>
   );
@@ -52,14 +52,14 @@ export function Pill(props: {
 }) {
   const tone =
     props.tone === "indigo"
-      ? "border-indigo-400/20 bg-indigo-400/10 text-indigo-100"
+      ? "border-indigo-200 bg-indigo-50 text-indigo-700"
       : props.tone === "emerald"
-        ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-100"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
         : props.tone === "cyan"
-          ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-100"
+          ? "border-cyan-200 bg-cyan-50 text-cyan-700"
           : props.tone === "red"
-            ? "border-red-400/20 bg-red-400/10 text-red-100"
-            : "border-white/10 bg-white/5 text-zinc-200";
+            ? "border-red-200 bg-red-50 text-red-700"
+            : "border-border bg-surface-muted text-text-subtle";
 
   return (
     <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold", tone)}>
@@ -79,10 +79,10 @@ export function Button(props: {
 }) {
   const variant =
     props.variant === "primary"
-      ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-zinc-950 shadow-[0_10px_30px_-12px_rgba(34,211,238,0.45)] hover:opacity-95"
+      ? "bg-primary text-primary-foreground shadow-[0_10px_20px_-12px_rgba(15,23,42,0.3)] hover:bg-primary/90"
       : props.variant === "danger"
-        ? "border border-red-500/25 bg-red-500/10 text-red-100 hover:bg-red-500/15"
-        : "border border-white/10 bg-white/5 text-zinc-50 hover:bg-white/10";
+        ? "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+        : "border border-border bg-surface text-text hover:bg-surface-strong";
 
   const size = props.size === "sm" ? "px-3 py-2 text-xs rounded-xl" : "px-4 py-2.5 text-sm rounded-xl";
 
@@ -112,8 +112,8 @@ export function ButtonLink(props: {
 }) {
   const variant =
     props.variant === "primary"
-      ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-zinc-950 shadow-[0_10px_30px_-12px_rgba(34,211,238,0.45)] hover:opacity-95"
-      : "border border-white/10 bg-white/5 text-zinc-50 hover:bg-white/10";
+      ? "bg-primary text-primary-foreground shadow-[0_10px_20px_-12px_rgba(15,23,42,0.3)] hover:bg-primary/90"
+      : "border border-border bg-surface text-text hover:bg-surface-strong";
   const size = props.size === "sm" ? "px-3 py-2 text-xs rounded-xl" : "px-4 py-2.5 text-sm rounded-xl";
 
   return (
@@ -128,7 +128,7 @@ export function ButtonLink(props: {
 
 export function Label(props: { htmlFor?: string; children: ReactNode }) {
   return (
-    <label htmlFor={props.htmlFor} className="text-sm font-semibold text-zinc-200">
+    <label htmlFor={props.htmlFor} className="text-sm font-semibold text-text-muted">
       {props.children}
     </label>
   );
@@ -141,13 +141,13 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { cla
       style={
         props.type === "date"
           ? {
-              colorScheme: "dark",
+              colorScheme: "light",
               ...props.style,
             }
           : props.style
       }
       className={cn(
-        "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10",
+        "w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none placeholder:text-text-subtle focus:border-ring/50 focus:ring-2 focus:ring-ring/20",
         props.className
       )}
     />
@@ -166,7 +166,7 @@ export function TextInput(props: {
 }) {
   return (
     <div className="space-y-2">
-      {props.label && <label className="text-sm font-semibold text-zinc-200">{props.label}</label>}
+      {props.label && <label className="text-sm font-semibold text-text-muted">{props.label}</label>}
       <Input
         type={props.type || "text"}
         value={props.value}
@@ -192,7 +192,7 @@ export function TextArea(props: {
 }) {
   return (
     <div className="space-y-2">
-      {props.label && <label className="text-sm font-semibold text-zinc-200">{props.label}</label>}
+      {props.label && <label className="text-sm font-semibold text-text-muted">{props.label}</label>}
       <textarea
         id={props.id}
         value={props.value}
@@ -201,7 +201,7 @@ export function TextArea(props: {
         rows={props.rows || 3}
         required={props.required}
         className={cn(
-          "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10",
+          "w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none placeholder:text-text-subtle focus:border-ring/50 focus:ring-2 focus:ring-ring/20",
           props.className
         )}
       />
@@ -214,7 +214,7 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { 
     <select
       {...props}
       className={cn(
-        "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10",
+        "w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-ring/50 focus:ring-2 focus:ring-ring/20",
         props.className
       )}
     />
@@ -222,7 +222,7 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { 
 }
 
 export function Hint(props: { children: ReactNode }) {
-  return <div className="text-xs text-zinc-400">{props.children}</div>;
+  return <div className="text-xs text-text-subtle">{props.children}</div>;
 }
 
 export function Callout(props: {
@@ -232,8 +232,8 @@ export function Callout(props: {
 }) {
   const tone =
     props.tone === "warning"
-      ? "border-yellow-400/30 bg-yellow-400/10 text-yellow-100"
-      : "border-cyan-400/25 bg-cyan-400/10 text-cyan-100";
+      ? "border-yellow-200 bg-yellow-50 text-yellow-800"
+      : "border-cyan-200 bg-cyan-50 text-cyan-700";
 
   return (
     <div className={cn("rounded-2xl border p-4", tone)}>
@@ -254,12 +254,12 @@ export function StatCard(props: {
     <Card>
       <CardBody className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="shrink-0 whitespace-nowrap text-xs font-semibold tracking-wide text-zinc-300">{props.title}</div>
+          <div className="shrink-0 whitespace-nowrap text-xs font-semibold tracking-wide text-text-subtle">{props.title}</div>
           {props.right ? <div className="shrink-0">{props.right}</div> : null}
         </div>
         {props.chart ? <div className="flex w-full justify-center">{props.chart}</div> : null}
-        <div className="text-2xl font-semibold tracking-tight text-zinc-50">{props.value}</div>
-        {props.hint ? <div className="text-xs text-zinc-400">{props.hint}</div> : null}
+        <div className="text-2xl font-semibold tracking-tight text-text">{props.value}</div>
+        {props.hint ? <div className="text-xs text-text-subtle">{props.hint}</div> : null}
       </CardBody>
     </Card>
   );
@@ -268,8 +268,8 @@ export function StatCard(props: {
 export function KeyValueRow(props: { k: ReactNode; v: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
-      <div className="text-zinc-400">{props.k}</div>
-      <div className="font-semibold text-zinc-100">{props.v}</div>
+      <div className="text-text-subtle">{props.k}</div>
+      <div className="font-semibold text-text">{props.v}</div>
     </div>
   );
 }

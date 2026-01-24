@@ -11,16 +11,16 @@ export function PageHeader(props: {
     <header className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
       <div className="space-y-2">
         {props.eyebrow ? (
-          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-cyan-200/90">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-300/90" aria-hidden="true" />
+          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-accent">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
             {props.eyebrow}
           </div>
         ) : null}
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-text sm:text-3xl">
             {props.title}
           </h1>
-          {props.description ? <p className="text-sm text-zinc-400 leading-relaxed">{props.description}</p> : null}
+          {props.description ? <p className="text-sm text-text-subtle leading-relaxed">{props.description}</p> : null}
         </div>
       </div>
       {props.right ? <div className="shrink-0 sm:justify-self-end">{props.right}</div> : null}

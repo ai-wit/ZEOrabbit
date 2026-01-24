@@ -734,7 +734,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-2">로컬맘 제공 혜택</label>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">지오래빗 제공 혜택</label>
                       <select
                         value={additionalInfo.localMomBenefit}
                         onChange={(e) => setAdditionalInfo({...additionalInfo, localMomBenefit: e.target.value})}
@@ -822,7 +822,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-2">로컬맘 제공 혜택</label>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">지오래빗 제공 혜택</label>
                       <select
                         value={additionalInfo.localMomBenefit}
                         onChange={(e) => setAdditionalInfo({...additionalInfo, localMomBenefit: e.target.value})}

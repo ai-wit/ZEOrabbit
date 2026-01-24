@@ -38,7 +38,7 @@ export default async function MemberSystemSelectorPage() {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="grid gap-8 md:grid-cols-1">
           {/* 리워드 시스템 */}
           <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300">
             <CardBody className="p-8 text-center">
@@ -66,7 +66,7 @@ export default async function MemberSystemSelectorPage() {
             </CardBody>
           </Card>
 
-          {/* 체험단 시스템 */}
+          {/* 체험단 시스템 
           <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300">
             <CardBody className="p-8 text-center">
               <div className="mb-6">
@@ -92,6 +92,7 @@ export default async function MemberSystemSelectorPage() {
               </ButtonLink>
             </CardBody>
           </Card>
+          */}
         </div>
 
         <div className="mt-12 text-center">

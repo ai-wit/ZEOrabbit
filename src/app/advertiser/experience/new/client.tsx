@@ -268,8 +268,8 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
                 step <= currentStep
-                  ? 'bg-gradient-to-r from-indigo-500 to-cyan-400 text-zinc-950'
-                  : 'border border-white/10 bg-white/5 text-zinc-400'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'border border-border bg-surface text-text-subtle'
               }`}
             >
               {step}
@@ -277,7 +277,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
             {step < 6 && (
               <div
                 className={`w-12 h-1 mx-2 ${
-                  step < currentStep ? 'bg-gradient-to-r from-indigo-500 to-cyan-400' : 'bg-white/10'
+                  step < currentStep ? 'bg-primary' : 'bg-border'
                 }`}
               />
             )}
@@ -583,7 +583,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
         <Card className="p-8">
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-zinc-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-8 h-8 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -754,7 +754,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-2">로컬맘 제공 혜택</label>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">지오래빗 제공 혜택</label>
                       <select
                         value={additionalInfo.localMomBenefit}
                         onChange={(e) => setAdditionalInfo({...additionalInfo, localMomBenefit: e.target.value})}
@@ -842,7 +842,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-2">로컬맘 제공 혜택</label>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">지오래빗 제공 혜택</label>
                       <select
                         value={additionalInfo.localMomBenefit}
                         onChange={(e) => setAdditionalInfo({...additionalInfo, localMomBenefit: e.target.value})}
@@ -913,7 +913,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
         <Card className="p-8">
           <div className="text-center py-12">
             <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-zinc-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-10 h-10 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>

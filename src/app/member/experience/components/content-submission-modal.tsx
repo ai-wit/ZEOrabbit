@@ -87,24 +87,24 @@ export function ContentSubmissionModal({
   if (!isOpen || !team) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 border border-white/10 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold text-zinc-50 mb-4">자료 및 컨텐츠 제출</h2>
-        <p className="text-zinc-400 mb-6">
-          <strong className="text-zinc-50">{team.name}</strong> 팀의 체험 결과를 제출합니다.
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold text-text mb-4">자료 및 컨텐츠 제출</h2>
+        <p className="text-text-subtle mb-6">
+          <strong className="text-text">{team.name}</strong> 팀의 체험 결과를 제출합니다.
         </p>
 
         <div className="space-y-6">
           {/* 자료 업로드 */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-text-muted mb-2">
               체험 자료 (ZIP 파일, 최대 300MB)
             </label>
-            <div className="border-2 border-dashed border-white/10 rounded-lg p-4 bg-white/[0.02]">
+            <div className="border-2 border-dashed border-border rounded-lg p-4 bg-surface-muted">
               {form.materialsPath ? (
                 <div className="text-center">
-                  <div className="text-emerald-400 font-medium">파일이 업로드되었습니다</div>
-                  <div className="text-sm text-zinc-500 mt-1">
+                  <div className="text-emerald-700 font-medium">파일이 업로드되었습니다</div>
+                  <div className="text-sm text-text-subtle mt-1">
                     크기: {(form.materialsSize / 1024 / 1024).toFixed(2)}MB
                   </div>
                 </div>
@@ -123,11 +123,11 @@ export function ContentSubmissionModal({
                   />
                   <label
                     htmlFor="file-upload"
-                    className="cursor-pointer text-cyan-400 hover:text-cyan-300 transition-colors"
+                    className="cursor-pointer text-accent hover:text-accent/80 transition-colors"
                   >
                     {uploading ? '업로드 중...' : 'ZIP 파일을 선택하세요'}
                   </label>
-                  <p className="text-xs text-zinc-500 mt-1">
+                  <p className="text-xs text-text-subtle mt-1">
                     최대 300MB까지 업로드 가능합니다
                   </p>
                 </div>
@@ -137,14 +137,14 @@ export function ContentSubmissionModal({
 
           {/* 컨텐츠 제목 */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-text-muted mb-2">
               컨텐츠 제목 (선택사항)
             </label>
             <input
               type="text"
               value={form.contentTitle}
               onChange={(e) => setForm(prev => ({ ...prev, contentTitle: e.target.value }))}
-              className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/10"
+              className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-text placeholder:text-text-subtle focus:outline-none focus:border-ring/50 focus:ring-2 focus:ring-ring/20"
               placeholder="컨텐츠 제목을 입력하세요"
               disabled={submitting}
             />
@@ -152,14 +152,14 @@ export function ContentSubmissionModal({
 
           {/* 컨텐츠 본문 */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-text-muted mb-2">
               컨텐츠 본문 (선택사항)
             </label>
             <textarea
               value={form.contentBody}
               onChange={(e) => setForm(prev => ({ ...prev, contentBody: e.target.value }))}
               rows={6}
-              className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/10 resize-none"
+              className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-text placeholder:text-text-subtle focus:outline-none focus:border-ring/50 focus:ring-2 focus:ring-ring/20 resize-none"
               placeholder="체험 후기를 작성하세요"
               disabled={submitting}
             />
@@ -167,7 +167,7 @@ export function ContentSubmissionModal({
 
           {/* 관련 링크 */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-text-muted mb-2">
               관련 링크 (선택사항)
             </label>
             {form.contentLinks.map((link, index) => (
@@ -176,13 +176,13 @@ export function ContentSubmissionModal({
                   type="url"
                   value={link}
                   onChange={(e) => updateLink(index, e.target.value)}
-                  className="flex-1 bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/10"
+                  className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-text placeholder:text-text-subtle focus:outline-none focus:border-ring/50 focus:ring-2 focus:ring-ring/20"
                   placeholder="https://..."
                   disabled={submitting}
                 />
                 <button
                   onClick={() => removeLink(index)}
-                  className="text-red-400 hover:text-red-300 transition-colors"
+                  className="text-red-600 hover:text-red-700 transition-colors"
                   disabled={submitting}
                 >
                   삭제
@@ -191,7 +191,7 @@ export function ContentSubmissionModal({
             ))}
             <button
               onClick={addLink}
-              className="text-cyan-400 hover:text-cyan-300 text-sm transition-colors"
+              className="text-accent hover:text-accent/80 text-sm transition-colors"
               disabled={submitting}
             >
               + 링크 추가
@@ -202,7 +202,7 @@ export function ContentSubmissionModal({
         <div className="flex justify-end space-x-3 mt-6">
           <button
             onClick={handleClose}
-            className="px-4 py-2 text-zinc-400 border border-white/10 rounded-lg hover:bg-white/5 transition-colors"
+            className="px-4 py-2 text-text-subtle border border-border rounded-lg hover:bg-surface-strong transition-colors"
             disabled={submitting}
           >
             취소
@@ -210,7 +210,7 @@ export function ContentSubmissionModal({
           <button
             onClick={handleSubmit}
             disabled={uploading || submitting}
-            className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             제출하기
           </button>

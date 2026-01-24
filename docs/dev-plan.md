@@ -1,4 +1,4 @@
-## LocalMom 개발 계획 (Next.js App Router + Prisma + MySQL + Vercel)
+## ZEOrabbit 개발 계획 (Next.js App Router + Prisma + MySQL + Vercel)
 
 ---
 

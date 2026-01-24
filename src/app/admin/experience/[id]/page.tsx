@@ -113,7 +113,7 @@ export default async function ExperienceApplicationDetailPage(props: {
                 <div className="grid gap-3 sm:grid-cols-2">
                   {application.openingDate && <KeyValueRow k="오픈 예정일" v={formatDate(application.openingDate)} />}
                   {application.shootingStartDate && <KeyValueRow k="촬영 시작일" v={formatDate(application.shootingStartDate)} />}
-                  {application.localMomBenefit && <KeyValueRow k="로컬맘 혜택" v={application.localMomBenefit} />}
+                  {application.localMomBenefit && <KeyValueRow k="지오래빗 혜택" v={application.localMomBenefit} />}
                 </div>
               </div>
             )}

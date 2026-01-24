@@ -131,7 +131,7 @@ export function ImageLightbox(props: {
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="원본 이미지 뷰어"
@@ -140,41 +140,41 @@ export function ImageLightbox(props: {
           }}
         >
           <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-4 py-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-zinc-950/70 px-4 py-3">
-              <div className="text-sm font-semibold text-zinc-50">원본 보기</div>
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface px-4 py-3">
+              <div className="text-sm font-semibold text-text">원본 보기</div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => zoomBy(0.15)}
-                  className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-zinc-100 hover:bg-white/[0.07]"
+                  className="rounded-xl border border-border bg-surface-muted px-3 py-1.5 text-xs font-semibold text-text hover:bg-surface-strong"
                 >
                   확대
                 </button>
                 <button
                   type="button"
                   onClick={() => zoomBy(-0.15)}
-                  className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-zinc-100 hover:bg-white/[0.07]"
+                  className="rounded-xl border border-border bg-surface-muted px-3 py-1.5 text-xs font-semibold text-text hover:bg-surface-strong"
                 >
                   축소
                 </button>
                 <button
                   type="button"
                   onClick={fit}
-                  className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-zinc-100 hover:bg-white/[0.07]"
+                  className="rounded-xl border border-border bg-surface-muted px-3 py-1.5 text-xs font-semibold text-text hover:bg-surface-strong"
                 >
                   맞춤
                 </button>
                 <button
                   type="button"
                   onClick={reset}
-                  className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-zinc-100 hover:bg-white/[0.07]"
+                  className="rounded-xl border border-border bg-surface-muted px-3 py-1.5 text-xs font-semibold text-text hover:bg-surface-strong"
                 >
                   원본
                 </button>
                 <button
                   type="button"
                   onClick={close}
-                  className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-100 hover:bg-red-500/15"
+                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
                 >
                   닫기
                 </button>
@@ -183,7 +183,7 @@ export function ImageLightbox(props: {
 
             <div
               ref={containerRef}
-              className="mt-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/60"
+              className="mt-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface"
             >
               <div
                 className="relative h-full w-full"
@@ -210,7 +210,7 @@ export function ImageLightbox(props: {
                 />
               </div>
             </div>
-            <div className="mt-2 text-xs text-zinc-400">
+            <div className="mt-2 text-xs text-text-subtle">
               드래그로 이동 · 휠로 확대/축소 · ESC로 닫기
             </div>
           </div>

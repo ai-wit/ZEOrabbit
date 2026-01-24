@@ -1,4 +1,4 @@
-## LocalMom 아키텍처/설계 (Next.js App Router + Prisma + MySQL + Vercel)
+## ZEOrabbit 아키텍처/설계 (Next.js App Router + Prisma + MySQL + Vercel)
 
 ---
 

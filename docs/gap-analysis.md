@@ -1,4 +1,4 @@
-## LocalMom 요구사항 보강/개선 제안 (Gap Analysis)
+## ZEOrabbit 요구사항 보강/개선 제안 (Gap Analysis)
 
 본 문서는 `requirements.md`를 **개발 관점(실구현/운영/보안/정산/법무)**에서 점검하여, 누락된 요구사항과 더 나은 설계 방향을 제안합니다.
 

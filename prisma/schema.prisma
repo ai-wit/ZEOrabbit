@@ -837,7 +837,7 @@ model ExperienceApplication {
   monthlyTeamCapacity Int?                    // 월 방문 가능 팀 수 (운영 중 유형)
   address           String?                   // 매장 위치
   representativeMenu String?                  // 대표 메뉴
-  localMomBenefit   String?                   // 로컬맘 제공 혜택 (만원 단위)
+  localMomBenefit   String?                   // 지오래빗 제공 혜택 (만원 단위)
   contactPhone      String?                   // 담당자 휴대폰 번호
 
   // 메타데이터

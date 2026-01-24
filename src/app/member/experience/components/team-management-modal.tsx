@@ -158,31 +158,31 @@ export function TeamManagementModal({
   const rejectedMemberships = memberships.filter(m => m.status === 'REJECTED');
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 border border-white/10 rounded-xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
-        <h2 className="text-xl font-bold text-zinc-50 mb-4">팀 관리 - {team.name}</h2>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+        <h2 className="text-xl font-bold text-text mb-4">팀 관리 - {team.name}</h2>
 
         {loading ? (
-          <div className="text-center py-8 text-zinc-400">로딩 중...</div>
+          <div className="text-center py-8 text-text-subtle">로딩 중...</div>
         ) : (
           <div className="space-y-6">
             {/* 초대코드 관리 */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-semibold text-zinc-50">초대코드 관리</h3>
+                <h3 className="text-lg font-semibold text-text">초대코드 관리</h3>
                 <button
                   onClick={() => setShowCreateInvitation(!showCreateInvitation)}
-                  className="bg-cyan-600 text-white px-3 py-1 rounded text-sm hover:bg-cyan-700"
+                  className="bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90"
                 >
                   {showCreateInvitation ? '취소' : '새 코드 생성'}
                 </button>
               </div>
 
               {showCreateInvitation && (
-                <div className="border border-cyan-400/40 rounded-lg p-4 bg-cyan-400/5 mb-4">
+                <div className="border border-ring/30 rounded-lg p-4 bg-cyan-50 mb-4">
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-zinc-50 mb-1">
+                      <label className="block text-sm font-medium text-text mb-1">
                         최대 사용 횟수
                       </label>
                       <input
@@ -191,11 +191,11 @@ export function TeamManagementModal({
                         max="10"
                         value={invitationForm.maxUses}
                         onChange={(e) => setInvitationForm(prev => ({ ...prev, maxUses: parseInt(e.target.value) }))}
-                        className="w-full bg-zinc-800 border border-zinc-600 rounded px-3 py-2 text-zinc-50"
+                        className="w-full bg-surface border border-border rounded px-3 py-2 text-text"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-zinc-50 mb-1">
+                      <label className="block text-sm font-medium text-text mb-1">
                         만료 시간 (시간)
                       </label>
                       <input
@@ -204,7 +204,7 @@ export function TeamManagementModal({
                         max="168"
                         value={invitationForm.expiresInHours}
                         onChange={(e) => setInvitationForm(prev => ({ ...prev, expiresInHours: parseInt(e.target.value) }))}
-                        className="w-full bg-zinc-800 border border-zinc-600 rounded px-3 py-2 text-zinc-50"
+                        className="w-full bg-surface border border-border rounded px-3 py-2 text-text"
                       />
                     </div>
                   </div>
@@ -221,11 +221,11 @@ export function TeamManagementModal({
               {invitationCodes.length > 0 && (
                 <div className="space-y-3">
                   {invitationCodes.map((code) => (
-                    <div key={code.id} className="border border-zinc-600 rounded-lg p-4 bg-zinc-800/50">
+                    <div key={code.id} className="border border-border rounded-lg p-4 bg-surface-muted">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <code className="bg-zinc-700 px-2 py-1 rounded text-sm font-mono text-cyan-400">
+                            <code className="bg-surface-strong px-2 py-1 rounded text-sm font-mono text-accent">
                               {code.code}
                             </code>
                             <span className={`px-2 py-1 rounded text-xs ${
@@ -234,7 +234,7 @@ export function TeamManagementModal({
                               {code.isActive ? '활성' : '비활성'}
                             </span>
                           </div>
-                          <div className="text-sm text-zinc-400 space-y-1">
+                          <div className="text-sm text-text-subtle space-y-1">
                             <p>사용: {code.currentUses}/{code.maxUses}</p>
                             <p>만료: {new Date(code.expiresAt).toLocaleString('ko-KR')}</p>
                             <p>생성: {code.createdByName} ({new Date(code.createdAt).toLocaleDateString('ko-KR')})</p>
@@ -242,7 +242,7 @@ export function TeamManagementModal({
                         </div>
                         <button
                           onClick={() => copyToClipboard(code.inviteUrl)}
-                          className="bg-zinc-600 text-white px-3 py-1 rounded text-sm hover:bg-zinc-700 ml-4"
+                          className="bg-slate-700 text-white px-3 py-1 rounded text-sm hover:bg-slate-800 ml-4"
                         >
                           링크 복사
                         </button>
@@ -253,7 +253,7 @@ export function TeamManagementModal({
               )}
 
               {invitationCodes.length === 0 && !showCreateInvitation && (
-                <div className="text-center py-4 text-zinc-500">
+                <div className="text-center py-4 text-text-subtle">
                   아직 생성된 초대코드가 없습니다.
                 </div>
               )}
@@ -262,15 +262,15 @@ export function TeamManagementModal({
             {/* 승인 대기 중인 신청들 */}
             {pendingMemberships.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-zinc-50 mb-3">승인 대기 중 ({pendingMemberships.length})</h3>
+                <h3 className="text-lg font-semibold text-text mb-3">승인 대기 중 ({pendingMemberships.length})</h3>
                 <div className="space-y-3">
                   {pendingMemberships.map((membership) => (
-                    <div key={membership.id} className="border border-yellow-400/40 rounded-lg p-4 bg-yellow-400/5">
+                    <div key={membership.id} className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="font-medium text-zinc-50">{membership.member.name}</p>
-                          <p className="text-sm text-zinc-400">{membership.member.email}</p>
-                          <p className="text-xs text-zinc-500">
+                          <p className="font-medium text-text">{membership.member.name}</p>
+                          <p className="text-sm text-text-subtle">{membership.member.email}</p>
+                          <p className="text-xs text-text-subtle">
                             신청일: {new Date(membership.appliedAt).toLocaleDateString('ko-KR')}
                           </p>
                         </div>
@@ -300,20 +300,20 @@ export function TeamManagementModal({
             {/* 승인된 팀원들 */}
             {approvedMemberships.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-zinc-50 mb-3">팀원 ({approvedMemberships.length})</h3>
+                <h3 className="text-lg font-semibold text-text mb-3">팀원 ({approvedMemberships.length})</h3>
                 <div className="space-y-3">
                   {approvedMemberships.map((membership) => (
-                    <div key={membership.id} className="border border-emerald-400/40 rounded-lg p-4 bg-emerald-400/5">
+                    <div key={membership.id} className="border border-emerald-200 rounded-lg p-4 bg-emerald-50">
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="font-medium text-zinc-50">{membership.member.name}</p>
-                          <p className="text-sm text-zinc-400">{membership.member.email}</p>
-                          <p className="text-xs text-zinc-500">
+                          <p className="font-medium text-text">{membership.member.name}</p>
+                          <p className="text-sm text-text-subtle">{membership.member.email}</p>
+                          <p className="text-xs text-text-subtle">
                             승인일: {new Date(membership.decidedAt!).toLocaleDateString('ko-KR')}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-emerald-400">승인됨</span>
+                          <span className="text-sm text-emerald-700">승인됨</span>
                           {team?.status === 'FORMING' && (
                             <button
                               onClick={() => handleRemoveMember(membership.id, membership.member.name)}
@@ -334,24 +334,24 @@ export function TeamManagementModal({
             {/* 거절된 신청들 */}
             {rejectedMemberships.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-zinc-50 mb-3">거절된 신청 ({rejectedMemberships.length})</h3>
+                <h3 className="text-lg font-semibold text-text mb-3">거절된 신청 ({rejectedMemberships.length})</h3>
                 <div className="space-y-3">
                   {rejectedMemberships.map((membership) => (
-                    <div key={membership.id} className="border border-red-400/40 rounded-lg p-4 bg-red-400/5">
+                    <div key={membership.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="font-medium text-zinc-50">{membership.member.name}</p>
-                          <p className="text-sm text-zinc-400">{membership.member.email}</p>
-                          <p className="text-xs text-zinc-500">
+                          <p className="font-medium text-text">{membership.member.name}</p>
+                          <p className="text-sm text-text-subtle">{membership.member.email}</p>
+                          <p className="text-xs text-text-subtle">
                             거절일: {new Date(membership.decidedAt!).toLocaleDateString('ko-KR')}
                           </p>
                           {membership.failureReason && (
-                            <p className="text-xs text-red-400 mt-1">
+                            <p className="text-xs text-red-700 mt-1">
                               사유: {membership.failureReason}
                             </p>
                           )}
                         </div>
-                        <div className="text-sm text-red-400">
+                        <div className="text-sm text-red-700">
                           거절됨
                         </div>
                       </div>
@@ -362,7 +362,7 @@ export function TeamManagementModal({
             )}
 
             {memberships.length === 0 && (
-              <div className="text-center py-8 text-zinc-500">
+              <div className="text-center py-8 text-text-subtle">
                 아직 팀원이 없습니다.
               </div>
             )}
@@ -372,7 +372,7 @@ export function TeamManagementModal({
         <div className="flex justify-end mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-zinc-400 border border-white/10 rounded-lg hover:bg-white/5 transition-colors"
+            className="px-4 py-2 text-text-subtle border border-border rounded-lg hover:bg-surface-strong transition-colors"
           >
             닫기
           </button>
