@@ -295,6 +295,53 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                 <div className="mt-3 whitespace-pre-wrap text-sm text-zinc-300">{product.guideText}</div>
               </details>
             ) : null}
+            <div>
+              <h3 className="text-lg font-semibold mb-2">환불 정책</h3>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                <textarea
+                  className="w-full text-sm text-zinc-200 bg-transparent resize-y min-h-[200px] max-h-[400px] border-none outline-none"
+                  readOnly
+                  style={{overflow: "auto"}}
+                  value={`환불정책
+
+본 환불정책은 본 사이트(ZEOrabbit)에서 제공하는 모든 유료 서비스에 적용됩니다.
+
+1. 결제 및 서비스 개시
+
+서비스는 결제 완료 후 즉시 개시되거나, 사전에 안내된 일정에 따라 제공됩니다.
+
+결제 완료와 동시에 서비스 이용 계약이 성립됩니다.
+
+2. 환불 가능 기준
+
+다음 각 호에 해당하는 경우에 한해 환불이 가능합니다.
+
+- 회사의 귀책 사유로 서비스 제공이 불가능한 경우
+- 서비스가 정상적으로 제공되지 않았음이 객관적으로 입증되는 경우
+- 서비스 개시 전 이용자가 환불을 요청한 경우
+
+3. 환불 불가 기준
+
+다음 각 호에 해당하는 경우 환불이 제한됩니다.
+
+- 서비스가 이미 개시되었거나 일부라도 제공된 경우
+- 이용자의 단순 변심, 기대 불일치, 내부 사정에 의한 요청
+- 이용자의 귀책 사유로 서비스 이용이 제한되거나 중단된 경우
+- 맞춤형 제작, 기획, 설정, 컨설팅 등 성격상 재판매가 불가능한 서비스
+
+4. 환불 금액 산정
+
+- 서비스 개시 전: 전액 환불
+- 서비스 개시 후: 제공된 범위를 제외한 금액에서 위약금 또는 실비를 공제 후 환불
+- 환불 시 발생하는 결제 수수료는 이용자가 부담할 수 있습니다.
+
+5. 환불 절차
+
+환불 요청은 고객센터 또는 사전에 안내된 공식 채널을 통해 접수합니다.
+`}
+                />
+              </div>
+            </div>
           </CardBody>
         </Card>
 
