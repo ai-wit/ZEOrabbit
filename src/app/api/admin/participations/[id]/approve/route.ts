@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
+import { getBaseUrl } from "@/server/url-helpers";
 
 export async function POST(req: Request, ctx: { params: { id: string } }) {
+
+  const baseUrl = getBaseUrl(req);
+  
   const admin = await requireRole("ADMIN");
   const participationId = ctx.params.id;
 
@@ -85,10 +89,10 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
       });
     });
   } catch {
-    return NextResponse.redirect(new URL(`/admin/reviews/${participationId}`, req.url), 303);
+    return NextResponse.redirect(new URL(`/admin/reviews/${participationId}`, baseUrl), 303);
   }
 
-  return NextResponse.redirect(new URL(`/admin/reviews/${participationId}`, req.url), 303);
+  return NextResponse.redirect(new URL(`/admin/reviews/${participationId}`, baseUrl), 303);
 }
 
 

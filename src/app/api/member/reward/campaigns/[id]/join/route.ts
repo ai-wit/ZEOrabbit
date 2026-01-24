@@ -6,10 +6,13 @@ import { getMissionTimeoutMs } from "@/server/member/policy";
 import { toDateOnlyUtc } from "@/server/date/date-only";
 import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
+import { getBaseUrl } from "@/server/url-helpers";
 
 export async function POST(req: Request, ctx: { params: { id: string } }) {
+  const baseUrl = getBaseUrl(req);
+  
   if (await isIpBlocked(getClientIp(req.headers))) {
-    return NextResponse.redirect(new URL("/member/reward/campaigns", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/campaigns", baseUrl), 303);
   }
 
   const user = await requireRole("MEMBER");
@@ -78,9 +81,9 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
       return created;
     });
 
-    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, req.url), 303);
+    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
   } catch {
-    return NextResponse.redirect(new URL("/member/reward/campaigns", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/campaigns", baseUrl), 303);
   }
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { prisma } from "@/server/prisma";
+import { getBaseUrl } from "@/server/url-helpers";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -26,6 +27,8 @@ const UpdateSchema = z.object({
 });
 
 export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
+  const baseUrl = getBaseUrl(req);
+  
   try {
     const user = await requireAdmin();
     const productId = ctx.params.id;
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
 
     if (!parsed.success) {
       const errorMessages = parsed.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join('; ');
-      return NextResponse.redirect(new URL(`/admin/products/${productId}?error=${encodeURIComponent(errorMessages)}`, req.url), 303);
+      return NextResponse.redirect(new URL(`/admin/products/${productId}?error=${encodeURIComponent(errorMessages)}`, baseUrl), 303);
     }
 
     const updated = await prisma.product.update({
@@ -72,7 +75,7 @@ export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
       },
     });
 
-    return NextResponse.redirect(new URL(`/admin/products/${productId}?saved=1`, req.url), 303);
+    return NextResponse.redirect(new URL(`/admin/products/${productId}?saved=1`, baseUrl), 303);
   } catch (error) {
     if (error instanceof Error && error.message.includes("권한")) {
       return NextResponse.json({ error: error.message }, { status: 403 });

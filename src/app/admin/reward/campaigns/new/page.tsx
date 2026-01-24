@@ -221,7 +221,7 @@ export default function NewCampaignPage() {
         <div className="flex flex-col items-center justify-center min-h-96 space-y-4">
           <div className="text-lg text-red-500">{error || '주문 정보를 불러올 수 없습니다.'}</div>
           <ButtonLink href="/admin/reward/campaigns" variant="secondary">
-            목록으로 돌아가기
+            목록
           </ButtonLink>
         </div>
       </PageShell>

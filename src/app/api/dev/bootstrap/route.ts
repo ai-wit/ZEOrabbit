@@ -4,6 +4,7 @@ import { prisma } from "@/server/prisma";
 import { hashPassword } from "@/server/auth/password";
 import { toDateOnlyUtc } from "@/server/date/date-only";
 import { maskAccountNumber } from "@/server/rewarder/mask";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const DEFAULT_PASSWORD = "password123!";
 
@@ -126,8 +127,11 @@ async function ensurePolicies(): Promise<void> {
 }
 
 export async function POST(req: Request) {
+
+  const baseUrl = getBaseUrl(req);
+  
   if (process.env.NODE_ENV === "production") {
-    return NextResponse.redirect(new URL("/", req.url), 303);
+    return NextResponse.redirect(new URL("/", baseUrl), 303);
   }
 
   await ensurePolicies();

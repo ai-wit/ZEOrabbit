@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-profile";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const Schema = z.object({
   amountKrw: z.coerce.number().int().min(1000).max(100_000_000),
@@ -11,6 +12,7 @@ const Schema = z.object({
 });
 
 export async function POST(req: Request) {
+  const baseUrl = getBaseUrl(req);
   const user = await requireRole("ADVERTISER");
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
@@ -26,7 +28,7 @@ export async function POST(req: Request) {
 
   if (!parsed.success) {
     console.error('Validation failed:', parsed.error);
-    return NextResponse.redirect(new URL("/advertiser/billing", req.url), 303);
+    return NextResponse.redirect(new URL("/advertiser/billing", baseUrl), 303);
   }
 
   const { amountKrw, paymentMethod } = parsed.data;
@@ -68,7 +70,7 @@ export async function POST(req: Request) {
       });
     });
 
-    return NextResponse.redirect(new URL("/advertiser/billing", req.url), 303);
+    return NextResponse.redirect(new URL("/advertiser/billing", baseUrl), 303);
 
   } else if (paymentMethod === "TOSS") {
     // 토스페이먼츠 결제 로직
@@ -101,7 +103,7 @@ export async function POST(req: Request) {
       });
 
       // Redirect to Toss payment page with payment parameters
-      const paymentUrl = new URL("/advertiser/billing/toss", req.url);
+      const paymentUrl = new URL("/advertiser/billing/toss", baseUrl);
       paymentUrl.searchParams.set("orderId", orderId);
       paymentUrl.searchParams.set("amount", amountKrw.toString());
       paymentUrl.searchParams.set("orderName", `${amountKrw.toLocaleString()}원 충전`);
@@ -112,12 +114,12 @@ export async function POST(req: Request) {
 
     } catch (error) {
       console.error("Toss payment initialization error:", error);
-      return NextResponse.redirect(new URL("/advertiser/billing?error=toss_init_failed", req.url), 303);
+      return NextResponse.redirect(new URL("/advertiser/billing?error=toss_init_failed", baseUrl), 303);
     }
   }
 
   // Fallback
-  return NextResponse.redirect(new URL("/advertiser/billing", req.url), 303);
+  return NextResponse.redirect(new URL("/advertiser/billing", baseUrl), 303);
 }
 
 

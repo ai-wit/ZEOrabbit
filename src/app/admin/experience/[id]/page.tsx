@@ -163,7 +163,7 @@ export default async function ExperienceApplicationDetailPage(props: {
             </ButtonLink>
           )}
           <ButtonLink href="/admin/experience" variant="secondary" size="sm">
-            목록으로 돌아가기
+            목록
           </ButtonLink>
         </div>
       </div>

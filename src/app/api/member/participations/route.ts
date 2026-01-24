@@ -6,14 +6,18 @@ import { getMemberProfileIdByUserId } from "@/server/member/member-profile";
 import { getMissionTimeoutMs } from "@/server/member/policy";
 import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const ClaimSchema = z.object({
   missionDayId: z.string().min(1)
 });
 
 export async function POST(req: Request) {
+
+  const baseUrl = getBaseUrl(req);
+  
   if (await isIpBlocked(getClientIp(req.headers))) {
-    return NextResponse.redirect(new URL("/member/reward/missions", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/missions", baseUrl), 303);
   }
 
   const user = await requireRole("MEMBER");
@@ -24,7 +28,7 @@ export async function POST(req: Request) {
     missionDayId: form.get("missionDayId")
   });
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/member/reward/missions", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/missions", baseUrl), 303);
   }
 
   const missionDayId = parsed.data.missionDayId;
@@ -86,11 +90,11 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.redirect(
-      new URL(`/member/reward/participations/${participation.id}`, req.url),
+      new URL(`/member/reward/participations/${participation.id}`, baseUrl),
       303
     );
   } catch {
-    return NextResponse.redirect(new URL("/member/missions", req.url), 303);
+    return NextResponse.redirect(new URL("/member/missions", baseUrl), 303);
   }
 }
 

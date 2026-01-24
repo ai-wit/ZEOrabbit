@@ -26,7 +26,7 @@ export default async function AdminProductsPage() {
     <PageShell
       header={
         <AdminHeader
-          title="상품 마스터"
+          title="리워드"
           description={`${user.email ?? user.id} (${user.role})`}
         />
       }
@@ -34,17 +34,17 @@ export default async function AdminProductsPage() {
       <div className="space-y-6">
         <div className="flex justify-end">
           <ButtonLink href="/admin/products/new" variant="primary" size="sm">
-            상품 생성
+            캠페인 생성
           </ButtonLink>
         </div>
 
         <Card>
           <div className="border-b border-white/10 px-6 py-4 text-sm text-zinc-300">
-            총 {products.length}개
+            총 {products.length}개의 캠페인이 있습니다.
           </div>
           <DividerList>
             {products.length === 0 ? (
-              <EmptyState title="상품이 없습니다." />
+              <EmptyState title="캠페인이 없습니다." />
             ) : (
               products.map((p) => (
                 <Link

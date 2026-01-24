@@ -205,7 +205,7 @@ export default function NewManagerPage() {
           </Button>
 
           <ButtonLink href="/admin/managers" variant="secondary">
-            목록으로 돌아가기
+            목록
           </ButtonLink>
         </div>
       </div>

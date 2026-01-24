@@ -438,7 +438,7 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
         <div className="flex flex-col items-center justify-center min-h-96 space-y-4">
           <div className="text-lg text-red-500">{error || '데이터를 불러올 수 없습니다.'}</div>
           <ButtonLink href="/admin/advertisers" variant="secondary">
-            목록으로 돌아가기
+            목록
           </ButtonLink>
         </div>
       </PageShell>
@@ -787,7 +787,7 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
           )}
 
           <ButtonLink href="/admin/advertisers" variant="secondary">
-            목록으로 돌아가기
+            목록
           </ButtonLink>
         </div>
       </div>

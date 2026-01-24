@@ -7,6 +7,7 @@ import { getRewarderAvailableBalanceKrw } from "@/server/rewarder/balance";
 import { getPayoutPolicy } from "@/server/policy/get-policy";
 import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const Schema = z.object({
   payoutAccountId: z.string().min(1),
@@ -14,8 +15,11 @@ const Schema = z.object({
 });
 
 export async function POST(req: Request) {
+
+  const baseUrl = getBaseUrl(req);
+  
   if (await isIpBlocked(getClientIp(req.headers))) {
-    return NextResponse.redirect(new URL("/rewarder/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/rewarder/payouts", baseUrl), 303);
   }
 
   const user = await requireRole("MEMBER");
@@ -27,7 +31,7 @@ export async function POST(req: Request) {
     amountKrw: form.get("amountKrw")
   });
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/rewarder/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/rewarder/payouts", baseUrl), 303);
   }
 
   const account = await prisma.payoutAccount.findFirst({
@@ -35,18 +39,18 @@ export async function POST(req: Request) {
     select: { id: true }
   });
   if (!account) {
-    return NextResponse.redirect(new URL("/rewarder/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/rewarder/payouts", baseUrl), 303);
   }
 
   const payoutPolicy = await getPayoutPolicy();
   const minPayoutKrw = payoutPolicy?.minPayoutKrw ?? 1000;
   if (parsed.data.amountKrw < minPayoutKrw) {
-    return NextResponse.redirect(new URL("/rewarder/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/rewarder/payouts", baseUrl), 303);
   }
 
   const available = await getRewarderAvailableBalanceKrw(rewarderId);
   if (available < parsed.data.amountKrw) {
-    return NextResponse.redirect(new URL("/rewarder/payouts", req.url), 303);
+    return NextResponse.redirect(new URL("/rewarder/payouts", baseUrl), 303);
   }
 
   await prisma.$transaction(async (tx) => {
@@ -69,7 +73,7 @@ export async function POST(req: Request) {
     });
   });
 
-  return NextResponse.redirect(new URL("/rewarder/payouts", req.url), 303);
+  return NextResponse.redirect(new URL("/rewarder/payouts", baseUrl), 303);
 }
 
 

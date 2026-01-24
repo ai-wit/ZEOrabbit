@@ -182,7 +182,7 @@ export default function AdminCampaignDetailPage() {
 
         <div className="flex justify-end">
           <ButtonLink href="/admin/campaigns" variant="secondary" size="sm">
-            목록으로 돌아가기
+            목록
           </ButtonLink>
         </div>
       </div>

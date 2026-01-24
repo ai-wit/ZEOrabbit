@@ -42,12 +42,12 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
       description={description}
       right={
         <div className="flex flex-wrap items-center gap-2">
-          <ButtonLink href="/" variant="secondary" size="sm">
+          {/* <ButtonLink href="/" variant="secondary" size="sm">
             🏠 홈
           </ButtonLink>
           <ButtonLink href="/admin" variant="secondary" size="sm">
             📊 대시보드
-          </ButtonLink>
+          </ButtonLink> */}
 
           {/* 슈퍼관리자만 매니저 관리 메뉴 표시 */}
           {!isManager && (
@@ -62,12 +62,12 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
           {/* 상품 메뉴는 매니저에게 표시하지 않음 */}
           {!isManager && (
             <ButtonLink href="/admin/products" variant="secondary" size="sm">
-              🧩 상품
+              🧩 리워드
             </ButtonLink>
           )}
-          <ButtonLink href={isManager ? "/admin/reward/campaigns" : "/admin/campaigns"} variant="secondary" size="sm">
+          {/* <ButtonLink href={isManager ? "/admin/reward/campaigns" : "/admin/campaigns"} variant="secondary" size="sm">
             📊 캠페인
-          </ButtonLink>
+          </ButtonLink> */}
           <ButtonLink href="/admin/experience" variant="secondary" size="sm">
             🎯 체험단
           </ButtonLink>

@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/server/prisma";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const BodySchema = z.object({
   email: z.string().email().max(255)
 });
 
 export async function POST(req: Request) {
+  const baseUrl = getBaseUrl(req);
+  
   if (process.env.NODE_ENV === "production") {
-    return NextResponse.redirect(new URL("/", req.url), 303);
+    return NextResponse.redirect(new URL("/", baseUrl), 303);
   }
 
   const form = await req.formData();
@@ -16,7 +19,7 @@ export async function POST(req: Request) {
     email: form.get("email")
   });
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/dev/promote-admin", req.url), 303);
+    return NextResponse.redirect(new URL("/dev/promote-admin", baseUrl), 303);
   }
 
   const email = parsed.data.email.toLowerCase();
@@ -25,7 +28,7 @@ export async function POST(req: Request) {
     select: { id: true }
   });
   if (!user) {
-    return NextResponse.redirect(new URL("/dev/promote-admin", req.url), 303);
+    return NextResponse.redirect(new URL("/dev/promote-admin", baseUrl), 303);
   }
 
   await prisma.$transaction(async (tx) => {
@@ -43,7 +46,7 @@ export async function POST(req: Request) {
     });
   });
 
-  return NextResponse.redirect(new URL("/admin", req.url), 303);
+  return NextResponse.redirect(new URL("/admin", baseUrl), 303);
 }
 
 

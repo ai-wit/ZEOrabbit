@@ -2,19 +2,23 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const Schema = z.object({
   reason: z.string().min(1).max(200)
 });
 
 export async function POST(req: Request, ctx: { params: { id: string } }) {
+
+  const baseUrl = getBaseUrl(req);
+  
   const admin = await requireRole("ADMIN");
   const payoutId = ctx.params.id;
 
   const form = await req.formData();
   const parsed = Schema.safeParse({ reason: form.get("reason") });
   if (!parsed.success) {
-    return NextResponse.redirect(new URL(`/admin/payouts/${payoutId}`, req.url), 303);
+    return NextResponse.redirect(new URL(`/admin/payouts/${payoutId}`, baseUrl), 303);
   }
 
   try {
@@ -46,10 +50,10 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
       });
     });
   } catch {
-    return NextResponse.redirect(new URL(`/admin/payouts/${payoutId}`, req.url), 303);
+    return NextResponse.redirect(new URL(`/admin/payouts/${payoutId}`, baseUrl), 303);
   }
 
-  return NextResponse.redirect(new URL(`/admin/payouts/${payoutId}`, req.url), 303);
+  return NextResponse.redirect(new URL(`/admin/payouts/${payoutId}`, baseUrl), 303);
 }
 
 

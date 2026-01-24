@@ -5,6 +5,7 @@ import { hashPassword } from "@/server/auth/password";
 import { createSessionForUser } from "@/server/auth/session";
 import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const SignupSchema = z.object({
   role: z.enum(["ADVERTISER", "MEMBER"]),
@@ -19,8 +20,10 @@ const SignupSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const baseUrl = getBaseUrl(req);
+  
   if (await isIpBlocked(getClientIp(req.headers))) {
-    return NextResponse.redirect(new URL("/signup", req.url), 303);
+    return NextResponse.redirect(new URL("/signup", baseUrl), 303);
   }
 
   const form = await req.formData();
@@ -37,12 +40,12 @@ export async function POST(req: Request) {
   });
 
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/signup", req.url), 303);
+    return NextResponse.redirect(new URL("/signup", baseUrl), 303);
   }
 
   const data = parsed.data;
   if (data.role === "MEMBER" && data.agreeRewarderGuide !== "yes") {
-    return NextResponse.redirect(new URL("/signup", req.url), 303);
+    return NextResponse.redirect(new URL("/signup", baseUrl), 303);
   }
 
   const email = data.email.toLowerCase();
@@ -112,9 +115,9 @@ export async function POST(req: Request) {
           ? "/member"
           : "/";
 
-    return NextResponse.redirect(new URL(redirectTo, req.url), 303);
+    return NextResponse.redirect(new URL(redirectTo, baseUrl), 303);
   } catch {
-    return NextResponse.redirect(new URL("/signup", req.url), 303);
+    return NextResponse.redirect(new URL("/signup", baseUrl), 303);
   }
 }
 

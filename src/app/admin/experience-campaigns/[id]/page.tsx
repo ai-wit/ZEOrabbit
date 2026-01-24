@@ -572,7 +572,7 @@ export default function CampaignDetailPage(props: {
                               삭제
                             </Button>
             <ButtonLink href="/admin/experience?tab=campaigns" variant="secondary" size="sm">
-              목록으로 돌아가기
+              목록
             </ButtonLink>
           </div>
         </div>

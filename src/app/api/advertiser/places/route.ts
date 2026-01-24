@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-profile";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const NAVER_PLACE_URL_PREFIX = "https://m.place.naver.com/place/";
 const NaverPlaceIdSchema = z
@@ -17,6 +18,9 @@ const CreatePlaceSchema = z.object({
 });
 
 export async function POST(req: Request) {
+
+  const baseUrl = getBaseUrl(req);
+  
   const user = await requireRole("ADVERTISER");
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
@@ -28,7 +32,7 @@ export async function POST(req: Request) {
   });
 
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/advertiser/places/new", req.url), 303);
+    return NextResponse.redirect(new URL("/advertiser/places/new", baseUrl), 303);
   }
 
   const normalizedIdFromUrl = (() => {
@@ -39,12 +43,12 @@ export async function POST(req: Request) {
 
   const naverPlaceId = parsed.data.naverPlaceId ?? normalizedIdFromUrl;
   if (!naverPlaceId) {
-    return NextResponse.redirect(new URL("/advertiser/places/new", req.url), 303);
+    return NextResponse.redirect(new URL("/advertiser/places/new", baseUrl), 303);
   }
 
   const naverPlaceIdValidated = NaverPlaceIdSchema.safeParse(naverPlaceId);
   if (!naverPlaceIdValidated.success) {
-    return NextResponse.redirect(new URL("/advertiser/places/new", req.url), 303);
+    return NextResponse.redirect(new URL("/advertiser/places/new", baseUrl), 303);
   }
 
   const fullUrl = `${NAVER_PLACE_URL_PREFIX}${naverPlaceIdValidated.data}`;
@@ -59,7 +63,7 @@ export async function POST(req: Request) {
     }
   });
 
-  return NextResponse.redirect(new URL("/advertiser/places", req.url), 303);
+  return NextResponse.redirect(new URL("/advertiser/places", baseUrl), 303);
 }
 
 

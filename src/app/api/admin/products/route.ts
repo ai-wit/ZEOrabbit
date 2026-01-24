@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { prisma } from "@/server/prisma";
+import { getBaseUrl } from "@/server/url-helpers";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!parsed.success) {
-      return NextResponse.redirect(new URL("/admin/products/new?error=invalid", req.url), 303);
+      return NextResponse.redirect(new URL("/admin/products/new?error=invalid", baseUrl), 303);
     }
 
     const created = await prisma.product.create({

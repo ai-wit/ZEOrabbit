@@ -5,13 +5,14 @@ import { getMemberProfileIdByUserId } from "@/server/member/member-profile";
 import { storeRewardEvidenceFile } from "@/server/upload/storage";
 import { getClientIp } from "@/server/security/ip";
 import { isIpBlocked } from "@/server/security/blacklist";
+import { getBaseUrl } from "@/server/url-helpers";
 
 export async function POST(
   req: Request,
   ctx: { params: { id: string } }
 ) {
   if (await isIpBlocked(getClientIp(req.headers))) {
-    return NextResponse.redirect(new URL("/member/reward/missions", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/missions", baseUrl), 303);
   }
 
   const user = await requireRole("MEMBER");
@@ -23,11 +24,11 @@ export async function POST(
     select: { id: true, status: true, expiresAt: true, missionDayId: true }
   });
   if (!participation) {
-    return NextResponse.redirect(new URL("/member/reward/participations", req.url), 303);
+    return NextResponse.redirect(new URL("/member/reward/participations", baseUrl), 303);
   }
 
   if (participation.status !== "IN_PROGRESS") {
-    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, req.url), 303);
+    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
   }
 
   if (Date.now() > new Date(participation.expiresAt).getTime()) {
@@ -43,24 +44,24 @@ export async function POST(
         data: { quotaRemaining: { increment: 1 } }
       });
     });
-    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, req.url), 303);
+    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
   }
 
   const form = await req.formData();
   const proofText = String(form.get("proofText") ?? "").trim();
   const file = form.get("file");
   if (!(file instanceof File)) {
-    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, req.url), 303);
+    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
   }
   if (proofText.length > 2000) {
-    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, req.url), 303);
+    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
   }
 
   let stored;
   try {
     stored = await storeRewardEvidenceFile({ participationId: participation.id, file });
   } catch {
-    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, req.url), 303);
+    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
   }
 
   const evidenceType = stored.mime.startsWith("video/") ? "VIDEO" : "IMAGE";
@@ -94,7 +95,7 @@ export async function POST(
     });
   });
 
-  return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, req.url), 303);
+  return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
 }
 
 

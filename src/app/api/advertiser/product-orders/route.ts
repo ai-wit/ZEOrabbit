@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireRole } from "@/server/auth/require-user";
 import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-profile";
 import { prisma } from "@/server/prisma";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const Schema = z.object({
   productId: z.string().min(1),
@@ -31,6 +32,9 @@ function daysInclusive(start: Date, end: Date): number {
 }
 
 export async function POST(req: Request) {
+
+  const baseUrl = getBaseUrl(req);
+  
   const user = await requireRole("ADVERTISER");
 
   const form = await req.formData();
@@ -41,7 +45,7 @@ export async function POST(req: Request) {
     const redirectUrl = productId
       ? `/advertiser/reward/products/${productId}?error=managerNotAllowed`
       : `/advertiser/reward/products?error=managerNotAllowed`;
-    return NextResponse.redirect(new URL(redirectUrl, req.url), 303);
+    return NextResponse.redirect(new URL(redirectUrl, baseUrl), 303);
   }
 
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
@@ -59,13 +63,13 @@ export async function POST(req: Request) {
     const redirectUrl = productId
       ? `/advertiser/reward/products/${productId}?error=invalid`
       : `/advertiser/reward/products?error=invalid`;
-    return NextResponse.redirect(new URL(redirectUrl, req.url), 303);
+    return NextResponse.redirect(new URL(redirectUrl, baseUrl), 303);
   }
 
   const start = parseDateInput(parsed.data.startDate);
   const end = parseDateInput(parsed.data.endDate);
   if (!start || !end || start.getTime() > end.getTime()) {
-    return NextResponse.redirect(new URL(`/advertiser/reward/products/${parsed.data.productId}?error=date`, req.url), 303);
+    return NextResponse.redirect(new URL(`/advertiser/reward/products/${parsed.data.productId}?error=date`, baseUrl), 303);
   }
 
   const [product, place] = await Promise.all([
@@ -80,12 +84,12 @@ export async function POST(req: Request) {
   ]);
 
   if (!product || !place) {
-    return NextResponse.redirect(new URL(`/advertiser/reward/products/${parsed.data.productId}?error=notfound`, req.url), 303);
+    return NextResponse.redirect(new URL(`/advertiser/reward/products/${parsed.data.productId}?error=notfound`, baseUrl), 303);
   }
 
   const totalDays = daysInclusive(start, end);
   if (totalDays < product.minOrderDays) {
-    return NextResponse.redirect(new URL(`/advertiser/reward/products/${product.id}?error=minDays`, req.url), 303);
+    return NextResponse.redirect(new URL(`/advertiser/reward/products/${product.id}?error=minDays`, baseUrl), 303);
   }
 
   const totalQty = parsed.data.dailyTarget * totalDays;
@@ -178,14 +182,14 @@ export async function POST(req: Request) {
 
   // DEV payments: redirect to Toss success page to reuse the same confirmation UX.
   if (paymentMethod === "DEV") {
-    const successUrl = new URL("/advertiser/billing/toss/success", req.url);
+    const successUrl = new URL("/advertiser/billing/toss/success", baseUrl);
     successUrl.searchParams.set("orderId", created.paymentId);
     successUrl.searchParams.set("paymentKey", `dev_payment_${Date.now()}`);
     successUrl.searchParams.set("amount", String(created.totalAmountKrw));
     return NextResponse.redirect(successUrl, 303);
   }
 
-  const paymentUrl = new URL("/advertiser/billing/toss", req.url);
+  const paymentUrl = new URL("/advertiser/billing/toss", baseUrl);
   paymentUrl.searchParams.set("orderId", created.paymentId);
   paymentUrl.searchParams.set("amount", created.totalAmountKrw.toString());
   paymentUrl.searchParams.set("orderName", `${product.name} (${place.name})`);

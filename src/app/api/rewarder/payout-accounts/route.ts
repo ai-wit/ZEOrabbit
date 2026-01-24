@@ -4,6 +4,7 @@ import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { maskAccountNumber } from "@/server/rewarder/mask";
+import { getBaseUrl } from "@/server/url-helpers";
 
 const Schema = z.object({
   bankName: z.string().min(1).max(100),
@@ -12,6 +13,9 @@ const Schema = z.object({
 });
 
 export async function POST(req: Request) {
+
+  const baseUrl = getBaseUrl(req);
+  
   const user = await requireRole("MEMBER");
   const rewarderId = await getMemberProfileIdByUserId(user.id);
 
@@ -22,7 +26,7 @@ export async function POST(req: Request) {
     accountHolderName: (form.get("accountHolderName") || undefined) as string | undefined
   });
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/rewarder/payouts/account", req.url), 303);
+    return NextResponse.redirect(new URL("/rewarder/payouts/account", baseUrl), 303);
   }
 
   const masked = maskAccountNumber(parsed.data.accountNumber);
@@ -51,7 +55,7 @@ export async function POST(req: Request) {
     });
   });
 
-  return NextResponse.redirect(new URL("/rewarder/payouts", req.url), 303);
+  return NextResponse.redirect(new URL("/rewarder/payouts", baseUrl), 303);
 }
 
 
