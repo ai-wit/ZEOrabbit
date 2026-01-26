@@ -42,13 +42,15 @@ export async function POST(req: Request) {
     // Example:
     // await sendSMS(phone, `인증번호: ${code}. 5분 내에 입력해주세요.`);
 
-    // In development, return the code for convenience
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    // In development-like mode, return the code for convenience
+    const isDevelopmentMode =
+      process.env.PHONE_VERIFICATION_MODE === "development" ||
+      process.env.NODE_ENV === "development";
 
     return NextResponse.json({
       success: true,
       message: "인증번호가 발송되었습니다.",
-      ...(isDevelopment && { code }) // Only include code in development
+      ...(isDevelopmentMode && { code }) // Only include code in development-like mode
     });
 
   } catch (error) {
