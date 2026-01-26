@@ -9,6 +9,8 @@ export async function POST(
   req: Request,
   ctx: { params: { campaignId: string } }
 ) {
+  const baseUrl = getBaseUrl(req);
+
   // NOTE: 캠페인 활성화/비활성화는 매니저가 수행합니다.
   await requireRole("ADVERTISER");
   return NextResponse.redirect(new URL("/advertiser/campaigns", baseUrl), 303);

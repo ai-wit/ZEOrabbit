@@ -11,6 +11,8 @@ export async function POST(
   req: Request,
   ctx: { params: { id: string } }
 ) {
+  const baseUrl = getBaseUrl(req);
+
   if (await isIpBlocked(getClientIp(req.headers))) {
     return NextResponse.redirect(new URL("/rewarder/participations", baseUrl), 303);
   }

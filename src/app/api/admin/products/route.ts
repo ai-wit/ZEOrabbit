@@ -29,6 +29,7 @@ const CreateSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const baseUrl = getBaseUrl(req);
     const user = await requireAdmin();
     const form = await req.formData();
 
