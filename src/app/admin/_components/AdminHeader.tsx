@@ -65,9 +65,11 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
               🧩 리워드
             </ButtonLink>
           )}
-          {/* <ButtonLink href={isManager ? "/admin/reward/campaigns" : "/admin/campaigns"} variant="secondary" size="sm">
-            📊 캠페인
-          </ButtonLink> */}
+          {isManager && (
+            <ButtonLink href="/admin/reward/campaigns" variant="secondary" size="sm">
+              📊 캠페인
+            </ButtonLink>
+          )}
           <ButtonLink href="/admin/experience" variant="secondary" size="sm">
             🎯 체험단
           </ButtonLink>

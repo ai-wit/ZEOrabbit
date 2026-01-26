@@ -60,6 +60,8 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
           const data = await response.json();
           setProduct(data.product);
           setPlaces(data.places);
+
+          setAdditionalDaysValue(data.product.minOrderDays.toString());
         }
       } catch (error) {
         console.error('Failed to fetch product data:', error);
@@ -378,15 +380,15 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="additionalDays">추가 일수 (최대 {productOrderLimits?.maxAdditionalDays || 300}일)</Label>
+                  <Label htmlFor="additionalDays">주문 일수 (최소 {product.minOrderDays}일, 최대 {productOrderLimits?.maxAdditionalDays || 300}일)</Label>
                   <Input
                     id="additionalDays"
                     type="number"
                     required
-                    min={0}
-                    max={productOrderLimits?.maxAdditionalDays || 300}
+                    min={product.minOrderDays}
+                    max={productOrderLimits?.maxAdditionalDays || 300 - product.minOrderDays}
                     step={1}
-                    placeholder="예: 3"
+                    placeholder="예: 7"
                     value={additionalDaysValue}
                     onChange={handleAdditionalDaysChange}
                   />
@@ -395,10 +397,7 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                   )}
                   <div className="space-y-2">
                     <div className="text-sm font-semibold text-amber-400">
-                      최소 주문 기간은 {product.minOrderDays}일입니다.
-                    </div>
-                    <div className="text-sm text-zinc-400">
-                      최소일수외 추가 일수를 작성해 주세요.
+                      최소 주문 기간은 {product.minOrderDays}일 이상입니다.
                     </div>
                   </div>
                 </div>
