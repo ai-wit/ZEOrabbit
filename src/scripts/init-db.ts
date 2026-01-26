@@ -46,6 +46,15 @@ async function ensureEssentialPolicies(): Promise<void> {
       }
     },
     {
+      id: "policy_product_order_limits_v1",
+      key: "PRODUCT_ORDER_LIMITS" as const,
+      version: 1,
+      payloadJson: {
+        maxAdditionalDays: 300,
+        maxDailyTarget: 1000
+      }
+    },
+    {
       id: "policy_payout_v1",
       key: "PAYOUT" as const,
       version: 1,
