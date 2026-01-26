@@ -137,7 +137,9 @@ export function verifyTossWebhookSignature(params: {
   signatureHeader: string | null;
 }): boolean {
   const secret = process.env.TOSS_PAYMENTS_WEBHOOK_SECRET;
-  if (!secret) return true; // If not configured, we can't verify. Caller should add alternative checks.
+  if (!secret) {
+    return process.env.NODE_ENV !== "production";
+  }
   if (!params.signatureHeader) return false;
 
   // Expected format (v1 style): "t=timestamp,v1=hexsignature"

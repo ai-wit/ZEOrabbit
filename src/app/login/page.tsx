@@ -27,8 +27,10 @@ const TEST_ACCOUNTS = {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const showTestAccounts = process.env.NODE_ENV !== "production";
 
   const handleTestLogin = (testEmail: string) => {
+    if (!showTestAccounts) return;
     setEmail(testEmail);
     setPassword("password123!");
     // 다음 렌더링에서 form이 submit되도록
@@ -95,68 +97,70 @@ export default function LoginPage() {
         </CardBody>
       </Card>
 
-      <Card>
-        <CardBody className="space-y-4">
-          <div className="text-sm font-medium text-zinc-200">테스트 계정</div>
-          <div className="text-xs text-zinc-400">비밀번호: password123!</div>
+      {showTestAccounts && (
+        <Card>
+          <CardBody className="space-y-4">
+            <div className="text-sm font-medium text-zinc-200">테스트 계정</div>
+            <div className="text-xs text-zinc-400">비밀번호: password123!</div>
 
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-zinc-200">관리자</div>
-              <div className="grid grid-cols-1 gap-2">
-                {TEST_ACCOUNTS.admin.map((account) => (
-                  <Button
-                    key={account.email}
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handleTestLogin(account.email)}
-                  >
-                    {account.label}
-                  </Button>
-                ))}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-zinc-200">관리자</div>
+                <div className="grid grid-cols-1 gap-2">
+                  {TEST_ACCOUNTS.admin.map((account) => (
+                    <Button
+                      key={account.email}
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleTestLogin(account.email)}
+                    >
+                      {account.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-zinc-200">광고주</div>
+                <div className="grid grid-cols-1 gap-2">
+                  {TEST_ACCOUNTS.advertiser.map((account) => (
+                    <Button
+                      key={account.email}
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleTestLogin(account.email)}
+                    >
+                      {account.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-zinc-200">멤버</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {TEST_ACCOUNTS.member.map((account) => (
+                    <Button
+                      key={account.email}
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleTestLogin(account.email)}
+                    >
+                      {account.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-zinc-200">광고주</div>
-              <div className="grid grid-cols-1 gap-2">
-                {TEST_ACCOUNTS.advertiser.map((account) => (
-                  <Button
-                    key={account.email}
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handleTestLogin(account.email)}
-                  >
-                    {account.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-zinc-200">멤버</div>
-              <div className="grid grid-cols-2 gap-2">
-                {TEST_ACCOUNTS.member.map((account) => (
-                  <Button
-                    key={account.email}
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handleTestLogin(account.email)}
-                  >
-                    {account.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+          </CardBody>
+        </Card>
+      )}
     </PageShell>
   );
 }
