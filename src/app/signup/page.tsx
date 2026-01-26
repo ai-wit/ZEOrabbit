@@ -45,7 +45,7 @@ export default function SignupPage() {
           setVerificationCode(data.code);
         }
 
-        alert(`인증번호가 발송되었습니다. ${data.code ? '(개발모드: 인증번호가 자동 입력됨)' : '(콘솔에서 확인 가능)'}`);
+        alert(`인증번호가 발송되었습니다. ${data.code ? '(개발모드: 인증번호가 자동 입력됨)' : ''}`);
       } else {
         setError(data.error || "인증번호 발송에 실패했습니다.");
       }
