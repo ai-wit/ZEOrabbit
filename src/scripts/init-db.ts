@@ -50,7 +50,7 @@ async function ensureEssentialPolicies(): Promise<void> {
       key: "PRODUCT_ORDER_LIMITS" as const,
       version: 1,
       payloadJson: {
-        maxAdditionalDays: 300,
+        maxAdditionalDays: 30,
         maxDailyTarget: 1000
       }
     },
