@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { requireRole } from "@/server/auth/require-user";
 import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-profile";
 import { getAdvertiserBudgetBalanceKrw } from "@/server/advertiser/balance";
 import { prisma } from "@/server/prisma";
 import { PageShell } from "@/app/_ui/shell";
-import { Button, ButtonLink, Card, CardBody, DividerList, EmptyState, Input, Label, Pill } from "@/app/_ui/primitives";
+import { Button, Card, CardBody, DividerList, EmptyState, Input, Label, Pill } from "@/app/_ui/primitives";
 import { AdvertiserHeader } from "../_components/AdvertiserHeader";
 
 export default async function AdvertiserBillingPage() {
@@ -12,6 +11,9 @@ export default async function AdvertiserBillingPage() {
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
   const balance = await getAdvertiserBudgetBalanceKrw(advertiserId);
+  const isDev = process.env.NODE_ENV === "development";
+  const krNumber = new Intl.NumberFormat("ko-KR");
+  const formatKrw = (value: number) => krNumber.format(value);
 
   const payments = await prisma.payment.findMany({
     where: { advertiserId },
@@ -32,7 +34,7 @@ export default async function AdvertiserBillingPage() {
       header={
         <AdvertiserHeader
           title="결제/충전"
-          description={`현재 예산 잔액: ${balance}원`}
+          description={`현재 예산 잔액: ${formatKrw(balance)}원`}
         />
       }
     >
@@ -53,7 +55,7 @@ export default async function AdvertiserBillingPage() {
                 className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg text-zinc-50 focus:border-cyan-400/50 focus:outline-none"
                 required
               >
-                <option value="DEV">DEV 즉시 반영 (개발용)</option>
+                {isDev ? <option value="DEV">DEV 즉시 반영 (개발용)</option> : null}
                 <option value="TOSS">토스페이먼츠 카드 결제</option>
               </select>
             </div>
@@ -75,7 +77,7 @@ export default async function AdvertiserBillingPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-sm font-semibold text-zinc-50">{p.amountKrw}원</div>
+                      <div className="text-sm font-semibold text-zinc-50">{formatKrw(p.amountKrw)}원</div>
                       <Pill tone={p.status === "PAID" ? "emerald" : p.status === "FAILED" ? "red" : "neutral"}>
                         {p.status}
                       </Pill>
@@ -101,8 +103,8 @@ export default async function AdvertiserBillingPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
                     <div className="text-sm font-semibold text-zinc-50">
-                      {l.amountKrw > 0 ? "+" : ""}
-                      {l.amountKrw}원
+                      {l.amountKrw > 0 ? "+" : l.amountKrw < 0 ? "-" : ""}
+                      {formatKrw(Math.abs(l.amountKrw))}원
                     </div>
                     <div className="text-xs text-zinc-400">
                       {l.reason} {l.refId ? `· ref=${l.refId}` : ""}

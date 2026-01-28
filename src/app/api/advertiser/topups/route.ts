@@ -17,22 +17,22 @@ export async function POST(req: Request) {
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
   const form = await req.formData();
-  console.log('Topup request form data:', Object.fromEntries(form.entries()));
 
   const parsed = Schema.safeParse({
     amountKrw: form.get("amountKrw"),
     paymentMethod: form.get("paymentMethod")
   });
 
-  console.log('Parsed data:', parsed);
-
   if (!parsed.success) {
-    console.error('Validation failed:', parsed.error);
     return NextResponse.redirect(new URL("/advertiser/billing", baseUrl), 303);
   }
 
   const { amountKrw, paymentMethod } = parsed.data;
-  console.log('Processing payment:', { amountKrw, paymentMethod });
+  const isDev = process.env.NODE_ENV === "development";
+
+  if (paymentMethod === "DEV" && !isDev) {
+    return NextResponse.redirect(new URL("/advertiser/billing?error=dev_payment_disabled", baseUrl), 303);
+  }
 
   if (paymentMethod === "DEV") {
     // 기존 DEV 즉시 결제 로직
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     // 토스페이먼츠 결제 로직
     try {
       // Create payment record first
-      const orderId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const orderId = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
       await prisma.payment.create({
         data: {
@@ -106,9 +106,7 @@ export async function POST(req: Request) {
       const paymentUrl = new URL("/advertiser/billing/toss", baseUrl);
       paymentUrl.searchParams.set("orderId", orderId);
       paymentUrl.searchParams.set("amount", amountKrw.toString());
-      paymentUrl.searchParams.set("orderName", `${amountKrw.toLocaleString()}원 충전`);
-
-      return NextResponse.redirect(paymentUrl, 303);
+      paymentUrl.searchParams.set("orderName", `${amountKrw.toLocaleString("ko-KR")}원 충전`);
 
       return NextResponse.redirect(paymentUrl, 303);
 
