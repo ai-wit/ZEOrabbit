@@ -4,6 +4,7 @@ import { Button, ButtonLink, Card, DividerList, EmptyState, Input, Label, Pill, 
 import { AdminHeader } from "../_components/AdminHeader";
 import { DateInput } from "@/app/_ui/DateInput";
 import type { Prisma, PayoutStatus } from "@prisma/client";
+import { getPayoutStatusLabel } from "@/lib/status-labels";
 
 function parseDateOnly(value: string | undefined): Date | null {
   if (!value) return null;
@@ -77,11 +78,11 @@ export default async function AdminPayoutsPage(props: {
               <Label htmlFor="status">상태</Label>
               <Select id="status" name="status" defaultValue={statusParam}>
                 <option value="ALL">전체(REQUESTED+APPROVED)</option>
-                <option value="REQUESTED">REQUESTED</option>
-                <option value="APPROVED">APPROVED</option>
-                <option value="PAID">PAID</option>
-                <option value="REJECTED">REJECTED</option>
-                <option value="CANCELED">CANCELED</option>
+                <option value="REQUESTED">{getPayoutStatusLabel("REQUESTED")}</option>
+                <option value="APPROVED">{getPayoutStatusLabel("APPROVED")}</option>
+                <option value="PAID">{getPayoutStatusLabel("PAID")}</option>
+                <option value="REJECTED">{getPayoutStatusLabel("REJECTED")}</option>
+                <option value="CANCELED">{getPayoutStatusLabel("CANCELED")}</option>
               </Select>
             </div>
             <div className="space-y-2 sm:col-span-1">
@@ -127,7 +128,7 @@ export default async function AdminPayoutsPage(props: {
                                   : "neutral"
                         }
                       >
-                        {r.status}
+                        {getPayoutStatusLabel(r.status)}
                       </Pill>
                     </div>
                     <div className="text-xs text-zinc-400">

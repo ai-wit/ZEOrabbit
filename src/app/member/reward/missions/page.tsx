@@ -6,6 +6,7 @@ import { toDateOnlyUtc } from "@/server/date/date-only";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, DividerList, EmptyState, Pill } from "@/app/_ui/primitives";
 import { RewardNavigation } from "../_components/RewardNavigation";
+import { getParticipationStatusLabel } from "@/lib/status-labels";
 
 export default async function RewarderMissionsPage() {
   const user = await requireRole("MEMBER");
@@ -93,7 +94,7 @@ export default async function RewarderMissionsPage() {
                       ) : (
                         <Pill tone="neutral">수량 소진</Pill>
                       )}
-                      {mine ? <Pill tone="cyan">{mine.status}</Pill> : null}
+                      {mine ? <Pill tone="cyan">{getParticipationStatusLabel(mine.status)}</Pill> : null}
                     </div>
                   </div>
                 </div>

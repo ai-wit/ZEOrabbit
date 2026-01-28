@@ -7,6 +7,7 @@ import { getPayoutPolicy } from "@/server/policy/get-policy";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, DividerList, EmptyState, Input, Label, Pill } from "@/app/_ui/primitives";
 import { RewardNavigation } from "../_components/RewardNavigation";
+import { getPayoutStatusLabel } from "@/lib/status-labels";
 
 export default async function RewarderPayoutsPage() {
   const user = await requireRole("MEMBER");
@@ -104,7 +105,7 @@ export default async function RewarderPayoutsPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="text-sm font-semibold text-zinc-50">{r.amountKrw.toLocaleString()}원</div>
                       <Pill tone={r.status === "PAID" ? "emerald" : r.status === "REJECTED" ? "red" : "cyan"}>
-                        {r.status}
+                        {getPayoutStatusLabel(r.status)}
                       </Pill>
                     </div>
                     <div className="text-xs text-zinc-400">

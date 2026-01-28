@@ -13,6 +13,7 @@ import {
   Button
 } from "@/app/_ui/primitives";
 import { AdminHeader } from "../_components/AdminHeader";
+import { getExperienceApplicationStatusLabel, getExperienceCampaignStatusLabel, getPaymentStatusLabel } from "@/lib/status-labels";
 
 interface ExperienceApplication {
   id: string;
@@ -355,9 +356,7 @@ export default function ExperienceApplicationsPage() {
                                 application.status === "PAYMENT_INFO_COMPLETED" ? "cyan" :
                                 application.status === "COMPLETED" ? "indigo" : "neutral"
                               }>
-                                {application.status === "PAYMENT_COMPLETED" ? "결제완료" :
-                                 application.status === "PAYMENT_INFO_COMPLETED" ? "결제대기" :
-                                 application.status === "COMPLETED" ? "신청완료" : application.status}
+                                {getExperienceApplicationStatusLabel(application.status)}
                               </Pill>
                             </div>
                             <div className="text-xs text-zinc-400">
@@ -368,7 +367,7 @@ export default function ExperienceApplicationsPage() {
                             </div>
                             {application.payment && (
                               <div className="text-xs text-zinc-500">
-                                결제: {application.payment.provider === "TOSS" ? "토스페이먼츠" : application.payment.provider} · {application.payment.status === "PAID" ? "결제완료" : application.payment.status}
+                                결제: {application.payment.provider === "TOSS" ? "토스페이먼츠" : application.payment.provider} · {getPaymentStatusLabel(application.payment.status)}
                               </div>
                             )}
                             <div className="text-xs text-zinc-500">
@@ -461,9 +460,7 @@ export default function ExperienceApplicationsPage() {
                                 campaign.status === "DRAFT" ? "neutral" :
                                 campaign.status === "PAUSED" ? "red" : "neutral"
                               }>
-                                {campaign.status === "ACTIVE" ? "진행중" :
-                                 campaign.status === "DRAFT" ? "초안" :
-                                 campaign.status === "PAUSED" ? "일시중지" : campaign.status}
+                                {getExperienceCampaignStatusLabel(campaign.status)}
                               </Pill>
                             </div>
                             <div className="text-xs text-zinc-400">

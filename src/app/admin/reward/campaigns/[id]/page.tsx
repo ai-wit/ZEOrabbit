@@ -7,6 +7,7 @@ import { PageShell } from "@/app/_ui/shell";
 import { AdminHeader } from "@/app/admin/_components/AdminHeader";
 import { Button, ButtonLink, Card, CardBody, DividerList, EmptyState, Input, Label, Pill, TextArea } from "@/app/_ui/primitives";
 import { ImageLightbox } from "@/app/_ui/ImageLightbox";
+import { getCampaignStatusLabel, getParticipationStatusLabel } from "@/lib/status-labels";
 
 type Participation = {
   id: string;
@@ -270,7 +271,7 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="text-sm font-semibold text-zinc-50">{campaign.name}</div>
                     <Pill tone={campaign.status === "ACTIVE" ? "emerald" : campaign.status === "PAUSED" ? "neutral" : "cyan"}>
-                      {campaign.status}
+                      {getCampaignStatusLabel(campaign.status)}
                     </Pill>
                     <Pill tone="neutral">{campaign.missionType}</Pill>
                   </div>
@@ -434,7 +435,7 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
                               <div className="text-sm font-semibold text-zinc-50">
                                 {p.rewarder.user.name ?? p.rewarder.user.email ?? "멤버"}
                               </div>
-                              <Pill tone={pending ? "cyan" : p.status === "APPROVED" ? "emerald" : "red"}>{p.status}</Pill>
+                              <Pill tone={pending ? "cyan" : p.status === "APPROVED" ? "emerald" : "red"}>{getParticipationStatusLabel(p.status)}</Pill>
                             </div>
                             <div className="text-xs text-zinc-500">
                               집행일: {new Date(p.missionDay.date).toLocaleDateString("ko-KR")} · 제출:{" "}

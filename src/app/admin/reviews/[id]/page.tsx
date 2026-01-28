@@ -5,6 +5,7 @@ import { prisma } from "@/server/prisma";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Input, Pill } from "@/app/_ui/primitives";
 import { ImageLightbox } from "@/app/_ui/ImageLightbox";
+import { getParticipationStatusLabel } from "@/lib/status-labels";
 
 export default async function AdminReviewDetailPage(props: { params: { id: string } }) {
   const admin = await requireRole("ADMIN");
@@ -75,7 +76,7 @@ export default async function AdminReviewDetailPage(props: { params: { id: strin
             <div className="text-sm font-semibold text-zinc-50">
               {participation.missionDay.campaign.place.name} · {participation.missionDay.campaign.missionType}
             </div>
-            <Pill tone={participation.status === "PENDING_REVIEW" ? "cyan" : "indigo"}>{participation.status}</Pill>
+            <Pill tone={participation.status === "PENDING_REVIEW" ? "cyan" : "indigo"}>{getParticipationStatusLabel(participation.status)}</Pill>
           </div>
           <div className="text-xs text-zinc-400">
             참여자: {participation.rewarder.user.email ?? participation.rewarder.id} · 광고주:{" "}

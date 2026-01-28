@@ -4,6 +4,7 @@ import { Button, ButtonLink, Card, DividerList, EmptyState, Input, Label, Pill, 
 import { AdminHeader } from "../_components/AdminHeader";
 import { DateInput } from "@/app/_ui/DateInput";
 import type { Prisma, ParticipationStatus } from "@prisma/client";
+import { getParticipationStatusLabel } from "@/lib/status-labels";
 
 function parseDateOnly(value: string | undefined): Date | null {
   if (!value) return null;
@@ -128,8 +129,8 @@ export default async function AdminReviewsPage(props: {
               <Label htmlFor="status">상태</Label>
               <Select id="status" name="status" defaultValue={statusParam}>
                 <option value="ALL">전체(PENDING+MANUAL)</option>
-                <option value="PENDING_REVIEW">PENDING_REVIEW</option>
-                <option value="MANUAL_REVIEW">MANUAL_REVIEW</option>
+                <option value="PENDING_REVIEW">{getParticipationStatusLabel("PENDING_REVIEW")}</option>
+                <option value="MANUAL_REVIEW">{getParticipationStatusLabel("MANUAL_REVIEW")}</option>
               </Select>
             </div>
             <div className="space-y-2 sm:col-span-1">
@@ -164,7 +165,7 @@ export default async function AdminReviewsPage(props: {
                       <div className="text-sm font-semibold text-zinc-50">
                         {p.missionDay.campaign.place.name}
                       </div>
-                      <Pill tone={p.status === "PENDING_REVIEW" ? "cyan" : "indigo"}>{p.status}</Pill>
+                      <Pill tone={p.status === "PENDING_REVIEW" ? "cyan" : "indigo"}>{getParticipationStatusLabel(p.status)}</Pill>
                     </div>
                     <div className="text-xs text-zinc-400">
                       참여자: {p.rewarder.user.email ?? p.rewarder.id} · 광고주:{" "}

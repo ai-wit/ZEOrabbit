@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, Pill } from '@/app/_ui/primitives';
+import { getPaymentStatusLabel } from '@/lib/status-labels';
 
 interface AdvertiserInfo {
   name: string;
@@ -628,8 +629,7 @@ export default function NewExperienceApplicationClient({ advertiserInfo }: Props
                         paymentInfo.status === 'PAID' ? 'text-green-400' :
                         paymentInfo.status === 'CREATED' ? 'text-yellow-400' : 'text-zinc-400'
                       }`}>
-                        {paymentInfo.status === 'PAID' ? '결제 완료' :
-                         paymentInfo.status === 'CREATED' ? '결제 대기' : paymentInfo.status}
+                        {getPaymentStatusLabel(paymentInfo.status)}
                       </span>
                     </div>
                     {paymentInfo.id && (

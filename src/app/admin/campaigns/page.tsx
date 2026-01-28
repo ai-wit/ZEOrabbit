@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { PageShell } from "@/app/_ui/shell";
 import { AdminHeader } from "../_components/AdminHeader";
 import { ButtonLink, Card, CardBody, DividerList, EmptyState, Pill } from "@/app/_ui/primitives";
+import { getCampaignStatusLabel } from "@/lib/status-labels";
 
 interface Campaign {
   id: string;
@@ -144,10 +145,7 @@ export default function AdminCampaignsPage() {
                               campaign.status === "PAUSED" ? "red" :
                               campaign.status === "ENDED" ? "neutral" : "neutral"
                             }>
-                              {campaign.status === "ACTIVE" ? "활성" :
-                               campaign.status === "DRAFT" ? "초안" :
-                               campaign.status === "PAUSED" ? "일시중지" :
-                               campaign.status === "ENDED" ? "종료됨" : campaign.status}
+                              {getCampaignStatusLabel(campaign.status)}
                             </Pill>
                           </div>
                             <div className="text-xs text-zinc-400">

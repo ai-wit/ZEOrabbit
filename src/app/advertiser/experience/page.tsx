@@ -4,6 +4,7 @@ import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-p
 import { PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, DividerList, EmptyState, Pill } from "@/app/_ui/primitives";
 import { AdvertiserHeader } from "../_components/AdvertiserHeader";
+import { getExperienceCampaignStatusLabel } from "@/lib/status-labels";
 
 function formatNumber(n: number): string {
   return new Intl.NumberFormat("ko-KR").format(n);
@@ -76,7 +77,7 @@ export default async function AdvertiserExperienceCampaignsPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="text-sm font-semibold text-zinc-50">{campaign.title}</div>
                         <Pill tone={campaign.status === "ACTIVE" ? "emerald" : "neutral"}>
-                          {campaign.status}
+                          {getExperienceCampaignStatusLabel(campaign.status)}
                         </Pill>
                         <Pill tone="cyan">캠페인</Pill>
                       </div>

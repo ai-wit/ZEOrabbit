@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Card, DividerList, EmptyState, Pill, Button } from "@/app/_ui/primitives";
+import { getTeamStatusLabel } from '@/lib/status-labels';
 
 // Components
 import { LeaderApplicationModal } from './leader-application-modal';
@@ -238,7 +239,7 @@ function TeamsTab() {
                         {team.userRole === 'leader' ? '팀장' : '팀원'}
                       </Pill>
                       <Pill tone={team.status === 'ACTIVE' ? 'emerald' : 'neutral'}>
-                        {team.status === 'FORMING' ? '팀 구성 중' : team.status === 'ACTIVE' ? '활성' : team.status}
+                        {getTeamStatusLabel(team.status)}
                       </Pill>
                     </div>
                     <div className="text-xs text-zinc-400">{team.experienceCampaign.title}</div>

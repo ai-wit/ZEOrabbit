@@ -1,4 +1,5 @@
 import type { ExperienceCampaign } from '../types';
+import { getExperienceCampaignStatusLabel } from '@/lib/status-labels';
 
 interface CampaignDetailModalProps {
   isOpen: boolean;
@@ -79,7 +80,7 @@ export function CampaignDetailModal({
                     </div>
                     <div>
                       <span className="font-medium text-text-subtle">공고 상태:</span>
-                      <p className="text-text-muted mt-1">{campaign.status === 'ACTIVE' ? '모집 중' : campaign.status === 'DRAFT' ? '임시 저장' : campaign.status}</p>
+                      <p className="text-text-muted mt-1">{getExperienceCampaignStatusLabel(campaign.status)}</p>
                     </div>
                     <div>
                       <span className="font-medium text-text-subtle">팀 현황:</span>

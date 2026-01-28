@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { PageShell } from "@/app/_ui/shell";
 import { AdminHeader } from "../../_components/AdminHeader";
 import { ButtonLink, Card, CardBody, Pill } from "@/app/_ui/primitives";
+import { getCampaignStatusLabel } from "@/lib/status-labels";
 
 interface Campaign {
   id: string;
@@ -140,9 +141,7 @@ export default function AdminCampaignDetailPage() {
                 campaign.status === "DRAFT" ? "neutral" :
                 campaign.status === "PAUSED" ? "red" : "neutral"
               }>
-                {campaign.status === "ACTIVE" ? "활성" :
-                 campaign.status === "DRAFT" ? "초안" :
-                 campaign.status === "PAUSED" ? "일시중지" : campaign.status}
+                {getCampaignStatusLabel(campaign.status)}
               </Pill>
             </div>
 

@@ -5,6 +5,7 @@ import { prisma } from "@/server/prisma";
 import { PageShell } from "@/app/_ui/shell";
 import { Button, Card, CardBody, DividerList, EmptyState, Input, Label, Pill } from "@/app/_ui/primitives";
 import { AdvertiserHeader } from "../_components/AdvertiserHeader";
+import { getPaymentStatusLabel } from "@/lib/status-labels";
 
 export default async function AdvertiserBillingPage() {
   const user = await requireRole("ADVERTISER");
@@ -79,7 +80,7 @@ export default async function AdvertiserBillingPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="text-sm font-semibold text-zinc-50">{formatKrw(p.amountKrw)}원</div>
                       <Pill tone={p.status === "PAID" ? "emerald" : p.status === "FAILED" ? "red" : "neutral"}>
-                        {p.status}
+                        {getPaymentStatusLabel(p.status)}
                       </Pill>
                     </div>
                     <div className="text-xs text-zinc-400">{p.provider ?? "—"}</div>

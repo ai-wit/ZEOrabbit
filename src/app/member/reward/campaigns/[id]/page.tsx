@@ -6,6 +6,7 @@ import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { toDateOnlyUtc } from "@/server/date/date-only";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Pill } from "@/app/_ui/primitives";
+import { getMissionDayStatusLabel, getParticipationStatusLabel } from "@/lib/status-labels";
 
 export default async function MemberRewardCampaignDetailPage(props: { params: { id: string } }) {
   const user = await requireRole("MEMBER");
@@ -85,7 +86,7 @@ export default async function MemberRewardCampaignDetailPage(props: { params: { 
           <CardBody className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <Pill tone="cyan">{campaign.missionType}</Pill>
-              {md ? <Pill tone={md.status === "ACTIVE" ? "emerald" : "neutral"}>{md.status}</Pill> : <Pill tone="neutral">오늘 미션 없음</Pill>}
+              {md ? <Pill tone={md.status === "ACTIVE" ? "emerald" : "neutral"}>{getMissionDayStatusLabel(md.status)}</Pill> : <Pill tone="neutral">오늘 미션 없음</Pill>}
               {soldOut ? <Pill tone="neutral">수량 소진</Pill> : null}
             </div>
             <div className="text-xs text-zinc-500">
@@ -134,7 +135,7 @@ export default async function MemberRewardCampaignDetailPage(props: { params: { 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Pill tone="emerald">이미 참여중</Pill>
-                  <Pill tone="cyan">{existingParticipation.status}</Pill>
+                  <Pill tone="cyan">{getParticipationStatusLabel(existingParticipation.status)}</Pill>
                 </div>
                 <div className="text-sm text-zinc-300">
                   증빙 제출 기한: {new Date(existingParticipation.expiresAt).toLocaleString("ko-KR")}

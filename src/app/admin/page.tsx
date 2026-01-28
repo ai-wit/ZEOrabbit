@@ -18,6 +18,7 @@ import {
   StatCard
 } from "@/app/_ui/primitives";
 import { AdminHeader } from "./_components/AdminHeader";
+import { getParticipationStatusLabel, getPayoutStatusLabel } from "@/lib/status-labels";
 
 function formatNumber(n: number): string {
   return new Intl.NumberFormat("ko-KR").format(n);
@@ -307,7 +308,7 @@ export default async function AdminPage() {
                             <div className="text-sm font-semibold text-zinc-50">
                               {p.missionDay.campaign.place.name}
                             </div>
-                            <Pill tone={p.status === "PENDING_REVIEW" ? "cyan" : "indigo"}>{p.status}</Pill>
+                            <Pill tone={p.status === "PENDING_REVIEW" ? "cyan" : "indigo"}>{getParticipationStatusLabel(p.status)}</Pill>
                             <Pill tone="neutral">{p.missionDay.campaign.missionType}</Pill>
                           </div>
                           <div className="text-xs text-zinc-400">
@@ -336,7 +337,7 @@ export default async function AdminPage() {
               <div className="space-y-1">
                 <div className="text-sm font-semibold text-zinc-50">출금 큐</div>
                 <div className="text-xs text-zinc-400">
-                  REQUESTED {formatKrw(payoutRequestedSum)} · APPROVED {formatKrw(payoutApprovedSum)}
+                  {getPayoutStatusLabel("REQUESTED")} {formatKrw(payoutRequestedSum)} · {getPayoutStatusLabel("APPROVED")} {formatKrw(payoutApprovedSum)}
                 </div>
               </div>
               <ButtonLink href="/admin/payouts" variant="secondary" size="sm">
@@ -355,7 +356,7 @@ export default async function AdminPage() {
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <div className="text-sm font-semibold text-zinc-50">{formatKrw(r.amountKrw)}</div>
-                            <Pill tone={r.status === "REQUESTED" ? "cyan" : "indigo"}>{r.status}</Pill>
+                            <Pill tone={r.status === "REQUESTED" ? "cyan" : "indigo"}>{getPayoutStatusLabel(r.status)}</Pill>
                           </div>
                           <div className="text-xs text-zinc-400">
                             리워더: {r.rewarder.user.email ?? r.rewarder.id}

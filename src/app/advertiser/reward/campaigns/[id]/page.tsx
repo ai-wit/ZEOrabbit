@@ -6,6 +6,7 @@ import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-p
 import { PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, CardHeader, DividerList, Pill } from "@/app/_ui/primitives";
 import { AdvertiserHeader } from "@/app/advertiser/_components/AdvertiserHeader";
+import { getCampaignStatusLabel, getMissionDayStatusLabel } from "@/lib/status-labels";
 
 function formatNumber(n: number): string {
   return new Intl.NumberFormat("ko-KR").format(n);
@@ -96,7 +97,7 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
             right={
               <div className="flex items-center gap-3">
                 <Pill tone={campaign.status === "ACTIVE" ? "emerald" : campaign.status === "DRAFT" ? "cyan" : campaign.status === "PAUSED" ? "neutral" : "indigo"}>
-                  {campaign.status}
+                  {getCampaignStatusLabel(campaign.status)}
                 </Pill>
               </div>
             }
@@ -160,7 +161,7 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="text-sm text-zinc-50">
-                    {new Date(currentDay.date).toLocaleDateString("ko-KR")} ({currentDay.status})
+                    {new Date(currentDay.date).toLocaleDateString("ko-KR")} ({getMissionDayStatusLabel(currentDay.status)})
                   </div>
                   <div className="text-xs text-zinc-400">
                     목표: {currentDay.quotaTotal}건 · 완료: {currentDay._count.participations}건
@@ -189,7 +190,7 @@ export default async function AdvertiserCampaignDetailPage({ params }: { params:
                       {new Date(day.date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
                     </div>
                     <Pill tone={day.status === "ENDED" ? "emerald" : day.status === "ACTIVE" ? "cyan" : "neutral"}>
-                      {day.status}
+                      {getMissionDayStatusLabel(day.status)}
                     </Pill>
                   </div>
                   <div className="text-sm text-zinc-300">

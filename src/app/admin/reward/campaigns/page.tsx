@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PageShell } from "@/app/_ui/shell";
 import { AdminHeader } from "@/app/admin/_components/AdminHeader";
 import { Button, ButtonLink, Card, CardBody, DividerList, EmptyState, Pill } from "@/app/_ui/primitives";
+import { getCampaignStatusLabel } from "@/lib/status-labels";
 
 type ManagedAdvertiser = {
   advertiserId: string;
@@ -141,10 +142,7 @@ export default function AdminRewardCampaignsPage() {
                               o.campaign?.status === "PAUSED" ? "red" :
                               o.campaign?.status === "ENDED" ? "neutral" : "cyan"
                             }>
-                              {o.campaign?.status === "ACTIVE" ? "활성" :
-                               o.campaign?.status === "DRAFT" ? "초안" :
-                               o.campaign?.status === "PAUSED" ? "일시중지" :
-                               o.campaign?.status === "ENDED" ? "종료됨" : "등록됨"}
+                              {o.campaign?.status ? getCampaignStatusLabel(o.campaign.status) : "등록됨"}
                             </Pill>
                           ) : (
                             <Pill tone="neutral">미등록</Pill>

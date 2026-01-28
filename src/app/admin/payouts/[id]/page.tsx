@@ -4,6 +4,7 @@ import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Input, Pill } from "@/app/_ui/primitives";
+import { getPayoutStatusLabel } from "@/lib/status-labels";
 
 export default async function AdminPayoutDetailPage(props: { params: { id: string } }) {
   await requireRole("ADMIN");
@@ -50,7 +51,7 @@ export default async function AdminPayoutDetailPage(props: { params: { id: strin
           <div className="flex flex-wrap items-center gap-2">
             <div className="text-sm font-semibold text-zinc-50">금액: {req.amountKrw}원</div>
             <Pill tone={req.status === "REQUESTED" ? "cyan" : req.status === "APPROVED" ? "indigo" : "neutral"}>
-              {req.status}
+              {getPayoutStatusLabel(req.status)}
             </Pill>
           </div>
           <div className="text-xs text-zinc-400">리워더: {req.rewarder.user.email ?? req.rewarder.id}</div>

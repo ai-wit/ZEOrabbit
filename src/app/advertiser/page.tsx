@@ -7,6 +7,7 @@ import { getAdvertiserBudgetBalanceKrw } from "@/server/advertiser/balance";
 import { PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Callout, Card, CardBody, DividerList, EmptyState, KeyValueRow, Pill, SparkBars, StatCard } from "@/app/_ui/primitives";
 import { AdvertiserHeader } from "./_components/AdvertiserHeader";
+import { getCampaignStatusLabel } from "@/lib/status-labels";
 
 export default async function AdvertiserPage() {
   const user = await requireRole("ADVERTISER");
@@ -393,7 +394,7 @@ export default async function AdvertiserPage() {
                                     : "neutral"
                             }
                           >
-                            {c.status}
+                            {getCampaignStatusLabel(c.status)}
                           </Pill>
                           <Pill tone={c.missionType === "TRAFFIC" ? "cyan" : c.missionType === "SAVE" ? "indigo" : "emerald"}>
                             {c.missionType}

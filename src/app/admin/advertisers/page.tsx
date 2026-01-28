@@ -12,6 +12,7 @@ import {
   Pill
 } from "@/app/_ui/primitives";
 import { AdminHeader } from "../_components/AdminHeader";
+import { getUserStatusLabel } from "@/lib/status-labels";
 
 function formatNumber(n: number): string {
   return new Intl.NumberFormat("ko-KR").format(n);
@@ -198,7 +199,7 @@ export default function AdvertisersPage() {
                               {advertiser.displayName || advertiser.name}
                             </div>
                             <Pill tone={advertiser.status === "ACTIVE" ? "emerald" : "red"}>
-                              {advertiser.status === "ACTIVE" ? "활성" : "비활성"}
+                              {getUserStatusLabel(advertiser.status)}
                             </Pill>
                           </div>
                           <div className="text-xs text-zinc-400">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardBody, Button } from '@/app/_ui/primitives';
+import { getPaymentStatusLabel } from "@/lib/status-labels";
 
 interface PaymentResult {
   success: boolean;
@@ -245,6 +246,9 @@ export default function TossPaymentSuccessPage() {
             <div className="text-sm text-zinc-400 mt-2">
               결제 ID: {result.payment?.id}
             </div>
+              <div className="text-sm text-zinc-400 mt-1">
+                결제 상태: {result.payment?.status ? getPaymentStatusLabel(result.payment.status) : "—"}
+              </div>
           </div>
 
           <div className="text-sm text-zinc-400 space-y-1">

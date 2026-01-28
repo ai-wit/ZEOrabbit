@@ -9,6 +9,7 @@ import {
 } from "@/app/_ui/primitives";
 import { AdminHeader } from "../../_components/AdminHeader";
 import { notFound } from "next/navigation";
+import { getExperienceApplicationStatusLabel, getPaymentStatusLabel } from "@/lib/status-labels";
 
 function formatNumber(n: number): string {
   return new Intl.NumberFormat("ko-KR").format(n);
@@ -88,9 +89,7 @@ export default async function ExperienceApplicationDetailPage(props: {
                 application.status === "PAYMENT_INFO_COMPLETED" ? "cyan" :
                 application.status === "COMPLETED" ? "indigo" : "neutral"
               }>
-                {application.status === "PAYMENT_COMPLETED" ? "결제완료" :
-                 application.status === "PAYMENT_INFO_COMPLETED" ? "결제대기" :
-                 application.status === "COMPLETED" ? "신청완료" : application.status}
+                {getExperienceApplicationStatusLabel(application.status)}
               </Pill>
             </div>
 
@@ -142,7 +141,7 @@ export default async function ExperienceApplicationDetailPage(props: {
                 <KeyValueRow k="결제 수단" v={application.payment.provider === "TOSS" ? "토스페이먼츠" : application.payment.provider} />
                 <KeyValueRow k="결제 상태" v={
                   <Pill tone={application.payment.status === "PAID" ? "emerald" : "cyan"}>
-                    {application.payment.status === "PAID" ? "결제완료" : application.payment.status}
+                    {getPaymentStatusLabel(application.payment.status)}
                   </Pill>
                 } />
                 <KeyValueRow k="결제일" v={formatDateTime(application.payment.createdAt)} />

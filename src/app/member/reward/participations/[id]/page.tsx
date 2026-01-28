@@ -6,6 +6,7 @@ import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, DividerList, Pill } from "@/app/_ui/primitives";
 import { BackButton } from "./BackButton";
+import { getParticipationStatusLabel } from "@/lib/status-labels";
 
 function getMissionTypeLabel(missionType: string) {
   switch (missionType) {
@@ -114,7 +115,7 @@ export default async function RewarderParticipationDetailPage(props: {
           <div className="flex flex-wrap items-center gap-2">
             <div className="text-sm font-semibold text-zinc-50">상태</div>
             <Pill tone={participation.status === "APPROVED" ? "emerald" : participation.status === "REJECTED" ? "red" : "cyan"}>
-              {participation.status}
+              {getParticipationStatusLabel(participation.status)}
             </Pill>
             {expired ? <Pill tone="red">만료됨</Pill> : null}
           </div>

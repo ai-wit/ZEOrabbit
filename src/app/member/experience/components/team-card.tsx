@@ -1,4 +1,5 @@
 import type { Team } from '../types';
+import { getTeamStatusLabel } from '@/lib/status-labels';
 
 interface TeamCardProps {
   team: Team;
@@ -16,7 +17,7 @@ export function TeamCard({ team, onCompleteFormation, onSubmitContent }: TeamCar
             {team.experienceCampaign.title} · {team.userRole === 'leader' ? '팀장' : '팀원'}
           </p>
           <p className="text-sm text-gray-500 mt-1">
-            상태: {team.status === 'FORMING' ? '팀 구성 중' : team.status === 'ACTIVE' ? '활성' : team.status}
+            상태: {getTeamStatusLabel(team.status)}
           </p>
         </div>
         <div className="flex gap-2">

@@ -5,6 +5,7 @@ import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, DividerList, EmptyState, Pill } from "@/app/_ui/primitives";
 import { RewardNavigation } from "../_components/RewardNavigation";
+import { getParticipationStatusLabel } from "@/lib/status-labels";
 
 export default async function RewarderParticipationsPage() {
   const user = await requireRole("MEMBER");
@@ -59,7 +60,7 @@ export default async function RewarderParticipationsPage() {
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="text-sm font-semibold text-zinc-50">{p.missionDay.campaign.place.name}</div>
-                      <Pill tone="cyan">{p.status}</Pill>
+                      <Pill tone="cyan">{getParticipationStatusLabel(p.status)}</Pill>
                     </div>
                     <div className="text-xs text-zinc-400">
                       {p.missionDay.campaign.missionType} · 리워드 {p.missionDay.campaign.rewardKrw}원 · 집행일{" "}

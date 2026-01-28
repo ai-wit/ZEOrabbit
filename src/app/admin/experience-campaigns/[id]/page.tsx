@@ -16,6 +16,7 @@ import {
   Select
 } from "@/app/_ui/primitives";
 import { AdminHeader } from "@/app/admin/_components/AdminHeader";
+import { getExperienceCampaignStatusLabel, getTeamStatusLabel } from "@/lib/status-labels";
 
 interface ExperienceCampaign {
   id: string;
@@ -540,9 +541,7 @@ export default function CampaignDetailPage(props: {
               campaign.status === "DRAFT" ? "neutral" :
               campaign.status === "PAUSED" ? "red" : "neutral"
             }>
-              {campaign.status === "ACTIVE" ? "진행중" :
-               campaign.status === "DRAFT" ? "초안" :
-               campaign.status === "PAUSED" ? "일시중지" : campaign.status}
+              {getExperienceCampaignStatusLabel(campaign.status)}
             </Pill>
           </div>
           <div className="flex gap-2">
@@ -785,10 +784,7 @@ export default function CampaignDetailPage(props: {
                               team.status === "COMPLETED" ? "indigo" :
                               team.status === "CANCELLED" ? "red" : "neutral"
                             }>
-                              {team.status === "ACTIVE" ? "참여중" :
-                               team.status === "FORMING" ? "팀구성중" :
-                               team.status === "COMPLETED" ? "완료" :
-                               team.status === "CANCELLED" ? "취소" : team.status}
+                              {getTeamStatusLabel(team.status)}
                             </Pill>
                           </div>
                           <div className="text-xs text-zinc-400">
@@ -845,11 +841,7 @@ export default function CampaignDetailPage(props: {
                                 application.status === "COMPLETED" ? "indigo" :
                                 application.status === "CANCELLED" ? "red" : "neutral"
                               }>
-                                {application.status === "PENDING_LEADER_APPROVAL" ? "승인대기" :
-                                 application.status === "FORMING" ? "팀구성중" :
-                                 application.status === "ACTIVE" ? "참여중" :
-                                 application.status === "COMPLETED" ? "완료" :
-                                 application.status === "CANCELLED" ? "취소" : application.status}
+                                {getTeamStatusLabel(application.status)}
                               </Pill>
                             </div>
                             <div className="text-xs text-zinc-400">
