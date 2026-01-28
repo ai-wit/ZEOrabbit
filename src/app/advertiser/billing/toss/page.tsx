@@ -3,46 +3,20 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardBody } from '@/app/_ui/primitives';
+import { loadTossPayments } from '@tosspayments/tosspayments-sdk';
 
-// Load Toss Payments SDK dynamically
-const loadTossPaymentsSDK = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    if (window.TossPayments) {
-      resolve();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://js.tosspayments.com/v1/payment';
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load Toss Payments SDK'));
-    document.head.appendChild(script);
-  });
-};
+function createAnonymousCustomerKey(): string {
+  // TossPayments requires a 2~50 length string containing allowed characters.
+  // Use an unpredictable-ish value to avoid guessable identifiers.
+  const rand = Math.random().toString(36).slice(2, 12);
+  return `anon_${Date.now()}_${rand}`;
+}
 
 export default function TossPaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // For development: simulate payment
-  const simulatePayment = () => {
-    const orderId = searchParams.get('orderId');
-    const amount = searchParams.get('amount');
-
-    if (!orderId || !amount) {
-      setError('결제 정보가 올바르지 않습니다.');
-      setIsLoading(false);
-      return;
-    }
-
-    console.log('Simulating payment success...');
-    setTimeout(() => {
-      window.location.href = `${window.location.origin}/advertiser/billing/toss/success?orderId=${orderId}&paymentKey=test_payment_key_${Date.now()}&amount=${amount}`;
-    }, 2000);
-  };
 
   useEffect(() => {
     const initializePayment = async () => {
@@ -66,23 +40,14 @@ export default function TossPaymentPage() {
           return;
         }
 
-        // Use simulation in development
-        if (process.env.NODE_ENV === 'development') {
-          simulatePayment();
+        const tossPayments = await loadTossPayments(clientKey);
+        const payment = tossPayments.payment({ customerKey: createAnonymousCustomerKey() });
+        const paymentAmount = Number.parseInt(amount, 10);
+        if (!Number.isFinite(paymentAmount)) {
+          setError('결제 금액이 올바르지 않습니다.');
+          setIsLoading(false);
           return;
         }
-
-        // Load SDK for production
-        await loadTossPaymentsSDK();
-
-        if (!window.TossPayments) {
-          throw new Error('TossPayments SDK 로드 실패');
-        }
-
-        // Initialize and request payment
-        const tossPayments = window.TossPayments(clientKey);
-        const payment = tossPayments.payment({ customerKey: 'anonymous' });
-        const paymentAmount = parseInt(amount);
 
         await payment.requestPayment({
           method: 'CARD',
@@ -90,7 +55,7 @@ export default function TossPaymentPage() {
           orderId,
           orderName,
           successUrl: `${window.location.origin}/advertiser/billing/toss/success`,
-          failUrl: `${window.location.origin}/advertiser/billing/toss/fail?orderId=${orderId}`,
+          failUrl: `${window.location.origin}/advertiser/billing/toss/fail`,
         });
 
       } catch (err) {

@@ -74,9 +74,9 @@ export default async function HomePage() {
       <footer className="border-t border-border pt-8">
         <div className="text-center space-y-3">
           <div className="text-xs text-text-subtle leading-relaxed">
-            <p>상호 : 레디카 | 대표자 : 조진의</p>
+            <p>상호 : 지오래빗 | 대표자 : 조진의</p>
             <p>소재지 : 서울특별시 강동구 상일로 74, 322동 201호</p>
-            <p>사업자등록번호 : 796-04-03974 | 통신판매신고번호 : 신고예정</p>
+            <p>사업자등록번호 : 796-04-03974 | 통신판매신고번호 : 제2026-서울강동-0188호</p>
             <p>개인정보관리책임자 : 조진의</p>
           </div>
           

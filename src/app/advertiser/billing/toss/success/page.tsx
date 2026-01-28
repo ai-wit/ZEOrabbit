@@ -126,26 +126,6 @@ export default function TossPaymentSuccessPage() {
           }
 
           // 일반 충전 결제
-          // For development: simulate successful confirmation
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Development mode: simulating payment confirmation');
-
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            setResult({
-              success: true,
-              payment: {
-                id: orderId,
-                amount: parseInt(amount),
-                status: 'PAID'
-              }
-            });
-            setIsConfirming(false);
-            return;
-          }
-
-          // Production: confirm payment with API
           if (!paymentKey) {
             setResult({
               success: false,
