@@ -21,6 +21,8 @@ export default function TossPaymentSuccessPage() {
   const searchParams = useSearchParams();
   const [result, setResult] = useState<PaymentResult | null>(null);
   const [isConfirming, setIsConfirming] = useState(true);
+  const productId = searchParams.get('productId');
+  const returnPath = productId ? `/advertiser/reward/products/${productId}` : '/advertiser/billing';
 
   useEffect(() => {
     const confirmPayment = async () => {
@@ -210,7 +212,7 @@ export default function TossPaymentSuccessPage() {
                 다시 시도
               </Button>
               <Button
-                onClick={() => router.push('/advertiser/billing')}
+                onClick={() => router.push(returnPath)}
               >
                 결제 페이지로 돌아가기
               </Button>

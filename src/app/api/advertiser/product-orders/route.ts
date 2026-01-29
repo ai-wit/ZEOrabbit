@@ -40,12 +40,19 @@ export async function POST(req: Request) {
   const form = await req.formData();
   const productId = form.get("productId") as string;
 
+  const redirectWithError = (code: string, message: string) => {
+    const fallback = productId
+      ? `/advertiser/reward/products/${productId}`
+      : `/advertiser/reward/products`;
+    const url = new URL(fallback, baseUrl);
+    url.searchParams.set("error", code);
+    url.searchParams.set("errorMessage", message);
+    return NextResponse.redirect(url, 303);
+  };
+
   // 매니저는 상품 구매 불가
   if (user.adminType === "MANAGER") {
-    const redirectUrl = productId
-      ? `/advertiser/reward/products/${productId}?error=managerNotAllowed`
-      : `/advertiser/reward/products?error=managerNotAllowed`;
-    return NextResponse.redirect(new URL(redirectUrl, baseUrl), 303);
+    return redirectWithError("managerNotAllowed", "매니저는 상품을 구매할 수 없습니다.");
   }
 
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
@@ -60,16 +67,13 @@ export async function POST(req: Request) {
   });
 
   if (!parsed.success) {
-    const redirectUrl = productId
-      ? `/advertiser/reward/products/${productId}?error=invalid`
-      : `/advertiser/reward/products?error=invalid`;
-    return NextResponse.redirect(new URL(redirectUrl, baseUrl), 303);
+    return redirectWithError("invalid", "입력값이 올바르지 않습니다.");
   }
 
   const start = parseDateInput(parsed.data.startDate);
   const end = parseDateInput(parsed.data.endDate);
   if (!start || !end || start.getTime() > end.getTime()) {
-    return NextResponse.redirect(new URL(`/advertiser/reward/products/${parsed.data.productId}?error=date`, baseUrl), 303);
+    return redirectWithError("date", "날짜 입력이 올바르지 않습니다.");
   }
 
   const [product, place] = await Promise.all([
@@ -84,12 +88,12 @@ export async function POST(req: Request) {
   ]);
 
   if (!product || !place) {
-    return NextResponse.redirect(new URL(`/advertiser/reward/products/${parsed.data.productId}?error=notfound`, baseUrl), 303);
+    return redirectWithError("notfound", "상품 또는 플레이스를 찾을 수 없습니다.");
   }
 
   const totalDays = daysInclusive(start, end);
   if (totalDays < product.minOrderDays) {
-    return NextResponse.redirect(new URL(`/advertiser/reward/products/${product.id}?error=minDays`, baseUrl), 303);
+    return redirectWithError("minDays", `주문 일수는 최소 ${product.minOrderDays}일 이상이어야 합니다.`);
   }
 
   const totalQty = parsed.data.dailyTarget * totalDays;
@@ -183,6 +187,7 @@ export async function POST(req: Request) {
   // DEV payments: redirect to Toss success page to reuse the same confirmation UX.
   if (paymentMethod === "DEV") {
     const successUrl = new URL("/advertiser/billing/toss/success", baseUrl);
+    successUrl.searchParams.set("productId", product.id);
     successUrl.searchParams.set("orderId", created.paymentId);
     successUrl.searchParams.set("paymentKey", `dev_payment_${Date.now()}`);
     successUrl.searchParams.set("amount", String(created.totalAmountKrw));
@@ -193,6 +198,7 @@ export async function POST(req: Request) {
   paymentUrl.searchParams.set("orderId", created.paymentId);
   paymentUrl.searchParams.set("amount", created.totalAmountKrw.toString());
   paymentUrl.searchParams.set("orderName", `${product.name} (${place.name})`);
+  paymentUrl.searchParams.set("productId", product.id);
   return NextResponse.redirect(paymentUrl, 303);
 }
 

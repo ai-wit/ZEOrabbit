@@ -28,6 +28,7 @@ type Place = {
 export default function AdvertiserProductDetailPage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
+  const errorMessage = searchParams.get('errorMessage');
   const [product, setProduct] = useState<Product | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +36,9 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [productOrderLimits, setProductOrderLimits] = useState<{maxAdditionalDays: number; maxDailyTarget: number} | null>(null);
-  const [additionalDaysValue, setAdditionalDaysValue] = useState<string>("0");
+  const [orderDaysValue, setOrderDaysValue] = useState<string>("0");
   const [dailyTargetValue, setDailyTargetValue] = useState<string>("");
+  const DAY_MS = 24 * 60 * 60 * 1000;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,7 +63,7 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
           setProduct(data.product);
           setPlaces(data.places);
 
-          setAdditionalDaysValue(data.product.minOrderDays.toString());
+          setOrderDaysValue(data.product.minOrderDays.toString());
         }
       } catch (error) {
         console.error('Failed to fetch product data:', error);
@@ -74,24 +76,93 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
   }, [params.id]);
 
   // 서버 처리중 에러 메시지 (URL 파라미터에서 받은 에러)
-  const getServerErrorMessage = (errorCode: string | null) => {
+  const getServerErrorMessage = (errorCode: string | null, messageOverride?: string | null) => {
+    if (messageOverride && messageOverride.trim() !== "") {
+      return messageOverride;
+    }
     switch (errorCode) {
       case 'productNotFound':
         return '상품을 찾을 수 없습니다.';
       case 'managerNotAllowed':
         return '매니저는 상품을 구매할 수 없습니다.';
+      case 'invalid':
+        return '입력값이 올바르지 않습니다.';
+      case 'date':
+        return '날짜 입력이 올바르지 않습니다.';
+      case 'notfound':
+        return '상품 또는 플레이스를 찾을 수 없습니다.';
+      case 'minDays':
+        return '주문 일수가 최소 기간보다 짧습니다.';
       default:
         return errorCode ? `처리중 오류가 발생했습니다: ${errorCode}` : null;
     }
   };
 
+  const getOrderDaysRange = () => {
+    const minDays = product?.minOrderDays ?? 0;
+    const maxDays = productOrderLimits?.maxAdditionalDays ?? 300;
+    return {
+      minDays,
+      maxDays: Math.max(maxDays, minDays),
+    };
+  };
+
+  const getDailyTargetRange = () => {
+    const minTarget = 1;
+    const maxTarget = productOrderLimits?.maxDailyTarget ?? 1000;
+    return {
+      minTarget,
+      maxTarget: Math.max(maxTarget, minTarget),
+    };
+  };
+
+  const clampValue = (value: number, min: number, max: number) => {
+    return Math.min(Math.max(value, min), max);
+  };
+
+  const getDateString = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
+
+  const getEndDateString = (orderDays: number) => {
+    const safeOrderDays = Math.max(orderDays, 1);
+    return getDateString(new Date(Date.now() + (safeOrderDays - 1) * DAY_MS));
+  };
+
+  const normalizeOrderDays = (value: string) => {
+    if (!value || value.trim() === "") {
+      return null;
+    }
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed)) {
+      return null;
+    }
+    const { minDays, maxDays } = getOrderDaysRange();
+    return clampValue(parsed, minDays, maxDays);
+  };
+
+  const normalizeDailyTarget = (value: string) => {
+    if (!value || value.trim() === "") {
+      return null;
+    }
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed)) {
+      return null;
+    }
+    const { minTarget, maxTarget } = getDailyTargetRange();
+    return clampValue(parsed, minTarget, maxTarget);
+  };
+
   // 결제 버튼 클릭 시 클라이언트 측 검증
-  const validateOrder = (): Record<string, string> => {
+  const validateOrder = (
+    form?: HTMLFormElement | null,
+    normalized?: { orderDays: number | null; dailyTarget: number | null },
+  ): Record<string, string> => {
     const errors: Record<string, string> = {};
 
     // 입력값 존재성 및 형식 검증
-    if (!additionalDaysValue || additionalDaysValue.trim() === "") {
-      errors.additionalDays = '추가 일수를 입력해주세요.';
+    if (!orderDaysValue || orderDaysValue.trim() === "") {
+      errors.orderDays = '주문 일수를 입력해주세요.';
       return errors;
     }
 
@@ -100,49 +171,65 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
       return errors;
     }
 
-    const additionalDays = parseInt(additionalDaysValue);
-    const dailyTarget = parseInt(dailyTargetValue);
+    const orderDays = normalized?.orderDays ?? parseInt(orderDaysValue, 10);
+    const dailyTarget = normalized?.dailyTarget ?? parseInt(dailyTargetValue, 10);
 
     // 숫자 형식 검증
-    if (isNaN(additionalDays)) {
-      errors.additionalDays = '추가 일수는 숫자만 입력 가능합니다.';
+    if (!Number.isFinite(orderDays)) {
+      errors.orderDays = '주문 일수는 숫자만 입력 가능합니다.';
       return errors;
     }
 
-    if (isNaN(dailyTarget)) {
+    if (!Number.isFinite(dailyTarget)) {
       errors.dailyTarget = '일일 목표 수량은 숫자만 입력 가능합니다.';
       return errors;
     }
 
     // 값 범위 검증
-    if (additionalDays < 0) {
-      errors.additionalDays = '추가 일수는 0 이상이어야 합니다.';
+    const { minDays, maxDays } = getOrderDaysRange();
+    if (orderDays < minDays) {
+      errors.orderDays = `주문 일수는 최소 ${minDays}일 이상이어야 합니다.`;
       return errors;
     }
 
-    if (dailyTarget < 1) {
+    if (orderDays > maxDays) {
+      errors.orderDays = `주문 일수는 최대 ${maxDays}일까지 가능합니다.`;
+      return errors;
+    }
+
+    const { minTarget, maxTarget } = getDailyTargetRange();
+    if (dailyTarget < minTarget) {
       errors.dailyTarget = '일일 목표 수량은 1개 이상이어야 합니다.';
       return errors;
     }
 
-    // 정책 최대치 검증
-    const maxDays = productOrderLimits?.maxAdditionalDays || 300;
-    if (additionalDays > maxDays) {
-      errors.additionalDays = `추가 일수는 최대 ${maxDays}일까지 가능합니다.`;
-      return errors;
-    }
-
-    const maxTarget = productOrderLimits?.maxDailyTarget || 1000;
     if (dailyTarget > maxTarget) {
       errors.dailyTarget = `일일 목표 수량은 최대 ${maxTarget}개까지 가능합니다.`;
       return errors;
     }
 
+    if (form) {
+      const formData = new FormData(form);
+      const placeId = formData.get('placeId');
+      if (!placeId) {
+        errors.placeId = '플레이스를 선택해주세요.';
+        return errors;
+      }
+
+      const paymentMethod = formData.get('paymentMethod');
+      if (!paymentMethod) {
+        errors.paymentMethod = '결제 수단을 선택해주세요.';
+        return errors;
+      }
+    }
+
     // 결제 금액 검증
     if (product) {
-      const totalDays = product.minOrderDays + additionalDays;
+      const totalDays = orderDays;
       const totalQuantity = totalDays * dailyTarget;
-      const estimatedTotal = totalQuantity * product.unitPriceKrw * (1 + product.vatPercent / 100);
+      const budgetTotalKrw = totalQuantity * product.unitPriceKrw;
+      const vatAmountKrw = Math.round((budgetTotalKrw * product.vatPercent) / 100);
+      const estimatedTotal = budgetTotalKrw + vatAmountKrw;
 
       if (estimatedTotal <= 0 || !isFinite(estimatedTotal)) {
         errors.dailyTarget = '결제 금액 계산에 문제가 있습니다. 입력값을 확인해주세요.';
@@ -161,59 +248,175 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
   };
 
   // 결제 금액 계산 함수
-  const calculatePaymentAmount = (additionalDays: number, dailyTarget: number): number => {
-    if (!product || additionalDays < 0 || !dailyTarget || dailyTarget < 1) {
+  const calculatePaymentAmount = (orderDays: number, dailyTarget: number): number => {
+    if (!product || orderDays < 0 || !dailyTarget || dailyTarget < 1) {
       return 0;
     }
 
-    // 총 기간 = 최소 주문 기간 + 추가 일수
-    const totalDays = product.minOrderDays + additionalDays;
+    // 총 기간 = 주문 일수
+    const totalDays = orderDays;
 
     // 총 수량 = 총 기간 * 일일 목표 수량
     const totalQuantity = totalDays * dailyTarget;
 
-    // 금액 계산 = 총수량 * 단가 * (1 + VAT/100)
-    const amount = totalQuantity * product.unitPriceKrw * (1 + product.vatPercent / 100);
+    // 금액 계산 = 총수량 * 단가 + VAT (서버 계산과 동일하게)
+    const budgetTotalKrw = totalQuantity * product.unitPriceKrw;
+    const vatAmountKrw = Math.round((budgetTotalKrw * product.vatPercent) / 100);
+    const amount = budgetTotalKrw + vatAmountKrw;
 
-    return Math.round(amount); // 정수로 반올림
+    return amount;
   };
 
-  // 추가 일수 입력 변경 핸들러
-  const handleAdditionalDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 주문 일수 입력 변경 핸들러
+  const handleOrderDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const numValue = parseInt(value) || 0;
-    const maxDays = productOrderLimits?.maxAdditionalDays || 300;
+    setOrderDaysValue(value);
 
-    // 최대치를 초과하면 자동으로 최대치로 설정
-    const clampedValue = Math.min(numValue, maxDays);
-    setAdditionalDaysValue(clampedValue.toString());
+    const normalizedOrderDays = normalizeOrderDays(value);
 
     // 결제 금액 업데이트
-    const dailyTarget = parseInt(dailyTargetValue) || 0;
-    const amount = calculatePaymentAmount(clampedValue, dailyTarget);
+    const normalizedDailyTarget = normalizeDailyTarget(dailyTargetValue);
+    const amount =
+      normalizedOrderDays !== null && normalizedDailyTarget !== null
+        ? calculatePaymentAmount(normalizedOrderDays, normalizedDailyTarget)
+        : 0;
+    setPaymentAmount(amount);
+  };
+
+  // Normalize min/max on blur for order days
+  const handleOrderDaysBlur = () => {
+    const normalizedOrderDays = normalizeOrderDays(orderDaysValue);
+    if (normalizedOrderDays === null) {
+      const { minDays } = getOrderDaysRange();
+      setOrderDaysValue(minDays.toString());
+
+      const normalizedDailyTarget = normalizeDailyTarget(dailyTargetValue);
+      const amount =
+        normalizedDailyTarget !== null
+          ? calculatePaymentAmount(minDays, normalizedDailyTarget)
+          : 0;
+      setPaymentAmount(amount);
+      return;
+    }
+
+    const nextValue = normalizedOrderDays.toString();
+    if (nextValue !== orderDaysValue) {
+      setOrderDaysValue(nextValue);
+    }
+
+    const normalizedDailyTarget = normalizeDailyTarget(dailyTargetValue);
+    const amount =
+      normalizedDailyTarget !== null
+        ? calculatePaymentAmount(normalizedOrderDays, normalizedDailyTarget)
+        : 0;
     setPaymentAmount(amount);
   };
 
   // 일일 목표 수량 입력 변경 핸들러
   const handleDailyTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const numValue = parseInt(value) || 0;
-    const maxTarget = productOrderLimits?.maxDailyTarget || 1000;
+    setDailyTargetValue(value);
 
-    // 최대치를 초과하면 자동으로 최대치로 설정
-    const clampedValue = Math.min(numValue, maxTarget);
-    setDailyTargetValue(clampedValue.toString());
+    const { minTarget, maxTarget } = getDailyTargetRange();
+    const parsed = parseInt(value, 10);
+    if (!value || value.trim() === "") {
+      setFieldErrors((prev) => ({ ...prev, dailyTarget: '일일 목표 수량을 입력해주세요.' }));
+    } else if (Number.isNaN(parsed)) {
+      setFieldErrors((prev) => ({ ...prev, dailyTarget: '일일 목표 수량은 숫자만 입력 가능합니다.' }));
+    } else if (parsed < minTarget) {
+      setFieldErrors((prev) => ({ ...prev, dailyTarget: '일일 목표 수량은 1개 이상이어야 합니다.' }));
+    } else if (parsed > maxTarget) {
+      setFieldErrors((prev) => ({ ...prev, dailyTarget: `일일 목표 수량은 최대 ${maxTarget}개까지 가능합니다.` }));
+    } else {
+      setFieldErrors((prev) => {
+        if (!prev.dailyTarget) {
+          return prev;
+        }
+        const { dailyTarget, ...rest } = prev;
+        return rest;
+      });
+    }
 
     // 결제 금액 업데이트
-    const additionalDays = parseInt(additionalDaysValue) || 0;
-    const amount = calculatePaymentAmount(additionalDays, clampedValue);
+    const normalizedOrderDays = normalizeOrderDays(orderDaysValue);
+    const normalizedDailyTarget = normalizeDailyTarget(value);
+    const amount =
+      normalizedOrderDays !== null && normalizedDailyTarget !== null
+        ? calculatePaymentAmount(normalizedOrderDays, normalizedDailyTarget)
+        : 0;
+    setPaymentAmount(amount);
+  };
+
+  const handleDailyTargetBlur = () => {
+    const normalizedDailyTarget = normalizeDailyTarget(dailyTargetValue);
+    const { minTarget, maxTarget } = getDailyTargetRange();
+
+    if (normalizedDailyTarget === null) {
+      setDailyTargetValue(minTarget.toString());
+      setFieldErrors((prev) => {
+        const { dailyTarget, ...rest } = prev;
+        return rest;
+      });
+
+      const normalizedOrderDays = normalizeOrderDays(orderDaysValue);
+      const amount =
+        normalizedOrderDays !== null
+          ? calculatePaymentAmount(normalizedOrderDays, minTarget)
+          : 0;
+      setPaymentAmount(amount);
+      return;
+    }
+
+    const clampedTarget = clampValue(normalizedDailyTarget, minTarget, maxTarget);
+    const nextValue = clampedTarget.toString();
+    if (nextValue !== dailyTargetValue) {
+      setDailyTargetValue(nextValue);
+    }
+
+    setFieldErrors((prev) => {
+      const { dailyTarget, ...rest } = prev;
+      return rest;
+    });
+
+    const normalizedOrderDays = normalizeOrderDays(orderDaysValue);
+    const amount =
+      normalizedOrderDays !== null
+        ? calculatePaymentAmount(normalizedOrderDays, clampedTarget)
+        : 0;
     setPaymentAmount(amount);
   };
 
   const handlePaymentClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault(); // 일단 무조건 폼 제출 방지
 
-    const validationErrors = validateOrder();
+    const form = e.currentTarget.closest('form') as HTMLFormElement | null;
+    const normalizedOrderDays = normalizeOrderDays(orderDaysValue);
+    const normalizedDailyTarget = normalizeDailyTarget(dailyTargetValue);
+
+    if (normalizedOrderDays !== null) {
+      const nextValue = normalizedOrderDays.toString();
+      if (nextValue !== orderDaysValue) {
+        setOrderDaysValue(nextValue);
+      }
+    }
+
+    if (normalizedDailyTarget !== null) {
+      const nextValue = normalizedDailyTarget.toString();
+      if (nextValue !== dailyTargetValue) {
+        setDailyTargetValue(nextValue);
+      }
+    }
+
+    const amount =
+      normalizedOrderDays !== null && normalizedDailyTarget !== null
+        ? calculatePaymentAmount(normalizedOrderDays, normalizedDailyTarget)
+        : 0;
+    setPaymentAmount(amount);
+
+    const validationErrors = validateOrder(form, {
+      orderDays: normalizedOrderDays,
+      dailyTarget: normalizedDailyTarget,
+    });
 
     if (Object.keys(validationErrors).length > 0) {
       setFieldErrors(validationErrors);
@@ -229,8 +432,13 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
 
     // 검증 통과 시 폼 제출
     setFieldErrors({});
-    const form = e.currentTarget.closest('form') as HTMLFormElement;
     if (form) {
+      if (normalizedOrderDays !== null) {
+        const endDateInput = form.querySelector('input[name="endDate"]') as HTMLInputElement | null;
+        if (endDateInput) {
+          endDateInput.value = getEndDateString(normalizedOrderDays);
+        }
+      }
       form.submit();
     }
   };
@@ -277,7 +485,7 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
       <div className="space-y-8">
         {error && (
           <Callout tone="warning" title="처리중 오류">
-            {getServerErrorMessage(error)}
+            {getServerErrorMessage(error, errorMessage)}
           </Callout>
         )}
 
@@ -360,10 +568,18 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
               <form action="/api/advertiser/product-orders" method="post" className="space-y-6">
                 <input type="hidden" name="productId" value={product.id} />
                 <input type="hidden" name="paymentAmount" value={paymentAmount} />
-                <input type="hidden" name="additionalDays" value={additionalDaysValue} />
-                <input type="hidden" name="dailyTarget" value={dailyTargetValue} />
-                <input type="hidden" name="startDate" value={new Date().toISOString().split('T')[0]} />
-                <input type="hidden" name="endDate" value={new Date(Date.now() + (product.minOrderDays + parseInt(additionalDaysValue || '0')) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} />
+                <input type="hidden" name="startDate" value={getDateString(new Date())} />
+                <input
+                  type="hidden"
+                  name="endDate"
+                  value={
+                    getEndDateString(
+                      normalizeOrderDays(orderDaysValue)
+                        ?? product.minOrderDays
+                        ?? 1,
+                    )
+                  }
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="placeId">플레이스</Label>
@@ -380,20 +596,22 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="additionalDays">주문 일수 (최소 {product.minOrderDays}일, 최대 {productOrderLimits?.maxAdditionalDays || 300}일)</Label>
+                  <Label htmlFor="orderDays">주문 일수 (최소 {product.minOrderDays}일, 최대 {productOrderLimits?.maxAdditionalDays || 300}일)</Label>
                   <Input
-                    id="additionalDays"
+                    id="orderDays"
+                    name="orderDays"
                     type="number"
                     required
                     min={product.minOrderDays}
-                    max={productOrderLimits?.maxAdditionalDays || 300 - product.minOrderDays}
+                    max={productOrderLimits?.maxAdditionalDays || 300}
                     step={1}
                     placeholder="예: 7"
-                    value={additionalDaysValue}
-                    onChange={handleAdditionalDaysChange}
+                    value={orderDaysValue}
+                    onChange={handleOrderDaysChange}
+                    onBlur={handleOrderDaysBlur}
                   />
-                  {fieldErrors.additionalDays && (
-                    <div className="text-sm text-red-400">{fieldErrors.additionalDays}</div>
+                  {fieldErrors.orderDays && (
+                    <div className="text-sm text-red-400">{fieldErrors.orderDays}</div>
                   )}
                   <div className="space-y-2">
                     <div className="text-sm font-semibold text-amber-400">
@@ -406,6 +624,7 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                   <Label htmlFor="dailyTarget">일일 목표 수량 (최대 {productOrderLimits?.maxDailyTarget || 1000}개)</Label>
                   <Input
                     id="dailyTarget"
+                    name="dailyTarget"
                     type="number"
                     required
                     min={1}
@@ -414,6 +633,7 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                     placeholder="예: 150"
                     value={dailyTargetValue}
                     onChange={handleDailyTargetChange}
+                    onBlur={handleDailyTargetBlur}
                   />
                   {fieldErrors.dailyTarget && (
                     <div className="text-sm text-red-400">{fieldErrors.dailyTarget}</div>

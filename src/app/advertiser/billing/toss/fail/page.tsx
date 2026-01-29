@@ -15,6 +15,9 @@ export default function TossPaymentFailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [failure, setFailure] = useState<PaymentFailure>({});
+  const productId = searchParams.get('productId');
+  const returnPath = productId ? `/advertiser/reward/products/${productId}` : '/advertiser/billing';
+  const returnLabel = productId ? '결제 페이지로 돌아가기' : '결제/충전 페이지로 이동';
 
   useEffect(() => {
     // Extract failure information from URL parameters
@@ -83,9 +86,9 @@ export default function TossPaymentFailPage() {
           </div>
 
           <div className="flex gap-3 justify-center">
-            <Link href="/advertiser/billing">
+            <Link href={returnPath}>
               <Button>
-                결제/충전 페이지로 이동
+                {returnLabel}
               </Button>
             </Link>
             <Button

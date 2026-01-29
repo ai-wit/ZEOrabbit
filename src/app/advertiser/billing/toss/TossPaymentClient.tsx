@@ -17,6 +17,8 @@ export default function TossPaymentClient() {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const productId = searchParams.get('productId');
+  const returnPath = productId ? `/advertiser/reward/products/${productId}` : '/advertiser/billing';
 
   useEffect(() => {
     const initializePayment = async () => {
@@ -25,6 +27,7 @@ export default function TossPaymentClient() {
         const orderId = searchParams.get('orderId');
         const amount = searchParams.get('amount');
         const orderName = searchParams.get('orderName');
+        const returnProductId = searchParams.get('productId');
 
         if (!orderId || !amount || !orderName) {
           setError('결제 정보가 올바르지 않습니다.');
@@ -49,13 +52,20 @@ export default function TossPaymentClient() {
           return;
         }
 
+        const successUrl = new URL('/advertiser/billing/toss/success', window.location.origin);
+        const failUrl = new URL('/advertiser/billing/toss/fail', window.location.origin);
+        if (returnProductId) {
+          successUrl.searchParams.set('productId', returnProductId);
+          failUrl.searchParams.set('productId', returnProductId);
+        }
+
         await payment.requestPayment({
           method: 'CARD',
           amount: { currency: 'KRW', value: paymentAmount },
           orderId,
           orderName,
-          successUrl: `${window.location.origin}/advertiser/billing/toss/success`,
-          failUrl: `${window.location.origin}/advertiser/billing/toss/fail`,
+          successUrl: successUrl.toString(),
+          failUrl: failUrl.toString(),
         });
       } catch (err) {
         console.error('Payment initialization error:', err);
@@ -86,7 +96,7 @@ export default function TossPaymentClient() {
             <h2 className="text-xl font-semibold text-zinc-50">결제 오류</h2>
             <p className="text-zinc-400">{error}</p>
             <button
-              onClick={() => router.push('/advertiser/billing')}
+              onClick={() => router.push(returnPath)}
               className="px-4 py-2 bg-zinc-700 text-zinc-50 rounded-lg hover:bg-zinc-600 transition-colors"
             >
               결제 페이지로 돌아가기
