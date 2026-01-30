@@ -15,6 +15,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
   // { key: "campaigns", label: "캠페인", href: "/member/reward/campaigns" },
   { key: "participations", label: "내 참여 내역", href: "/member/reward/participations" },
   { key: "payouts", label: "출금/정산", href: "/member/reward/payouts" },
+  { key: "my-page", label: "마이페이지", href: "/member/reward/my-page" },
   { key: "logout", label: "로그아웃", href: "/api/auth/logout", variant: "secondary", isForm: true },
 ];
 
