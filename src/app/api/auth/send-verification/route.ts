@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verificationStore } from "@/server/verification-store";
+import { prisma } from "@/server/prisma";
 
 const SendVerificationSchema = z.object({
   phone: z.string().min(10).max(20)
@@ -19,6 +20,19 @@ export async function POST(req: Request) {
     }
 
     const { phone } = parsed.data;
+
+    // Check if phone number is already registered
+    const existingUser = await prisma.user.findFirst({
+      where: { phone },
+      select: { id: true }
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "이미 가입되어 있는 전화번호입니다." },
+        { status: 409 }
+      );
+    }
 
     // Normalize phone number (remove hyphens and spaces)
     const normalizedPhone = phone.replace(/[-\s]/g, '');

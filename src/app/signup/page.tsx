@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Hint, Input, Label, Select } from "@/app/_ui/primitives";
 
@@ -20,8 +20,14 @@ function SignupContent() {
   const [verificationCode, setVerificationCode] = useState("");
   const [isVerificationSent, setIsVerificationSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState(""); // Store verified phone number
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (roleParam === "ADVERTISER" || roleParam === "MEMBER") {
@@ -70,6 +76,7 @@ function SignupContent() {
       if (response.ok) {
         setIsVerificationSent(true);
         setError("");
+        setPhoneError("");
 
         // Auto-fill the verification code if provided (development mode)
         if (data.code) {
@@ -77,12 +84,38 @@ function SignupContent() {
         }
 
         alert(`인증번호가 발송되었습니다. ${data.code ? '(개발모드: 인증번호가 자동 입력됨)' : ''}`);
+      } else if (response.status === 409) {
+        // Conflict - phone number already exists
+        setPhoneError(data.error || "이미 가입되어 있는 전화번호입니다.");
+        phoneInputRef.current?.focus();
       } else {
         setError(data.error || "인증번호 발송에 실패했습니다.");
       }
     } catch (error) {
       setError("네트워크 오류가 발생했습니다.");
     }
+  };
+
+  const handlePhoneChange = (newPhone: string) => {
+    setPhone(newPhone);
+    setPhoneError("");
+    
+    // Reset verification if phone number is changed after verification
+    if (isVerified && newPhone !== verifiedPhone) {
+      setIsVerified(false);
+      setIsVerificationSent(false);
+      setVerificationCode("");
+      setVerifiedPhone("");
+    }
+  };
+
+  const handleChangePhone = () => {
+    setIsVerified(false);
+    setIsVerificationSent(false);
+    setVerificationCode("");
+    setVerifiedPhone("");
+    setPhoneError("");
+    phoneInputRef.current?.focus();
   };
 
   const handleVerifyCode = async () => {
@@ -104,6 +137,7 @@ function SignupContent() {
 
       if (response.ok) {
         setIsVerified(true);
+        setVerifiedPhone(phone); // Store the verified phone number
         setError("");
       } else {
         setError(data.error || "인증번호 확인에 실패했습니다.");
@@ -116,6 +150,8 @@ function SignupContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setEmailError("");
+    setPhoneError("");
 
     if (password !== passwordConfirm) {
       setError("비밀번호가 일치하지 않습니다.");
@@ -124,6 +160,16 @@ function SignupContent() {
 
     if (!isVerified) {
       setError("핸드폰 인증을 완료해주세요.");
+      return;
+    }
+
+    // Check if phone number was changed after verification
+    if (phone !== verifiedPhone) {
+      setPhoneError("인증된 번호와 다릅니다. 인증을 다시 진행해주세요.");
+      setIsVerified(false);
+      setIsVerificationSent(false);
+      setVerificationCode("");
+      phoneInputRef.current?.focus();
       return;
     }
 
@@ -155,10 +201,20 @@ function SignupContent() {
         body: formData,
       });
 
-      if (response.ok) {
-        window.location.href = role === "ADVERTISER" ? "/advertiser" : "/member";
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        window.location.href = data.redirectTo || (role === "ADVERTISER" ? "/advertiser" : "/member");
       } else {
-        setError("회원 가입에 실패했습니다. 다시 시도해주세요.");
+        if (data.field === "email") {
+          setEmailError(data.error);
+          emailInputRef.current?.focus();
+        } else if (data.field === "phone") {
+          setPhoneError(data.error);
+          phoneInputRef.current?.focus();
+        } else {
+          setError(data.error || "회원 가입에 실패했습니다. 다시 시도해주세요.");
+        }
       }
     } catch (error) {
       setError("오류가 발생했습니다. 다시 시도해주세요.");
@@ -218,39 +274,66 @@ function SignupContent() {
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
               <Input
+                ref={emailInputRef}
                 id="email"
                 name="email"
                 type="email"
                 required
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setEmailError("");
+                }}
               />
+              {emailError && (
+                <div className="text-sm text-red-500">
+                  {emailError}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="phone">핸드폰 번호</Label>
               <div className="flex gap-2">
                 <Input
+                  ref={phoneInputRef}
                   id="phone"
                   name="phone"
                   type="tel"
                   required
                   placeholder="010-1234-5678"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  disabled={isVerified}
                   className="flex-1"
                 />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleSendVerification}
-                  disabled={isVerificationSent}
-                >
-                  {isVerificationSent ? "재발송" : "인증요청"}
-                </Button>
+                {isVerified ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleChangePhone}
+                  >
+                    번호변경
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleSendVerification}
+                    disabled={isVerificationSent}
+                  >
+                    {isVerificationSent ? "재발송" : "인증요청"}
+                  </Button>
+                )}
               </div>
+              {phoneError && (
+                <div className="text-sm text-red-500">
+                  {phoneError}
+                </div>
+              )}
               {isVerificationSent && !isVerified && (
                 <div className="flex gap-2 mt-2">
                   <Input

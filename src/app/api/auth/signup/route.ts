@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const baseUrl = getBaseUrl(req);
   
   if (await isIpBlocked(getClientIp(req.headers))) {
-    return NextResponse.redirect(new URL("/signup", baseUrl), 303);
+    return NextResponse.json({ error: "차단된 IP입니다." }, { status: 403 });
   }
 
   const form = await req.formData();
@@ -40,15 +40,41 @@ export async function POST(req: Request) {
   });
 
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/signup", baseUrl), 303);
+    return NextResponse.json({ error: "입력 정보가 올바르지 않습니다." }, { status: 400 });
   }
 
   const data = parsed.data;
   if (data.role === "MEMBER" && data.agreeRewarderGuide !== "yes") {
-    return NextResponse.redirect(new URL("/signup", baseUrl), 303);
+    return NextResponse.json({ error: "리워더 가이드 동의가 필요합니다." }, { status: 400 });
   }
 
   const email = data.email.toLowerCase();
+
+  // Check for existing email or phone
+  const existingUserByEmail = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true }
+  });
+
+  if (existingUserByEmail) {
+    return NextResponse.json({ 
+      error: "이미 가입되어 있는 이메일입니다.",
+      field: "email"
+    }, { status: 409 });
+  }
+
+  const existingUserByPhone = await prisma.user.findFirst({
+    where: { phone: data.phone },
+    select: { id: true }
+  });
+
+  if (existingUserByPhone) {
+    return NextResponse.json({ 
+      error: "이미 가입되어 있는 전화번호입니다.",
+      field: "phone"
+    }, { status: 409 });
+  }
+
   const passwordHash = await hashPassword(data.password);
 
   try {
@@ -115,9 +141,10 @@ export async function POST(req: Request) {
           ? "/member"
           : "/";
 
-    return NextResponse.redirect(new URL(redirectTo, baseUrl), 303);
-  } catch {
-    return NextResponse.redirect(new URL("/signup", baseUrl), 303);
+    return NextResponse.json({ success: true, redirectTo }, { status: 200 });
+  } catch (error) {
+    console.error("Signup error:", error);
+    return NextResponse.json({ error: "회원 가입에 실패했습니다. 다시 시도해주세요." }, { status: 500 });
   }
 }
 
