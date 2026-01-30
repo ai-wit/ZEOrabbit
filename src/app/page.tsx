@@ -44,6 +44,16 @@ export default async function HomePage() {
           <p className="mx-auto max-w-xl text-lg leading-relaxed text-text-muted">
             체험단 운영과 리워드 정산을 위한 플랫폼
           </p>
+          <div className="pt-2">
+            <a
+              href="https://www.notion.so/2f20db37412d8042a1afed2938927f32"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-all"
+            >
+              지오래빗 사용자 매뉴얼
+            </a>
+          </div>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
           {user ? (
