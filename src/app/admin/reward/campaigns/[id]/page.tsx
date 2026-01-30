@@ -18,7 +18,7 @@ type Participation = {
   proofText: string | null;
   rewarder: { user: { email: string | null; name: string | null } };
   missionDay: { date: string };
-  evidences: Array<{ type: "IMAGE" | "VIDEO"; fileRef: string | null; createdAt: string }>;
+  evidences: Array<{ id: string; type: "IMAGE" | "VIDEO"; fileRef: string | null; createdAt: string }>;
 };
 
 type CampaignButton = { id?: string; label: string; url: string; sortOrder: number };
@@ -423,10 +423,11 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
                   <EmptyState title="검수할 항목이 없습니다." />
                 ) : (
                   participations.map((p) => {
-                    const ev = p.evidences[0] ?? null;
-                    const src = ev?.fileRef ?? null;
-                    const isVideo = ev?.type === "VIDEO";
                     const pending = p.status === "PENDING_REVIEW" || p.status === "MANUAL_REVIEW";
+                    const imageItems = p.evidences
+                      .filter((e) => e.type === "IMAGE" && e.fileRef)
+                      .map((e) => ({ id: e.id, src: e.fileRef as string }));
+                    const imageIndexMap = new Map(imageItems.map((item, idx) => [item.id, idx]));
                     return (
                       <div key={p.id} className="py-4">
                         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -445,20 +446,49 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
                               <div className="whitespace-pre-wrap text-sm text-zinc-300">{p.proofText}</div>
                             ) : null}
                             {p.failureReason ? <div className="text-xs text-red-200">사유: {p.failureReason}</div> : null}
-                            {src ? (
+                            {p.evidences.length > 0 ? (
                               <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-zinc-950/40 p-2">
-                                {isVideo ? (
-                                  // eslint-disable-next-line jsx-a11y/media-has-caption
-                                  <video src={src} controls preload="metadata" className="h-48 w-full rounded-lg object-contain" />
-                                ) : (
-                                  <ImageLightbox
-                                    src={src}
-                                    trigger={
-                                      // eslint-disable-next-line @next/next/no-img-element
-                                      <img src={src} alt="evidence" className="h-48 w-full rounded-lg object-contain" />
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                  {p.evidences.map((e) => {
+                                    if (!e.fileRef) {
+                                      return (
+                                        <div
+                                          key={e.id}
+                                          className="flex h-24 items-center justify-center rounded-lg border border-white/10 text-xs text-zinc-500"
+                                        >
+                                          미리보기 없음
+                                        </div>
+                                      );
                                     }
-                                  />
-                                )}
+
+                                    if (e.type === "VIDEO") {
+                                      return (
+                                        <div key={e.id} className="overflow-hidden rounded-lg border border-white/10">
+                                          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                                          <video
+                                            src={e.fileRef}
+                                            controls
+                                            preload="metadata"
+                                            className="h-24 w-full object-cover"
+                                          />
+                                        </div>
+                                      );
+                                    }
+
+                                    const initialIndex = imageIndexMap.get(e.id) ?? 0;
+                                    return (
+                                      <ImageLightbox
+                                        key={e.id}
+                                        items={imageItems.map((item) => ({ src: item.src }))}
+                                        initialIndex={initialIndex}
+                                        trigger={
+                                          // eslint-disable-next-line @next/next/no-img-element
+                                          <img src={e.fileRef} alt="evidence" className="h-24 w-full rounded-lg object-cover" />
+                                        }
+                                      />
+                                    );
+                                  })}
+                                </div>
                               </div>
                             ) : (
                               <div className="text-xs text-zinc-500">증빙 없음</div>

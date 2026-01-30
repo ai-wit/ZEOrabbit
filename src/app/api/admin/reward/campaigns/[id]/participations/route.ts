@@ -48,7 +48,11 @@ export async function GET(req: NextRequest, ctx: { params: { id: string } }) {
       proofText: true,
       rewarder: { select: { user: { select: { email: true, name: true } } } },
       missionDay: { select: { date: true } },
-      evidences: { orderBy: { createdAt: "desc" }, take: 1, select: { type: true, fileRef: true, createdAt: true } }
+      evidences: {
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: { id: true, type: true, fileRef: true, createdAt: true }
+      }
     }
   });
 

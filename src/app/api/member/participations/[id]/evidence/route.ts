@@ -51,36 +51,46 @@ export async function POST(
 
   const form = await req.formData();
   const proofText = String(form.get("proofText") ?? "").trim();
-  const file = form.get("file");
-  if (!(file instanceof File)) {
+  const files = form.getAll("files").filter((item): item is File => item instanceof File);
+  if (files.length === 0) {
     return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
   }
   if (proofText.length > 2000) {
     return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
   }
+  if (files.length > 10) {
+    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
+  }
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+  if (totalBytes > 10 * 1024 * 1024) {
+    return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
+  }
 
-  let stored;
+  let storedFiles: Awaited<ReturnType<typeof storeRewardEvidenceFile>>[] = [];
   try {
-    stored = await storeRewardEvidenceFile({ participationId: participation.id, file });
+    storedFiles = await Promise.all(
+      files.map((file) => storeRewardEvidenceFile({ participationId: participation.id, file }))
+    );
   } catch {
     return NextResponse.redirect(new URL(`/member/reward/participations/${participation.id}`, baseUrl), 303);
   }
 
-  const evidenceType = stored.mime.startsWith("video/") ? "VIDEO" : "IMAGE";
-
   await prisma.$transaction(async (tx) => {
-    await tx.verificationEvidence.create({
-      data: {
-        participationId: participation.id,
-        type: evidenceType,
-        fileRef: stored.fileRef,
-        metadataJson: {
-          originalName: stored.originalName,
-          size: stored.size,
-          mime: stored.mime
+    for (const stored of storedFiles) {
+      const evidenceType = stored.mime.startsWith("video/") ? "VIDEO" : "IMAGE";
+      await tx.verificationEvidence.create({
+        data: {
+          participationId: participation.id,
+          type: evidenceType,
+          fileRef: stored.fileRef,
+          metadataJson: {
+            originalName: stored.originalName,
+            size: stored.size,
+            mime: stored.mime
+          }
         }
-      }
-    });
+      });
+    }
 
     await tx.participation.update({
       where: { id: participation.id },

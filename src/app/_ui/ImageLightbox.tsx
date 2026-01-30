@@ -14,13 +14,22 @@ function isModifiedWheel(e: WheelEvent): boolean {
 }
 
 export function ImageLightbox(props: {
-  src: string;
+  src?: string;
   label?: string;
   trigger?: ReactNode;
   className?: string;
+  items?: Array<{ src: string; label?: string }>;
+  initialIndex?: number;
 }) {
   const label = props.label ?? "원본 보기";
   const [open, setOpen] = useState(false);
+  const items = useMemo(() => {
+    if (props.items && props.items.length > 0) return props.items;
+    return props.src ? [{ src: props.src, label: props.label }] : [];
+  }, [props.items, props.src, props.label]);
+  const [index, setIndex] = useState(0);
+  const currentItem = items[index] ?? null;
+  const currentSrc = currentItem?.src ?? "";
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
@@ -71,6 +80,19 @@ export function ImageLightbox(props: {
     // Start in "fit" mode for best UX.
     fit();
   }, [open, fit]);
+
+  useEffect(() => {
+    if (!open) return;
+    const safeIndex = clamp(props.initialIndex ?? 0, 0, Math.max(0, items.length - 1));
+    setIndex(safeIndex);
+  }, [open, items.length, props.initialIndex]);
+
+  useEffect(() => {
+    if (!open) return;
+    setNatural(null);
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
+  }, [open, currentSrc]);
 
   useEffect(() => {
     if (!open) return;
@@ -181,33 +203,55 @@ export function ImageLightbox(props: {
               </div>
             </div>
 
-            <div
-              ref={containerRef}
-              className="mt-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface"
-            >
+            <div className="mt-3 flex min-h-0 flex-1 gap-3">
+              {items.length > 1 ? (
+                <div className="w-28 shrink-0 overflow-hidden rounded-2xl border border-border bg-surface">
+                  <div className="h-full max-h-[70vh] overflow-y-auto p-2">
+                    <div className="grid gap-2">
+                      {items.map((item, idx) => (
+                        <button
+                          key={`${item.src}-${idx}`}
+                          type="button"
+                          onClick={() => setIndex(idx)}
+                          className={`overflow-hidden rounded-lg border ${idx === index ? "border-white/40 ring-2 ring-white/20" : "border-white/10"} bg-black/40`}
+                          aria-label={`썸네일 ${idx + 1}`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.src} alt="thumbnail" className="h-16 w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               <div
-                className="relative h-full w-full"
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
-                style={{ cursor: dragging ? "grabbing" : "grab", touchAction: "none" }}
+                ref={containerRef}
+                className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={props.src}
-                  alt="evidence-original"
-                  draggable={false}
-                  onLoad={(e) => {
-                    const img = e.currentTarget;
-                    setNatural({ w: img.naturalWidth, h: img.naturalHeight });
-                  }}
-                  className="absolute left-1/2 top-1/2 max-h-none max-w-none select-none"
-                  style={{
-                    transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${scale})`,
-                    transformOrigin: "center"
-                  }}
-                />
+                <div
+                  className="relative h-full w-full"
+                  onPointerDown={onPointerDown}
+                  onPointerMove={onPointerMove}
+                  onPointerUp={onPointerUp}
+                  onPointerCancel={onPointerUp}
+                  style={{ cursor: dragging ? "grabbing" : "grab", touchAction: "none" }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentSrc}
+                    alt="evidence-original"
+                    draggable={false}
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      setNatural({ w: img.naturalWidth, h: img.naturalHeight });
+                    }}
+                    className="absolute left-1/2 top-1/2 max-h-none max-w-none select-none"
+                    style={{
+                      transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${scale})`,
+                      transformOrigin: "center"
+                    }}
+                  />
+                </div>
               </div>
             </div>
             <div className="mt-2 text-xs text-text-subtle">

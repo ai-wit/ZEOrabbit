@@ -4,9 +4,11 @@ import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
 import { getMemberProfileIdByUserId } from "@/server/rewarder/rewarder-profile";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
-import { Button, ButtonLink, Card, CardBody, DividerList, Pill } from "@/app/_ui/primitives";
+import { Button, ButtonLink, Card, CardBody, Pill } from "@/app/_ui/primitives";
 import { BackButton } from "./BackButton";
 import { getParticipationStatusLabel } from "@/lib/status-labels";
+import { EvidenceUploadForm } from "./EvidenceUploadForm";
+import { EvidenceList } from "./EvidenceList";
 
 function getMissionTypeLabel(missionType: string) {
   switch (missionType) {
@@ -56,7 +58,6 @@ export default async function RewarderParticipationDetailPage(props: {
       },
       evidences: {
         orderBy: { createdAt: "desc" },
-        take: 3,
         select: {
           id: true,
           type: true,
@@ -181,35 +182,10 @@ export default async function RewarderParticipationDetailPage(props: {
         <Card>
           <CardBody className="space-y-4">
             <div className="text-sm font-semibold text-zinc-50">인증 제출</div>
-            <div className="text-sm text-zinc-300">
-              증빙 내용을 입력하고 이미지 또는 동영상 1개를 업로드하세요.
-              <br />
-              <span className="text-amber-200">주의: 제출 기한({new Date(participation.expiresAt).toLocaleString("ko-KR")})까지 업로드하지 않으면 참여가 취소됩니다.</span>
-            </div>
-            <form
+            <EvidenceUploadForm
               action={`/api/member/participations/${participation.id}/evidence`}
-              method="post"
-              encType="multipart/form-data"
-              className="space-y-4"
-            >
-              <textarea
-                name="proofText"
-                maxLength={2000}
-                placeholder="증빙 내용(선택)"
-                className="block w-full rounded-xl border border-white/10 bg-zinc-950/40 p-3 text-sm text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/10"
-                rows={4}
-              />
-              <input
-                type="file"
-                name="file"
-                accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"
-                required
-                className="block w-full rounded-xl border border-white/10 bg-zinc-950/40 p-3 text-sm text-zinc-200 file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-zinc-50 hover:file:bg-white/15"
-              />
-              <Button type="submit" variant="primary" className="w-full">
-                인증 제출
-              </Button>
-            </form>
+              expiresAtLabel={new Date(participation.expiresAt).toLocaleString("ko-KR")}
+            />
           </CardBody>
         </Card>
       ) : null}
@@ -217,45 +193,7 @@ export default async function RewarderParticipationDetailPage(props: {
       <Card>
         <CardBody className="space-y-3">
           <div className="text-sm font-semibold text-zinc-50">최근 증빙</div>
-          {participation.evidences.length === 0 ? (
-            <div className="text-sm text-zinc-400">아직 업로드된 증빙이 없습니다.</div>
-          ) : (
-            <DividerList>
-              {participation.evidences.map((e) => {
-                const metadata = e.metadataJson as any;
-                const fileUrl = e.fileRef; // fileRef is already a full URL like /api/uploads/reward/participations/...
-
-                return (
-                  <div key={e.id} className="py-3 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <Pill tone="neutral">{e.type}</Pill>
-                        {metadata?.originalName && (
-                          <span className="text-xs text-zinc-500">{metadata.originalName}</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-zinc-500">{new Date(e.createdAt).toLocaleString("ko-KR")}</div>
-                    </div>
-                    {fileUrl && e.type === "IMAGE" ? (
-                      <img
-                        src={fileUrl}
-                        alt="증빙 이미지"
-                        className="max-w-full h-auto rounded-lg border border-white/10"
-                        style={{ maxHeight: "300px" }}
-                      />
-                    ) : fileUrl && e.type === "VIDEO" ? (
-                      <video
-                        src={fileUrl}
-                        controls
-                        className="max-w-full h-auto rounded-lg border border-white/10"
-                        style={{ maxHeight: "300px" }}
-                      />
-                    ) : null}
-                  </div>
-                );
-              })}
-            </DividerList>
-          )}
+          <EvidenceList evidences={participation.evidences} />
         </CardBody>
       </Card>
 
