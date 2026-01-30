@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Input, Label } from "@/app/_ui/primitives";
 
@@ -25,9 +26,29 @@ const TEST_ACCOUNTS = {
 };
 
 export default function LoginPage() {
+  const sp = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const showTestAccounts = process.env.NODE_ENV !== "production";
+  const errorMessage = useMemo(() => {
+    const code = sp?.get("error");
+    switch (code) {
+      case "email_not_found":
+        return "존재하지 않는 이메일입니다.";
+      case "wrong_password":
+        return "비밀번호가 올바르지 않습니다.";
+      case "account_inactive":
+        return "비활성화된 계정입니다. 관리자에게 문의하세요.";
+      case "blocked_ip":
+        return "접근이 제한된 네트워크입니다.";
+      case "invalid_form":
+        return "이메일과 비밀번호를 확인해주세요.";
+      case "server_error":
+        return "서버 오류로 로그인할 수 없습니다. 잠시 후 다시 시도해주세요.";
+      default:
+        return null;
+    }
+  }, [sp]);
 
   const handleTestLogin = (testEmail: string) => {
     if (!showTestAccounts) return;
@@ -56,6 +77,11 @@ export default function LoginPage() {
       <Card>
         <CardBody className="space-y-4">
           <form action="/api/auth/login" method="post" className="space-y-4">
+            {errorMessage ? (
+              <div className="rounded-xl border border-red-400 p-3 text-sm font-semibold text-red-600">
+                {errorMessage}
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
               <Input
