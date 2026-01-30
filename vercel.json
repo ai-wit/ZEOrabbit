@@ -1,5 +1,15 @@
 {
-  "crons": []
+  "crons": [],
+  "functions": {
+    "src/app/api/member/participations/*/evidence/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/rewarder/participations/*/evidence/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  }
 }
 
 
