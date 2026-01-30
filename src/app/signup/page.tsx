@@ -17,6 +17,8 @@ function SignupContent() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [phone, setPhone] = useState("");
   const [businessNumber, setBusinessNumber] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [isVerificationSent, setIsVerificationSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -190,6 +192,10 @@ function SignupContent() {
       if (role === "ADVERTISER") {
         formData.append("businessNumber", businessNumber);
       }
+      if (role === "MEMBER") {
+        if (age) formData.append("age", age);
+        if (gender) formData.append("gender", gender);
+      }
       formData.append("agreeService", "yes");
       formData.append("agreePrivacy", "yes");
       if (role === "MEMBER") {
@@ -361,6 +367,41 @@ function SignupContent() {
                 </div>
               )}
             </div>
+
+            {role === "MEMBER" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="age">연령</Label>
+                  <Input
+                    id="age"
+                    name="age"
+                    type="number"
+                    placeholder="예: 25"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    min="1"
+                    max="120"
+                  />
+                  <Hint>선택사항입니다.</Hint>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gender">성별</Label>
+                  <Select
+                    id="gender"
+                    name="gender"
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                  >
+                    <option value="">선택 안 함</option>
+                    <option value="MALE">남성</option>
+                    <option value="FEMALE">여성</option>
+                    <option value="OTHER">기타</option>
+                  </Select>
+                  <Hint>선택사항입니다.</Hint>
+                </div>
+              </>
+            )}
 
             {role === "ADVERTISER" && (
               <div className="space-y-2">

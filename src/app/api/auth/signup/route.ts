@@ -14,6 +14,8 @@ const SignupSchema = z.object({
   name: z.string().min(1).max(100),
   phone: z.string().min(10).max(20),
   businessNumber: z.union([z.string().max(20), z.undefined()]),
+  age: z.union([z.string().transform(Number), z.undefined()]),
+  gender: z.union([z.enum(["MALE", "FEMALE", "OTHER"]), z.undefined()]),
   agreeService: z.literal("yes"),
   agreePrivacy: z.literal("yes"),
   agreeRewarderGuide: z.union([z.literal("yes"), z.undefined()])
@@ -34,6 +36,8 @@ export async function POST(req: Request) {
     name: form.get("name"),
     phone: form.get("phone"),
     businessNumber: form.get("businessNumber") ?? undefined,
+    age: form.get("age") ?? undefined,
+    gender: form.get("gender") ?? undefined,
     agreeService: form.get("agreeService"),
     agreePrivacy: form.get("agreePrivacy"),
     agreeRewarderGuide: form.get("agreeRewarderGuide") ?? undefined
@@ -105,7 +109,11 @@ export async function POST(req: Request) {
         });
       } else {
         await tx.memberProfile.create({
-          data: { userId: created.id }
+          data: { 
+            userId: created.id,
+            age: data.age,
+            gender: data.gender
+          }
         });
       }
 

@@ -281,6 +281,8 @@ model AdvertiserProfile {
 model MemberProfile {
   id          String   @id @default(cuid())
   userId      String   @unique
+  age         Int?     // 연령
+  gender      String?  // 성별 (MALE, FEMALE, OTHER)
   level       Int      @default(1)
   trustScore  Int      @default(0)
   warningCount Int     @default(0)
