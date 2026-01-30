@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import { forwardRef } from "react";
 import Link from "next/link";
 import { cn } from "@/app/_ui/cn";
 
@@ -134,25 +135,28 @@ export function Label(props: { htmlFor?: string; children: ReactNode }) {
   );
 }
 
-export function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { className?: string }) {
-  return (
-    <input
-      {...props}
-      style={
-        props.type === "date"
-          ? {
-              colorScheme: "light",
-              ...props.style,
-            }
-          : props.style
-      }
-      className={cn(
-        "w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none placeholder:text-text-subtle focus:border-ring/50 focus:ring-2 focus:ring-ring/20",
-        props.className
-      )}
-    />
-  );
-}
+export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { className?: string }>(
+  function Input(props, ref) {
+    return (
+      <input
+        ref={ref}
+        {...props}
+        style={
+          props.type === "date"
+            ? {
+                colorScheme: "light",
+                ...props.style,
+              }
+            : props.style
+        }
+        className={cn(
+          "w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none placeholder:text-text-subtle focus:border-ring/50 focus:ring-2 focus:ring-ring/20",
+          props.className
+        )}
+      />
+    );
+  }
+);
 
 export function TextInput(props: {
   label?: string;
