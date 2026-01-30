@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Hint, Input, Label, Select } from "@/app/_ui/primitives";
 
-export default function SignupPage() {
+function SignupContent() {
   const searchParams = useSearchParams();
   const roleParam = searchParams.get("role");
   const isRoleFixed = roleParam === "ADVERTISER" || roleParam === "MEMBER";
@@ -354,6 +354,14 @@ export default function SignupPage() {
         </CardBody>
       </Card>
     </PageShell>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupContent />
+    </Suspense>
   );
 }
 

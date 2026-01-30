@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Input, Label } from "@/app/_ui/primitives";
@@ -25,7 +25,7 @@ const TEST_ACCOUNTS = {
   ],
 };
 
-export default function LoginPage() {
+function LoginContent() {
   const sp = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -188,6 +188,14 @@ export default function LoginPage() {
         </Card>
       )}
     </PageShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }
 
