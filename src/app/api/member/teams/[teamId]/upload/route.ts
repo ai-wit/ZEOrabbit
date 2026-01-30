@@ -4,6 +4,7 @@ import { join } from "path";
 import { randomUUID } from "crypto";
 import { requireRole } from "@/server/auth/require-user";
 import { prisma } from "@/server/prisma";
+import { getUploadDirForReading } from "@/server/upload/storage";
 
 // 팀장 권한 확인 헬퍼 함수
 async function requireTeamLeader(teamId: string) {
@@ -79,7 +80,8 @@ export async function POST(
     }
 
     // 업로드 디렉토리 생성
-    const uploadDir = join(process.cwd(), "uploads", "materials", params.teamId);
+    const uploadBaseDir = getUploadDirForReading();
+    const uploadDir = join(uploadBaseDir, "materials", params.teamId);
     try {
       await mkdir(uploadDir, { recursive: true });
     } catch (error) {
