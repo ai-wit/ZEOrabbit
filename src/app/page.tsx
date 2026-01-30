@@ -62,10 +62,35 @@ export default async function HomePage() {
               </form>
             </>
           ) : (
-            <>
-              <PrimaryButton href="/signup">시작하기</PrimaryButton>
-              <SecondaryButton href="/login">로그인</SecondaryButton>
-            </>
+            <div className="grid w-full gap-4 sm:grid-cols-3">
+              <Link
+                href="/signup?role=MEMBER"
+                className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-primary/10 px-5 py-6 text-center shadow-sm transition-all hover:border-primary/40 hover:bg-primary/15"
+              >
+                <span className="text-sm font-semibold text-primary">리워드 시작하기</span>
+                <span className="text-xs text-text-muted">
+                  참여자 맞춤 리워드 캠페인을 빠르게 시작하세요.
+                </span>
+              </Link>
+              <Link
+                href="/signup?role=ADVERTISER"
+                className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-emerald-200/70 bg-emerald-50/60 px-5 py-6 text-center shadow-sm transition-all hover:border-emerald-200 hover:bg-emerald-50"
+              >
+                <span className="text-sm font-semibold text-emerald-700">광고주 시작하기</span>
+                <span className="text-xs text-emerald-700/80">
+                  매장 성장에 필요한 신뢰도 높은 리워드 운영을 시작하세요.
+                </span>
+              </Link>
+              <Link
+                href="/login"
+                className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-5 py-6 text-center shadow-sm transition-all hover:bg-surface-strong"
+              >
+                <span className="text-sm font-semibold text-text">로그인</span>
+                <span className="text-xs text-text-muted">
+                  이미 계정이 있다면 안전하게 로그인하세요.
+                </span>
+              </Link>
+            </div>
           )}
         </div>
       </header>

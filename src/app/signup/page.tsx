@@ -1,11 +1,15 @@
 'use client';
 
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, PageShell } from "@/app/_ui/shell";
 import { Button, ButtonLink, Card, CardBody, Hint, Input, Label, Select } from "@/app/_ui/primitives";
 
 export default function SignupPage() {
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get("role");
+  const isRoleFixed = roleParam === "ADVERTISER" || roleParam === "MEMBER";
   const [role, setRole] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -18,6 +22,33 @@ export default function SignupPage() {
   const [isVerified, setIsVerified] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (roleParam === "ADVERTISER" || roleParam === "MEMBER") {
+      setRole(roleParam);
+    }
+  }, [roleParam]);
+
+  const pageCopy = useMemo(() => {
+    if (role === "ADVERTISER") {
+      return {
+        title: "광고주 가입하기",
+        description: "광고주 정보를 입력하고 약관에 동의해 가입을 완료해 주세요.",
+      };
+    }
+
+    if (role === "MEMBER") {
+      return {
+        title: "리워드 가입하기",
+        description: "리워드 참여를 위한 정보를 입력하고 약관에 동의해 주세요.",
+      };
+    }
+
+    return {
+      title: "회원가입",
+      description: "필수 정보를 입력하고 약관에 동의해 가입을 완료해 주세요.",
+    };
+  }, [role]);
 
   const handleSendVerification = async () => {
     if (!phone) {
@@ -142,8 +173,8 @@ export default function SignupPage() {
       header={
         <PageHeader
           eyebrow="AUTH"
-          title="회원가입"
-          description="역할 선택과 약관 동의 후 가입합니다."
+          title={pageCopy.title}
+          description={pageCopy.description}
           right={<ButtonLink href="/" variant="secondary" size="sm">홈</ButtonLink>}
         />
       }
@@ -157,17 +188,19 @@ export default function SignupPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="role">역할</Label>
-              <Select id="role" name="role" required value={role} onChange={(e) => setRole(e.target.value)}>
-                <option value="" disabled>
-                  선택해주세요
-                </option>
-                <option value="ADVERTISER">광고주(플레이스 운영자)</option>
-                <option value="MEMBER">회원(참여자)</option>
-              </Select>
-              <Hint>회원으로 가입 시 리워더 가이드 동의가 필요합니다.</Hint>
-            </div>
+            {!isRoleFixed && (
+              <div className="space-y-2">
+                <Label htmlFor="role">역할</Label>
+                <Select id="role" name="role" required value={role} onChange={(e) => setRole(e.target.value)}>
+                  <option value="" disabled>
+                    선택해주세요
+                  </option>
+                  <option value="ADVERTISER">광고주(플레이스 운영자)</option>
+                  <option value="MEMBER">회원(참여자)</option>
+                </Select>
+                <Hint>회원으로 가입 시 리워더 가이드 동의가 필요합니다.</Hint>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="name">이름</Label>
