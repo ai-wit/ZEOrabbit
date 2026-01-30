@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageShell } from "@/app/_ui/shell";
 import { AdminHeader } from "@/app/admin/_components/AdminHeader";
@@ -58,6 +58,12 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
     endDate: "",
     buttons: [] as CampaignButton[]
   });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Refs for focusing on error fields
+  const nameRef = useRef<HTMLInputElement>(null);
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     setLoading(true);
@@ -113,15 +119,47 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
     if (!campaign || !order) return;
     setSaving(true);
     setError(null);
+    setFieldErrors({});
+    
     try {
       const start = new Date(form.startDate);
       const end = new Date(form.endDate);
-      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) throw new Error("기간을 입력해주세요.");
-      if (start > end) throw new Error("기간이 올바르지 않습니다.");
+      
+      // Validate dates
+      if (Number.isNaN(start.getTime())) {
+        setFieldErrors({ startDate: "시작일을 입력해주세요." });
+        startDateRef.current?.focus();
+        return;
+      }
+      if (Number.isNaN(end.getTime())) {
+        setFieldErrors({ endDate: "종료일을 입력해주세요." });
+        endDateRef.current?.focus();
+        return;
+      }
+      
+      if (start > end) {
+        setFieldErrors({ 
+          startDate: "시작일은 종료일보다 이전이어야 합니다.",
+          endDate: "종료일은 시작일보다 이후여야 합니다."
+        });
+        startDateRef.current?.focus();
+        return;
+      }
+      
       const purchaseStart = new Date(order.startDate);
       const purchaseEnd = new Date(order.endDate);
-      if (start < purchaseStart) throw new Error("시작일은 구매 기간 범위 내여야 합니다.");
-      if (end > purchaseEnd) throw new Error("종료일은 구매 기간 범위 내여야 합니다.");
+      
+      if (start < purchaseStart) {
+        setFieldErrors({ startDate: "시작일은 구매 기간 범위 내여야 합니다." });
+        startDateRef.current?.focus();
+        return;
+      }
+      
+      if (end > purchaseEnd) {
+        setFieldErrors({ endDate: "종료일은 구매 기간 범위 내여야 합니다." });
+        endDateRef.current?.focus();
+        return;
+      }
 
       const res = await fetch(`/api/admin/reward/campaigns/${campaign.id}`, {
         method: "PUT",
@@ -324,7 +362,16 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">캠페인 이름</Label>
-                    <Input id="name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+                    <Input 
+                      id="name" 
+                      ref={nameRef}
+                      value={form.name} 
+                      onChange={(e) => {
+                        setForm((p) => ({ ...p, name: e.target.value }));
+                        if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+                      }} 
+                    />
+                    {fieldErrors.name && <div className="text-xs text-red-400">{fieldErrors.name}</div>}
                   </div>
                   <div className="space-y-2">
                     <Label>미션 타입 / 일일 목표</Label>
@@ -339,23 +386,33 @@ export default function AdminRewardCampaignDetailPage({ params }: { params: { id
                     <Label htmlFor="startDate">시작일 (구매 범위 내)</Label>
                     <Input
                       id="startDate"
+                      ref={startDateRef}
                       type="date"
                       value={form.startDate}
                       min={new Date(order.startDate).toISOString().slice(0, 10)}
                       max={new Date(order.endDate).toISOString().slice(0, 10)}
-                      onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
+                      onChange={(e) => {
+                        setForm((p) => ({ ...p, startDate: e.target.value }));
+                        if (fieldErrors.startDate) setFieldErrors((prev) => ({ ...prev, startDate: "" }));
+                      }}
                     />
+                    {fieldErrors.startDate && <div className="text-xs text-red-400">{fieldErrors.startDate}</div>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="endDate">종료일 (구매 범위 내)</Label>
                     <Input
                       id="endDate"
+                      ref={endDateRef}
                       type="date"
                       value={form.endDate}
                       min={new Date(order.startDate).toISOString().slice(0, 10)}
                       max={new Date(order.endDate).toISOString().slice(0, 10)}
-                      onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))}
+                      onChange={(e) => {
+                        setForm((p) => ({ ...p, endDate: e.target.value }));
+                        if (fieldErrors.endDate) setFieldErrors((prev) => ({ ...prev, endDate: "" }));
+                      }}
                     />
+                    {fieldErrors.endDate && <div className="text-xs text-red-400">{fieldErrors.endDate}</div>}
                   </div>
                 </div>
 
