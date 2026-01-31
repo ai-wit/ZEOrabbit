@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Team, TeamMembership } from '../types';
 
 interface InvitationCode {
@@ -36,13 +36,7 @@ export function TeamManagementModal({
     expiresInHours: 24
   });
 
-  useEffect(() => {
-    if (isOpen && team) {
-      fetchMemberships();
-    }
-  }, [isOpen, team]);
-
-  const fetchMemberships = async () => {
+  const fetchMemberships = useCallback(async () => {
     if (!team) return;
 
     try {
@@ -66,7 +60,13 @@ export function TeamManagementModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [team]);
+
+  useEffect(() => {
+    if (isOpen && team) {
+      fetchMemberships();
+    }
+  }, [fetchMemberships, isOpen, team]);
 
   const handleDecideMembership = async (membershipId: string, action: 'approve' | 'reject') => {
     if (!confirm(action === 'approve' ? '이 회원을 팀원으로 승인하시겠습니까?' : '이 회원의 신청을 거절하시겠습니까?')) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PageShell } from "@/app/_ui/shell";
 import {
@@ -155,11 +155,26 @@ export default function CampaignDetailPage(props: {
   });
 
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const loadTeamApplications = useCallback(async () => {
+    try {
+      setTeamApplicationsLoading(true);
+      const response = await fetch(`/api/admin/experience-campaigns/${props.params.id}/team-applications`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '팀 신청 목록을 불러올 수 없습니다.');
+      }
+      const data = await response.json();
+      setTeamApplications(data.applications || []);
+    } catch (error) {
+      console.error('팀 신청 목록 로드 실패:', error);
+      // 에러가 발생해도 UI가 깨지지 않도록 빈 배열로 설정
+      setTeamApplications([]);
+    } finally {
+      setTeamApplicationsLoading(false);
+    }
+  }, [props.params.id]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -203,7 +218,11 @@ export default function CampaignDetailPage(props: {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadTeamApplications, props.params.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,24 +343,6 @@ export default function CampaignDetailPage(props: {
     }
   };
 
-  const loadTeamApplications = async () => {
-    try {
-      setTeamApplicationsLoading(true);
-      const response = await fetch(`/api/admin/experience-campaigns/${props.params.id}/team-applications`);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || '팀 신청 목록을 불러올 수 없습니다.');
-      }
-      const data = await response.json();
-      setTeamApplications(data.applications || []);
-    } catch (error) {
-      console.error('팀 신청 목록 로드 실패:', error);
-      // 에러가 발생해도 UI가 깨지지 않도록 빈 배열로 설정
-      setTeamApplications([]);
-    } finally {
-      setTeamApplicationsLoading(false);
-    }
-  };
 
   const handleApproveTeam = async (application: TeamApplication) => {
     if (!window.confirm(`"${application.teamName}" 팀의 신청을 승인하시겠습니까?`)) {

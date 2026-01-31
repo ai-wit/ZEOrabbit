@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Pill } from "@/app/_ui/primitives";
 
@@ -47,9 +48,12 @@ export function EvidenceList({ evidences }: { evidences: EvidenceItem[] }) {
                     <Pill tone="neutral">{evidence.type}</Pill>
                   </div>
                   {fileUrl && evidence.type === "IMAGE" ? (
-                    <img
+                    <Image
                       src={fileUrl}
                       alt={metadata?.originalName ?? "증빙 이미지"}
+                      width={240}
+                      height={160}
+                      unoptimized
                       className="h-28 w-full rounded-md object-cover"
                     />
                   ) : fileUrl && evidence.type === "VIDEO" ? (
@@ -92,9 +96,12 @@ export function EvidenceList({ evidences }: { evidences: EvidenceItem[] }) {
                     <div className="text-xs text-zinc-400">{metadata.originalName}</div>
                   ) : null}
                   {fileUrl && evidence.type === "IMAGE" ? (
-                    <img
+                    <Image
                       src={fileUrl}
                       alt={metadata?.originalName ?? "증빙 이미지"}
+                      width={960}
+                      height={720}
+                      unoptimized
                       className="max-w-full h-auto rounded-lg border border-white/10"
                       style={{ maxHeight: "360px" }}
                     />

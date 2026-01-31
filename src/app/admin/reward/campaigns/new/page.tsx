@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PageShell } from "@/app/_ui/shell";
 import { AdminHeader } from "@/app/admin/_components/AdminHeader";
@@ -50,16 +50,7 @@ export default function NewCampaignPage() {
     buttons: [] as Array<{ id?: string; label: string; url: string; sortOrder: number }>
   });
 
-  useEffect(() => {
-    if (orderId) {
-      loadOrderData();
-    } else {
-      setError('주문 ID가 제공되지 않았습니다.');
-      setLoading(false);
-    }
-  }, [orderId]);
-
-  const loadOrderData = async () => {
+  const loadOrderData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -90,7 +81,16 @@ export default function NewCampaignPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId]);
+
+  useEffect(() => {
+    if (orderId) {
+      loadOrderData();
+    } else {
+      setError('주문 ID가 제공되지 않았습니다.');
+      setLoading(false);
+    }
+  }, [orderId, loadOrderData]);
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));

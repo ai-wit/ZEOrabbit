@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PageShell } from "@/app/_ui/shell";
 import {
@@ -117,11 +117,7 @@ export default function ExperienceApplicationsPage() {
   const [campaigns, setCampaigns] = useState<ExperienceCampaign[]>([]);
   const [totalCampaigns, setTotalCampaigns] = useState(0);
 
-  useEffect(() => {
-    loadData();
-  }, [page, advertiserId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -206,7 +202,11 @@ export default function ExperienceApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, advertiserId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const isManager = user?.adminType === "MANAGER";
   const totalPages = Math.ceil(totalCount / pageSize);

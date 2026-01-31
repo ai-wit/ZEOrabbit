@@ -50,7 +50,7 @@ export function ImageLightbox(props: {
     const w = Math.max(1, rect.width - pad);
     const h = Math.max(1, rect.height - pad);
     return clamp(Math.min(w / natural.w, h / natural.h), 0.05, 8);
-  }, [natural, open]);
+  }, [natural]);
 
   const reset = useCallback(() => {
     setScale(1);

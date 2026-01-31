@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageShell } from "@/app/_ui/shell";
 import {
@@ -56,11 +56,7 @@ export default function NewCampaignPage(props: {
     endDate: ''
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -101,7 +97,11 @@ export default function NewCampaignPage(props: {
     } finally {
       setLoading(false);
     }
-  };
+  }, [props.params.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

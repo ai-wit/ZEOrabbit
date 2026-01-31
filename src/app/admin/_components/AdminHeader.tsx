@@ -59,6 +59,11 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
           <ButtonLink href="/admin/advertisers" variant="secondary" size="sm">
             🏢 광고주
           </ButtonLink>
+          {!isManager && (
+            <ButtonLink href="/admin/members" variant="secondary" size="sm">
+              👥 회원관리
+            </ButtonLink>
+          )}
           {/* 상품 메뉴는 매니저에게 표시하지 않음 */}
           {!isManager && (
             <ButtonLink href="/admin/products" variant="secondary" size="sm">

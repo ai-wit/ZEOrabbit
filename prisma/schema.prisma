@@ -204,6 +204,7 @@ model User {
   credential         AuthCredential?
   sessions           Session[]
   terms              TermsAgreement[]
+  passwordResetTokens PasswordResetToken[]
 
   auditLogs     AuditLog[]
   notifications Notification[]
@@ -650,6 +651,20 @@ model VerificationCode {
   createdAt DateTime @default(now())
 
   @@index([phone])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
   @@index([expiresAt])
 }
 

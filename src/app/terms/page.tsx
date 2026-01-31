@@ -16,7 +16,7 @@ export default function TermsPage() {
 
               <div>
                 <h3 className="text-lg font-semibold mb-2">제2조 (일반 회원의 정의)</h3>
-                <p>"일반 회원"이란 광고 집행 목적이 아닌 서비스 이용, 미션 수행, 기능 사용을 위해 가입한 개인을 의미합니다.</p>
+                <p>&quot;일반 회원&quot;이란 광고 집행 목적이 아닌 서비스 이용, 미션 수행, 기능 사용을 위해 가입한 개인을 의미합니다.</p>
               </div>
 
               <div>
@@ -96,7 +96,7 @@ export default function TermsPage() {
 
               <div>
                 <h3 className="text-lg font-semibold mb-2">제2조 (광고주 회원의 정의)</h3>
-                <p>"광고주 회원"이란 본 프로젝트에서 광고 집행을 목적으로 가입한 개인 또는 법인을 의미합니다.</p>
+                <p>&quot;광고주 회원&quot;이란 본 프로젝트에서 광고 집행을 목적으로 가입한 개인 또는 법인을 의미합니다.</p>
               </div>
 
               <div>
@@ -136,7 +136,7 @@ export default function TermsPage() {
                   <div>
                     <h4 className="font-semibold">포인트 순환 구조</h4>
                     <ul className="list-disc pl-6 mt-1">
-                      <li>광고주가 사용한 당근 포인트는 시스템 정산을 통해 일반 회원에게 '클로버' 포인트로 분배됩니다.</li>
+                      <li>광고주가 사용한 당근 포인트는 시스템 정산을 통해 일반 회원에게 &apos;클로버&apos; 포인트로 분배됩니다.</li>
                     </ul>
                   </div>
                 </div>

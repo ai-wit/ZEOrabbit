@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageShell } from "@/app/_ui/shell";
 import {
@@ -76,12 +76,7 @@ export default function ManagerDetailPage({ params }: { params: { id: string } }
     confirmPassword: ''
   });
 
-  // 데이터 로드
-  useEffect(() => {
-    loadData();
-  }, [params.id]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -114,7 +109,12 @@ export default function ManagerDetailPage({ params }: { params: { id: string } }
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  // 데이터 로드
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // 폼 입력 핸들러
   const handleInputChange = (field: string, value: string) => {

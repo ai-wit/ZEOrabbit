@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { PageShell } from "@/app/_ui/shell";
 import { AdminHeader } from "../../_components/AdminHeader";
@@ -42,13 +42,7 @@ export default function AdminCampaignDetailPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (campaignId) {
-      loadCampaign();
-    }
-  }, [campaignId]);
-
-  const loadCampaign = async () => {
+  const loadCampaign = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -67,7 +61,13 @@ export default function AdminCampaignDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [campaignId]);
+
+  useEffect(() => {
+    if (campaignId) {
+      loadCampaign();
+    }
+  }, [campaignId, loadCampaign]);
 
   const formatDate = (dateStr: string) => {
     return new Intl.DateTimeFormat("ko-KR", {

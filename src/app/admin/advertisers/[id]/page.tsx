@@ -137,21 +137,7 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
     confirmPassword: ''
   });
 
-  // 데이터 로드
-  useEffect(() => {
-    loadData();
-  }, [params.id]);
-
-  // 클린업: 컴포넌트 언마운트 시 타임아웃 정리
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -192,7 +178,22 @@ export default function AdvertiserDetailPage({ params }: { params: { id: string 
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  // 데이터 로드
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // 클린업: 컴포넌트 언마운트 시 타임아웃 정리
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
 
   // 매니저 검색
   const searchManagers = useCallback(async (query: string) => {

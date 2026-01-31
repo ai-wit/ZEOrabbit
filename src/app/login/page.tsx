@@ -115,6 +115,13 @@ function LoginContent() {
           </form>
 
           <div className="text-sm text-zinc-400">
+            비밀번호를 잊으셨나요?{" "}
+            <Link href="/reset-password" className="font-semibold text-zinc-200 hover:underline">
+              비밀번호 찾기
+            </Link>
+          </div>
+
+          <div className="text-sm text-zinc-400">
             계정이 없나요?{" "}
             <Link href="/signup" className="font-semibold text-zinc-200 hover:underline">
               회원가입
