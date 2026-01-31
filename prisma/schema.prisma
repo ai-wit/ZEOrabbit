@@ -349,7 +349,7 @@ model CampaignButton {
   id         String   @id @default(cuid())
   campaignId String
   label      String
-  url        String
+  url        String   @db.VarChar(512)
   sortOrder  Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
