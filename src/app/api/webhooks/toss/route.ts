@@ -100,6 +100,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    const isProductOrderPayment = payment.id.startsWith("prd_");
+
     // Update payment and create ledger entry if needed
     await prisma.$transaction(async (tx) => {
       // Update payment status
@@ -127,6 +129,34 @@ export async function POST(req: NextRequest) {
             createdAt: new Date(),
           }
         });
+      }
+
+      if (isProductOrderPayment && (newStatus === "FAILED" || newStatus === "CANCELED")) {
+        const order = await tx.productOrder.findFirst({
+          where: { paymentId: payment.id },
+          select: { id: true, status: true, pointsAppliedKrw: true, advertiserId: true }
+        });
+
+        if (order?.pointsAppliedKrw && order.pointsAppliedKrw > 0) {
+          await tx.budgetLedger.createMany({
+            data: [
+              {
+                advertiserId: order.advertiserId,
+                amountKrw: order.pointsAppliedKrw,
+                reason: "PRODUCT_ORDER_POINTS_REFUND",
+                refId: order.id,
+              }
+            ],
+            skipDuplicates: true
+          });
+        }
+
+        if (order && order.status !== "FULFILLED") {
+          await tx.productOrder.update({
+            where: { id: order.id },
+            data: { status: newStatus === "FAILED" ? "FAILED" : "CANCELED" }
+          });
+        }
       }
 
       // Create audit log

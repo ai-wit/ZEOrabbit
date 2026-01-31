@@ -3,7 +3,7 @@ import { getAdvertiserProfileIdByUserId } from "@/server/advertiser/advertiser-p
 import { getAdvertiserBudgetBalanceKrw } from "@/server/advertiser/balance";
 import { prisma } from "@/server/prisma";
 import { PageShell } from "@/app/_ui/shell";
-import { Button, Card, CardBody, DividerList, EmptyState, Input, Label, Pill } from "@/app/_ui/primitives";
+import { Button, ButtonLink, Card, CardBody, DividerList, EmptyState, Input, Label, Pill } from "@/app/_ui/primitives";
 import { AdvertiserHeader } from "../_components/AdvertiserHeader";
 import { getPaymentStatusLabel } from "@/lib/status-labels";
 
@@ -20,7 +20,20 @@ export default async function AdvertiserBillingPage() {
     where: { advertiserId },
     orderBy: { createdAt: "desc" },
     take: 20,
-    select: { id: true, amountKrw: true, status: true, provider: true, createdAt: true }
+    select: {
+      id: true,
+      amountKrw: true,
+      status: true,
+      provider: true,
+      createdAt: true,
+      productOrder: {
+        select: {
+          id: true,
+          product: { select: { id: true, name: true } },
+          place: { select: { name: true } },
+        },
+      },
+    }
   });
 
   const ledgers = await prisma.budgetLedger.findMany({
@@ -35,7 +48,7 @@ export default async function AdvertiserBillingPage() {
       header={
         <AdvertiserHeader
           title="결제/충전"
-          description={`현재 예산 잔액: ${formatKrw(balance)}원`}
+          description={`현재 포인트: ${formatKrw(balance)}P`}
         />
       }
     >
@@ -73,22 +86,41 @@ export default async function AdvertiserBillingPage() {
           {payments.length === 0 ? (
             <EmptyState title="결제 내역이 없습니다." />
           ) : (
-            payments.map((p) => (
-              <div key={p.id} className="px-6 py-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-sm font-semibold text-zinc-50">{formatKrw(p.amountKrw)}원</div>
-                      <Pill tone={p.status === "PAID" ? "emerald" : p.status === "FAILED" ? "red" : "neutral"}>
-                        {getPaymentStatusLabel(p.status)}
-                      </Pill>
+            payments.map((p) => {
+              const canRetry = p.status === "CREATED" && p.provider === "TOSS" && p.productOrder;
+              const retryUrl = canRetry
+                ? `/advertiser/billing/toss?${new URLSearchParams({
+                    orderId: p.id,
+                    amount: p.amountKrw.toString(),
+                    orderName: `${p.productOrder.product.name} (${p.productOrder.place.name})`,
+                    productId: p.productOrder.product.id,
+                  }).toString()}`
+                : null;
+
+              return (
+                <div key={p.id} className="px-6 py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="text-sm font-semibold text-zinc-50">{formatKrw(p.amountKrw)}원</div>
+                        <Pill tone={p.status === "PAID" ? "emerald" : p.status === "FAILED" ? "red" : "neutral"}>
+                          {getPaymentStatusLabel(p.status)}
+                        </Pill>
+                      </div>
+                      <div className="text-xs text-zinc-400">{p.provider ?? "—"}</div>
                     </div>
-                    <div className="text-xs text-zinc-400">{p.provider ?? "—"}</div>
+                    <div className="text-right space-y-2">
+                      <div className="text-xs text-zinc-500">{new Date(p.createdAt).toLocaleString("ko-KR")}</div>
+                      {retryUrl ? (
+                        <ButtonLink href={retryUrl} variant="secondary" size="sm">
+                          결제 다시하기
+                        </ButtonLink>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="text-xs text-zinc-500">{new Date(p.createdAt).toLocaleString("ko-KR")}</div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </DividerList>
       </Card>

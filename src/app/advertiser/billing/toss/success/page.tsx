@@ -30,11 +30,25 @@ export default function TossPaymentSuccessPage() {
         const paymentKey = searchParams.get('paymentKey');
         const orderId = searchParams.get('orderId');
         const amount = searchParams.get('amount');
+        const pointsOnly = searchParams.get('pointsOnly') === '1' || amount === '0';
 
         if (!orderId || !amount) {
           setResult({
             success: false,
             error: '결제 정보가 올바르지 않습니다.'
+          });
+          setIsConfirming(false);
+          return;
+        }
+
+        if (pointsOnly) {
+          setResult({
+            success: true,
+            payment: {
+              id: orderId,
+              amount: 0,
+              status: 'PAID',
+            }
           });
           setIsConfirming(false);
           return;

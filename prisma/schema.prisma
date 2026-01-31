@@ -149,6 +149,8 @@ enum LedgerReason {
   TOPUP
   PRODUCT_ORDER_CREDIT
   PRODUCT_ORDER_BURN
+  PRODUCT_ORDER_POINTS_BURN
+  PRODUCT_ORDER_POINTS_REFUND
   REFUND
   ADJUSTMENT
 }
@@ -571,6 +573,8 @@ model ProductOrder {
   budgetTotalKrw   Int
   vatAmountKrw     Int
   totalAmountKrw   Int
+  pointsAppliedKrw Int            @default(0)
+  payableAmountKrw Int            @default(0)
 
   status        ProductOrderStatus @default(CREATED)
 

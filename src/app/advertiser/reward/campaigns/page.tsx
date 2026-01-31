@@ -11,7 +11,7 @@ export default async function AdvertiserCampaignsPage() {
   const advertiserId = await getAdvertiserProfileIdByUserId(user.id);
 
   const productOrders = await prisma.productOrder.findMany({
-    where: { advertiserId },
+    where: { advertiserId, status: { in: ["PAID", "FULFILLED"] } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,

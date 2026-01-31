@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PageShell } from "@/app/_ui/shell";
 import { Button, Card, CardBody, Hint, Input, Label, Select, Callout } from "@/app/_ui/primitives";
@@ -27,6 +27,7 @@ type Place = {
 
 export default function AdvertiserProductDetailPage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const error = searchParams.get('error');
   const errorMessage = searchParams.get('errorMessage');
   const [product, setProduct] = useState<Product | null>(null);
@@ -38,6 +39,8 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
   const [productOrderLimits, setProductOrderLimits] = useState<{maxAdditionalDays: number; maxDailyTarget: number} | null>(null);
   const [orderDaysValue, setOrderDaysValue] = useState<string>("0");
   const [dailyTargetValue, setDailyTargetValue] = useState<string>("");
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string>("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("TOSS");
   const DAY_MS = 24 * 60 * 60 * 1000;
 
   useEffect(() => {
@@ -62,8 +65,10 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
           const data = await response.json();
           setProduct(data.product);
           setPlaces(data.places);
-
           setOrderDaysValue(data.product.minOrderDays.toString());
+          if (data.places?.length && !selectedPlaceId) {
+            setSelectedPlaceId(data.places[0].id);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch product data:', error);
@@ -118,15 +123,6 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
 
   const clampValue = (value: number, min: number, max: number) => {
     return Math.min(Math.max(value, min), max);
-  };
-
-  const getDateString = (date: Date) => {
-    return date.toISOString().split('T')[0];
-  };
-
-  const getEndDateString = (orderDays: number) => {
-    const safeOrderDays = Math.max(orderDays, 1);
-    return getDateString(new Date(Date.now() + (safeOrderDays - 1) * DAY_MS));
   };
 
   const normalizeOrderDays = (value: string) => {
@@ -430,17 +426,15 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
       return; // 검증 실패 시 여기서 중단
     }
 
-    // 검증 통과 시 폼 제출
+    // 검증 통과 시 결제 확인 페이지로 이동
     setFieldErrors({});
-    if (form) {
-      if (normalizedOrderDays !== null) {
-        const endDateInput = form.querySelector('input[name="endDate"]') as HTMLInputElement | null;
-        if (endDateInput) {
-          endDateInput.value = getEndDateString(normalizedOrderDays);
-        }
-      }
-      form.submit();
-    }
+    const reviewParams = new URLSearchParams({
+      placeId: selectedPlaceId,
+      orderDays: (normalizedOrderDays ?? product?.minOrderDays ?? 1).toString(),
+      dailyTarget: (normalizedDailyTarget ?? 1).toString(),
+      paymentMethod: selectedPaymentMethod,
+    });
+    router.push(`/advertiser/reward/products/${params.id}/review?${reviewParams.toString()}`);
   };
 
   if (loading) {
@@ -565,25 +559,17 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                 </Link>
               </div>
             ) : (
-              <form action="/api/advertiser/product-orders" method="post" className="space-y-6">
-                <input type="hidden" name="productId" value={product.id} />
-                <input type="hidden" name="paymentAmount" value={paymentAmount} />
-                <input type="hidden" name="startDate" value={getDateString(new Date())} />
-                <input
-                  type="hidden"
-                  name="endDate"
-                  value={
-                    getEndDateString(
-                      normalizeOrderDays(orderDaysValue)
-                        ?? product.minOrderDays
-                        ?? 1,
-                    )
-                  }
-                />
+              <form className="space-y-6">
 
                 <div className="space-y-2">
                   <Label htmlFor="placeId">플레이스</Label>
-                  <Select id="placeId" name="placeId" required>
+                  <Select
+                    id="placeId"
+                    name="placeId"
+                    required
+                    value={selectedPlaceId}
+                    onChange={(e) => setSelectedPlaceId(e.target.value)}
+                  >
                     {places.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -654,7 +640,13 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
 
                 <div className="space-y-2">
                   <Label htmlFor="paymentMethod">결제 수단</Label>
-                  <Select id="paymentMethod" name="paymentMethod" required>
+                  <Select
+                    id="paymentMethod"
+                    name="paymentMethod"
+                    required
+                    value={selectedPaymentMethod}
+                    onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                  >
                     <option value="TOSS">토스페이먼츠 카드 결제</option>
                     <option value="DEV">DEV 즉시 반영 (개발용)</option>
                   </Select>
@@ -663,8 +655,8 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
                   )}
                 </div>
 
-                <Button type="submit" variant="primary" className="w-full" onClick={handlePaymentClick}>
-                  결제하기
+                <Button type="button" variant="primary" className="w-full" onClick={handlePaymentClick}>
+                  구매하기
                 </Button>
               </form>
             )}

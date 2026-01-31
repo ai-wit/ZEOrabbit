@@ -30,6 +30,16 @@ export default function TossPaymentFailPage() {
       message: message || undefined,
       orderId: orderId || undefined,
     });
+
+    if (orderId && orderId.startsWith('prd_')) {
+      fetch('/api/advertiser/product-orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      }).catch((error) => {
+        console.error('Failed to cancel product order:', error);
+      });
+    }
   }, [searchParams]);
 
   const getErrorMessage = (code?: string, message?: string) => {
