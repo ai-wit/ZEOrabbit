@@ -342,7 +342,7 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
 
         {activeTab === "info" ? (
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
+            <Card className="lg:col-span-2">
               <CardBody className="space-y-4">
                 <div className="text-sm font-semibold text-text">개인정보 수정</div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -409,7 +409,7 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
                     </Select>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <Button variant="primary" onClick={handleUpdate} disabled={saving}>
                     {saving ? "저장 중..." : "저장하기"}
                   </Button>
@@ -418,13 +418,13 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className="lg:col-span-2">
               <CardBody className="space-y-4">
                 <div className="text-sm font-semibold text-text">비밀번호 재설정</div>
                 <div className="text-xs text-text-subtle">
                   재설정 링크를 생성해 직접 전달하거나 이메일 발송 요청을 저장할 수 있습니다.
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <Button variant="primary" onClick={() => handlePasswordReset(false)}>
                     링크 생성
                   </Button>
@@ -437,7 +437,7 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
                     <Label>재설정 링크</Label>
                     <div className="flex flex-wrap items-center gap-2">
                       <Input value={resetLink} readOnly />
-                      <Button variant="secondary" onClick={handleCopyLink}>
+                      <Button className="ml-auto" variant="secondary" onClick={handleCopyLink}>
                         복사
                       </Button>
                     </div>
