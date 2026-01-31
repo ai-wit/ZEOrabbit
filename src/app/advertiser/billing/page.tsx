@@ -26,15 +26,26 @@ export default async function AdvertiserBillingPage() {
       status: true,
       provider: true,
       createdAt: true,
-      productOrder: {
+    }
+  });
+
+  const paymentIds = payments.map((p) => p.id);
+  const productOrders = paymentIds.length
+    ? await prisma.productOrder.findMany({
+        where: { paymentId: { in: paymentIds } },
         select: {
-          id: true,
+          paymentId: true,
           product: { select: { id: true, name: true } },
           place: { select: { name: true } },
         },
-      },
-    }
-  });
+      })
+    : [];
+
+  const productOrderByPaymentId = new Map(
+    productOrders
+      .filter((po) => po.paymentId)
+      .map((po) => [po.paymentId as string, { product: po.product, place: po.place }])
+  );
 
   const ledgers = await prisma.budgetLedger.findMany({
     where: { advertiserId },
@@ -87,15 +98,17 @@ export default async function AdvertiserBillingPage() {
             <EmptyState title="결제 내역이 없습니다." />
           ) : (
             payments.map((p) => {
-              const canRetry = p.status === "CREATED" && p.provider === "TOSS" && p.productOrder;
-              const retryUrl = canRetry
-                ? `/advertiser/billing/toss?${new URLSearchParams({
-                    orderId: p.id,
-                    amount: p.amountKrw.toString(),
-                    orderName: `${p.productOrder.product.name} (${p.productOrder.place.name})`,
-                    productId: p.productOrder.product.id,
-                  }).toString()}`
-                : null;
+              const order = productOrderByPaymentId.get(p.id) ?? null;
+              const canRetry = p.status === "CREATED" && p.provider === "TOSS" && !!order;
+              const retryUrl =
+                canRetry && order
+                  ? `/advertiser/billing/toss?${new URLSearchParams({
+                      orderId: p.id,
+                      amount: p.amountKrw.toString(),
+                      orderName: `${order.product.name} (${order.place.name})`,
+                      productId: order.product.id,
+                    }).toString()}`
+                  : null;
 
               return (
                 <div key={p.id} className="px-6 py-4">

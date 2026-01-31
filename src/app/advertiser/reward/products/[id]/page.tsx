@@ -78,7 +78,7 @@ export default function AdvertiserProductDetailPage({ params }: { params: { id: 
     };
 
     fetchData();
-  }, [params.id]);
+  }, [params.id, selectedPlaceId]);
 
   // 서버 처리중 에러 메시지 (URL 파라미터에서 받은 에러)
   const getServerErrorMessage = (errorCode: string | null, messageOverride?: string | null) => {
